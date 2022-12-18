@@ -1,0 +1,77 @@
+# @file      ci.yml
+# @brief     Used to perform code format checking and Sonarcloud analysis
+#
+# MIT License
+#
+# Copyright (c) 2022-2023 joelguittet and mender-mcu-client contributors
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+name: ci
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  check:
+    name: Check code format
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install tools
+        run: |
+          sudo apt-get install clang-format pcregrep
+      - name: Check headers
+        run: |
+          ./.github/workflows/check_headers.sh
+      - name: Check include guards
+        run: |
+          ./.github/workflows/check_include_guards.sh
+      - name: Check equivalence tests
+        run: |
+          ./.github/workflows/check_equivalence_tests.sh
+      - name: Check code format
+        run: |
+          ./.github/workflows/check_code_format.sh
+  build:
+    name: SonarCloud analysis
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Install sonar-scanner and build-wrapper
+        uses: SonarSource/sonarcloud-github-c-cpp@v1
+      - name: Run build-wrapper
+        run: |
+          cd tests
+          mkdir build
+          cd build
+          cmake .. -G "Unix Makefiles"
+          build-wrapper-linux-x86-64 --out-dir bw_output make -j$(nproc)
+      - name: Run sonar-scanner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner -Dsonar.organization=joelguittet -Dsonar.projectKey=joelguittet_mender-mcu-client -Dsonar.cfamily.cache.enabled=false -Dsonar.inclusions=include/**/*,core/**/*,platform/**/* -Dsonar.projectVersion=$(cat VERSION) -Dsonar.cfamily.build-wrapper-output="tests/build/bw_output"

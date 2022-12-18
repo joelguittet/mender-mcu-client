@@ -1,0 +1,15 @@
+tests/mocks/esp-idf/include/esp_crt_bundle.h
+tests/mocks/esp-idf/include/esp_err.h
+tests/mocks/esp-idf/include/esp_flash_partitions.h
+tests/mocks/esp-idf/include/esp_http_client.h
+tests/mocks/esp-idf/include/esp_log.h
+tests/mocks/esp-idf/include/esp_ota_ops.h
+tests/mocks/esp-idf/include/esp_partition.h
+tests/mocks/esp-idf/include/nvs.h
+tests/mocks/esp-idf/include/nvs_flash.h
+tests/mocks/esp-idf/src/esp_crt_bundle.c
+tests/mocks/esp-idf/src/esp_err.c
+tests/mocks/esp-idf/src/esp_http_client.c
+tests/mocks/esp-idf/src/esp_ota_ops.c
+tests/mocks/esp-idf/src/nvs.c
+tests/mocks/freertos/include/FreeRTOSConfig.h
