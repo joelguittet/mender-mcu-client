@@ -85,8 +85,10 @@ static mender_client_callbacks_t mender_client_callbacks;
 /**
  * @brief Authentication keys
  */
-static char *mender_client_private_key = NULL;
-static char *mender_client_public_key  = NULL;
+static unsigned char *mender_client_private_key        = NULL;
+static size_t         mender_client_private_key_length = 0;
+static unsigned char *mender_client_public_key         = NULL;
+static size_t         mender_client_public_key_length  = 0;
 
 /**
  * @brief OTA ID and artifact name, used to report OTA status after rebooting
@@ -319,10 +321,12 @@ mender_client_exit(void) {
         free(mender_client_private_key);
         mender_client_private_key = NULL;
     }
+    mender_client_private_key_length = 0;
     if (NULL != mender_client_public_key) {
         free(mender_client_public_key);
         mender_client_public_key = NULL;
     }
+    mender_client_public_key_length = 0;
     if (NULL != mender_client_ota_id) {
         free(mender_client_ota_id);
         mender_client_ota_id = NULL;
@@ -365,33 +369,27 @@ mender_client_task(void *arg) {
     }
 
     /* Retrieve or generate authentication keys if not allready done */
-    size_t private_key_length = 0;
-    size_t public_key_length  = 0;
-    if (MENDER_OK != mender_storage_get_authentication_keys(&mender_client_private_key, &private_key_length, &mender_client_public_key, &public_key_length)) {
+    if (MENDER_OK
+        != mender_storage_get_authentication_keys(
+            &mender_client_private_key, &mender_client_private_key_length, &mender_client_public_key, &mender_client_public_key_length)) {
 
         /* Generate authentication keys */
         mender_log_info("Generating authentication keys...");
         if (MENDER_OK
-            != mender_tls_generate_authentication_keys(&mender_client_private_key, &private_key_length, &mender_client_public_key, &public_key_length)) {
+            != mender_tls_generate_authentication_keys(
+                &mender_client_private_key, &mender_client_private_key_length, &mender_client_public_key, &mender_client_public_key_length)) {
             mender_log_error("Unable to generate authentication keys");
             goto END;
         }
 
         /* Record keys */
-        if (MENDER_OK != mender_storage_set_authentication_keys(mender_client_private_key, mender_client_public_key)) {
+        if (MENDER_OK
+            != mender_storage_set_authentication_keys(
+                mender_client_private_key, mender_client_private_key_length, mender_client_public_key, mender_client_public_key_length)) {
             mender_log_error("Unable to record authentication keys");
             goto END;
         }
     }
-
-    /* Convert public key for usage with mender HTTP API */
-    char *tmp = mender_utils_str_replace(mender_client_public_key, "\n", "\\n");
-    if (NULL == tmp) {
-        mender_log_error("Unable to convert public key");
-        goto END;
-    }
-    free(mender_client_public_key);
-    mender_client_public_key = tmp;
 
     /* Retrieve OTA ID if it is found (following an update) */
     mender_err_t ret;
@@ -411,7 +409,9 @@ mender_client_task(void *arg) {
     while (true) {
 
         /* Perform authentication with the mender server */
-        if (MENDER_OK != mender_api_perform_authentication(mender_client_private_key, mender_client_public_key)) {
+        if (MENDER_OK
+            != mender_api_perform_authentication(
+                mender_client_private_key, mender_client_private_key_length, mender_client_public_key, mender_client_public_key_length)) {
 
             /* Invoke authentication error callback */
             if (NULL != mender_client_callbacks.authentication_failure) {
