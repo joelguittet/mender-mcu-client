@@ -16,6 +16,16 @@ nvs_get_str(nvs_handle_t handle, const char *key, char *out_value, size_t *lengt
 }
 
 esp_err_t
+nvs_set_blob(nvs_handle_t handle, const char *key, const void *value, size_t length) {
+    return ESP_OK;
+}
+
+esp_err_t
+nvs_get_blob(nvs_handle_t handle, const char *key, void *out_value, size_t *length) {
+    return ESP_OK;
+}
+
+esp_err_t
 nvs_erase_key(nvs_handle_t handle, const char *key) {
     return ESP_OK;
 }

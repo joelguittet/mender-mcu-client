@@ -32,8 +32,8 @@
 /**
  * @brief NVS keys
  */
-#define MENDER_STORAGE_NVS_PRIVATE_KEY       "key.pem"
-#define MENDER_STORAGE_NVS_PUBLIC_KEY        "pubkey.pem"
+#define MENDER_STORAGE_NVS_PRIVATE_KEY       "key.der"
+#define MENDER_STORAGE_NVS_PUBLIC_KEY        "pubkey.der"
 #define MENDER_STORAGE_NVS_OTA_ID            "id"
 #define MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME "artifact_name"
 
@@ -72,7 +72,7 @@ mender_storage_erase_authentication_keys(void) {
 }
 
 mender_err_t
-mender_storage_get_authentication_keys(char **private_key, size_t *private_key_length, char **public_key, size_t *public_key_length) {
+mender_storage_get_authentication_keys(unsigned char **private_key, size_t *private_key_length, unsigned char **public_key, size_t *public_key_length) {
 
     assert(NULL != private_key);
     assert(NULL != private_key_length);
@@ -80,28 +80,33 @@ mender_storage_get_authentication_keys(char **private_key, size_t *private_key_l
     assert(NULL != public_key_length);
 
     /* Retrieve length of the keys */
-    nvs_get_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, NULL, private_key_length);
-    nvs_get_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, NULL, public_key_length);
+    nvs_get_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, NULL, private_key_length);
+    nvs_get_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, NULL, public_key_length);
     if ((0 == *private_key_length) || (0 == *public_key_length)) {
         mender_log_info("Authentication keys are not available");
         return MENDER_NOT_FOUND;
     }
 
     /* Allocate memory to copy keys */
-    if (NULL == (*private_key = malloc(*private_key_length + 1))) {
+    if (NULL == (*private_key = malloc(*private_key_length))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
-    if (NULL == (*public_key = malloc(*public_key_length + 1))) {
+    if (NULL == (*public_key = malloc(*public_key_length))) {
         mender_log_error("Unable to allocate memory");
         free(*private_key);
+        *private_key = NULL;
         return MENDER_FAIL;
     }
 
     /* Read keys */
-    if ((ESP_OK != nvs_get_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, *private_key, private_key_length))
-        || (ESP_OK != nvs_get_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, *public_key, public_key_length))) {
+    if ((ESP_OK != nvs_get_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, *private_key, private_key_length))
+        || (ESP_OK != nvs_get_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, *public_key, public_key_length))) {
         mender_log_error("Unable to read authentication keys");
+        free(*private_key);
+        *private_key = NULL;
+        free(*public_key);
+        *public_key = NULL;
         return MENDER_FAIL;
     }
 
@@ -109,14 +114,14 @@ mender_storage_get_authentication_keys(char **private_key, size_t *private_key_l
 }
 
 mender_err_t
-mender_storage_set_authentication_keys(char *private_key, char *public_key) {
+mender_storage_set_authentication_keys(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length) {
 
     assert(NULL != private_key);
     assert(NULL != public_key);
 
     /* Write keys */
-    if ((ESP_OK != nvs_set_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, private_key))
-        || (ESP_OK != nvs_set_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, public_key))) {
+    if ((ESP_OK != nvs_set_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, private_key, private_key_length))
+        || (ESP_OK != nvs_set_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, public_key, public_key_length))) {
         mender_log_error("Unable to write authentication keys");
         return MENDER_FAIL;
     }

@@ -29,7 +29,7 @@
 #include "mbedtls/bignum.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
-#ifdef DEBUG
+#ifdef MBEDTLS_ERROR_C
 #include "mbedtls/error.h"
 #endif
 #include "mbedtls/pk.h"
@@ -42,10 +42,10 @@
  * @brief Default keys length
  */
 #ifndef MENDER_TLS_PRIVATE_KEY_LENGTH
-#define MENDER_TLS_PRIVATE_KEY_LENGTH (3072)
+#define MENDER_TLS_PRIVATE_KEY_LENGTH (2048)
 #endif
 #ifndef MENDER_TLS_PUBLIC_KEY_LENGTH
-#define MENDER_TLS_PUBLIC_KEY_LENGTH (1024)
+#define MENDER_TLS_PUBLIC_KEY_LENGTH (768)
 #endif
 
 /**
@@ -63,7 +63,7 @@ mender_tls_init(void) {
 }
 
 mender_err_t
-mender_tls_generate_authentication_keys(char **private_key, size_t *private_key_length, char **public_key, size_t *public_key_length) {
+mender_tls_generate_authentication_keys(unsigned char **private_key, size_t *private_key_length, unsigned char **public_key, size_t *public_key_length) {
 
     assert(NULL != private_key);
     assert(NULL != private_key_length);
@@ -73,9 +73,9 @@ mender_tls_generate_authentication_keys(char **private_key, size_t *private_key_
     mbedtls_pk_context *      pk_context = NULL;
     mbedtls_ctr_drbg_context *ctr_drbg   = NULL;
     mbedtls_entropy_context * entropy    = NULL;
-    char *                    tmp;
+    unsigned char *           tmp;
 
-#ifdef DEBUG
+#ifdef MBEDTLS_ERROR_C
     char err[128];
 #endif
 
@@ -101,7 +101,7 @@ mender_tls_generate_authentication_keys(char **private_key, size_t *private_key_
 
     /* Setup CRT DRBG */
     if (0 != (ret = mbedtls_ctr_drbg_seed(ctr_drbg, mbedtls_entropy_func, entropy, (const unsigned char *)"mender", strlen("mender")))) {
-#ifdef DEBUG
+#ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
         mender_log_error("Unable to initialize ctr drbg (-0x%04x: %s)", -ret, err);
 #else
@@ -112,7 +112,7 @@ mender_tls_generate_authentication_keys(char **private_key, size_t *private_key_
 
     /* PK setup */
     if (0 != (ret = mbedtls_pk_setup(pk_context, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)))) {
-#ifdef DEBUG
+#ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
         mender_log_error("Unable to setup pk (-0x%04x: %s)", -ret, err);
 #else
@@ -123,7 +123,7 @@ mender_tls_generate_authentication_keys(char **private_key, size_t *private_key_
 
     /* Generate key pair */
     if (0 != (ret = mbedtls_rsa_gen_key(mbedtls_pk_rsa(*pk_context), mbedtls_ctr_drbg_random, ctr_drbg, 3072, 65537))) {
-#ifdef DEBUG
+#ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
         mender_log_error("Unable to setup pk (-0x%04x: %s)", -ret, err);
 #else
@@ -133,14 +133,13 @@ mender_tls_generate_authentication_keys(char **private_key, size_t *private_key_
     }
 
     /* Export private key */
-    if (NULL == (*private_key = malloc(MENDER_TLS_PRIVATE_KEY_LENGTH + 1))) {
+    if (NULL == (*private_key = malloc(MENDER_TLS_PRIVATE_KEY_LENGTH))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
     }
-    *private_key_length = MENDER_TLS_PRIVATE_KEY_LENGTH + 1;
-    if (0 != (ret = mbedtls_pk_write_key_pem(pk_context, (unsigned char *)*private_key, *private_key_length))) {
-#ifdef DEBUG
+    if ((ret = mbedtls_pk_write_key_der(pk_context, *private_key, MENDER_TLS_PRIVATE_KEY_LENGTH)) < 0) {
+#ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
         mender_log_error("Unable to write private key to PEM format (-0x%04x: %s)", -ret, err);
 #else
@@ -150,8 +149,9 @@ mender_tls_generate_authentication_keys(char **private_key, size_t *private_key_
         *private_key = NULL;
         goto END;
     }
-    *private_key_length = strlen(*private_key);
-    if (NULL == (tmp = realloc(*private_key, *private_key_length + 1))) {
+    *private_key_length = (size_t)ret;
+    memcpy(*private_key, *private_key + MENDER_TLS_PRIVATE_KEY_LENGTH - *private_key_length, *private_key_length);
+    if (NULL == (tmp = realloc(*private_key, *private_key_length))) {
         mender_log_error("Unable to allocate memory");
         free(*private_key);
         *private_key = NULL;
@@ -161,16 +161,15 @@ mender_tls_generate_authentication_keys(char **private_key, size_t *private_key_
     *private_key = tmp;
 
     /* Export public key */
-    if (NULL == (*public_key = malloc(MENDER_TLS_PUBLIC_KEY_LENGTH + 1))) {
+    if (NULL == (*public_key = malloc(MENDER_TLS_PUBLIC_KEY_LENGTH))) {
         mender_log_error("Unable to allocate memory");
         free(*private_key);
         *private_key = NULL;
         ret          = -1;
         goto END;
     }
-    *public_key_length = MENDER_TLS_PUBLIC_KEY_LENGTH + 1;
-    if (0 != (ret = mbedtls_pk_write_pubkey_pem(pk_context, (unsigned char *)*public_key, *public_key_length))) {
-#ifdef DEBUG
+    if ((ret = mbedtls_pk_write_pubkey_der(pk_context, *public_key, MENDER_TLS_PUBLIC_KEY_LENGTH)) < 0) {
+#ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
         mender_log_error("Unable to write public key to PEM format (-0x%04x: %s)", -ret, err);
 #else
@@ -182,8 +181,9 @@ mender_tls_generate_authentication_keys(char **private_key, size_t *private_key_
         *public_key = NULL;
         goto END;
     }
-    *public_key_length = strlen(*public_key);
-    if (NULL == (tmp = realloc(*public_key, *public_key_length + 1))) {
+    *public_key_length = (size_t)ret;
+    memcpy(*public_key, *public_key + MENDER_TLS_PUBLIC_KEY_LENGTH - *public_key_length, *public_key_length);
+    if (NULL == (tmp = realloc(*public_key, *public_key_length))) {
         mender_log_error("Unable to allocate memory");
         free(*private_key);
         *private_key = NULL;
@@ -193,6 +193,7 @@ mender_tls_generate_authentication_keys(char **private_key, size_t *private_key_
         goto END;
     }
     *public_key = tmp;
+    ret         = 0;
 
 END:
 
@@ -214,7 +215,86 @@ END:
 }
 
 mender_err_t
-mender_tls_sign_payload(char *private_key, char *payload, char **signature, size_t *signature_length) {
+mender_tls_pem_write_buffer(const unsigned char *der_data, size_t der_len, char *buf, size_t buf_len, size_t *olen) {
+
+#define PEM_BEGIN_PUBLIC_KEY "-----BEGIN PUBLIC KEY-----"
+#define PEM_END_PUBLIC_KEY   "-----END PUBLIC KEY-----"
+
+    mender_err_t   ret        = MENDER_OK;
+    unsigned char *encode_buf = NULL;
+    unsigned char *p          = (unsigned char *)buf;
+
+    /* Compute length required to convert DER data */
+    size_t use_len = 0;
+    mbedtls_base64_encode(NULL, 0, &use_len, der_data, der_len);
+    if (0 == use_len) {
+        ret = MENDER_FAIL;
+        goto END;
+    }
+
+    /* Compute length required to format PEM */
+    size_t add_len = strlen(PEM_BEGIN_PUBLIC_KEY) + 2 + strlen(PEM_END_PUBLIC_KEY) + 2 * ((use_len / 64) + 1);
+
+    /* Check buffer length */
+    if (use_len + add_len > buf_len) {
+        *olen = use_len + add_len;
+        ret   = MENDER_FAIL;
+        goto END;
+    }
+
+    /* Allocate memory to store PEM data */
+    if (NULL == (encode_buf = malloc(use_len))) {
+        ret = MENDER_FAIL;
+        goto END;
+    }
+
+    /* Convert DER data */
+    if (0 != mbedtls_base64_encode(encode_buf, use_len, &use_len, der_data, der_len)) {
+        ret = MENDER_FAIL;
+        goto END;
+    }
+
+    /* Copy header */
+    memcpy(p, PEM_BEGIN_PUBLIC_KEY, strlen(PEM_BEGIN_PUBLIC_KEY));
+    p += strlen(PEM_BEGIN_PUBLIC_KEY);
+    *p++ = '\\';
+    *p++ = 'n';
+
+    /* Copy PEM data */
+    unsigned char *c = encode_buf;
+    while (use_len) {
+        size_t len = (use_len > 64) ? 64 : use_len;
+        memcpy(p, c, len);
+        use_len -= len;
+        p += len;
+        c += len;
+        *p++ = '\\';
+        *p++ = 'n';
+    }
+
+    /* Copy footer */
+    memcpy(p, PEM_END_PUBLIC_KEY, strlen(PEM_END_PUBLIC_KEY));
+    p += strlen(PEM_END_PUBLIC_KEY);
+    *p++ = '\0';
+
+    /* Compute output length */
+    *olen = p - (unsigned char *)buf;
+
+    /* Clean any remaining data previously written to the buffer */
+    memset(buf + *olen, 0, buf_len - *olen);
+
+END:
+
+    /* Release memory */
+    if (NULL != encode_buf) {
+        free(encode_buf);
+    }
+
+    return ret;
+}
+
+mender_err_t
+mender_tls_sign_payload(unsigned char *private_key, size_t private_key_length, char *payload, char **signature, size_t *signature_length) {
 
     assert(NULL != private_key);
     assert(NULL != payload);
@@ -227,7 +307,7 @@ mender_tls_sign_payload(char *private_key, char *payload, char **signature, size
     unsigned char *           sig        = NULL;
     size_t                    sig_length;
     char *                    tmp;
-#ifdef DEBUG
+#ifdef MBEDTLS_ERROR_C
     char err[128];
 #endif
 
@@ -253,7 +333,7 @@ mender_tls_sign_payload(char *private_key, char *payload, char **signature, size
 
     /* Setup CRT DRBG */
     if (0 != (ret = mbedtls_ctr_drbg_seed(ctr_drbg, mbedtls_entropy_func, entropy, (const unsigned char *)"mender", strlen("mender")))) {
-#ifdef DEBUG
+#ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
         mender_log_error("Unable to initialize ctr drbg (-0x%04x: %s)", -ret, err);
 #else
@@ -263,8 +343,12 @@ mender_tls_sign_payload(char *private_key, char *payload, char **signature, size
     }
 
     /* Parse private key (IMPORTANT NOTE: length must include the ending \0 character) */
-    if (0 != (ret = mbedtls_pk_parse_key(pk_context, (unsigned char *)private_key, strlen(private_key) + 1, NULL, 0))) {
-#ifdef DEBUG
+#if MBEDTLS_VERSION_NUMBER >= 0x03000000
+    if (0 != (ret = mbedtls_pk_parse_key(pk_context, private_key, private_key_length, NULL, 0, mbedtls_ctr_drbg_random, ctr_drbg))) {
+#else
+    if (0 != (ret = mbedtls_pk_parse_key(pk_context, private_key, private_key_length, NULL, 0))) {
+#endif
+#ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
         mender_log_error("Unable to parse private key (-0x%04x: %s)", -ret, err);
 #else
@@ -276,7 +360,7 @@ mender_tls_sign_payload(char *private_key, char *payload, char **signature, size
     /* Generate digest */
     uint8_t digest[32];
     if (0 != (ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), (unsigned char *)payload, strlen(payload), digest))) {
-#ifdef DEBUG
+#ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
         mender_log_error("Unable to generate digest (-0x%04x: %s)", -ret, err);
 #else
@@ -292,8 +376,12 @@ mender_tls_sign_payload(char *private_key, char *payload, char **signature, size
         goto END;
     }
     sig_length = MENDER_TLS_SIGNATURE_LENGTH + 1;
+#if MBEDTLS_VERSION_NUMBER >= 0x03000000
+    if (0 != (ret = mbedtls_pk_sign(pk_context, MBEDTLS_MD_SHA256, digest, sizeof(digest), sig, sig_length, &sig_length, mbedtls_ctr_drbg_random, ctr_drbg))) {
+#else
     if (0 != (ret = mbedtls_pk_sign(pk_context, MBEDTLS_MD_SHA256, digest, sizeof(digest), sig, &sig_length, mbedtls_ctr_drbg_random, ctr_drbg))) {
-#ifdef DEBUG
+#endif
+#ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
         mender_log_error("Unable to compute signature (-0x%04x: %s)", -ret, err);
 #else
@@ -310,7 +398,7 @@ mender_tls_sign_payload(char *private_key, char *payload, char **signature, size
     }
     *signature_length = MENDER_TLS_SIGNATURE_LENGTH + 1;
     if (0 != (ret = mbedtls_base64_encode((unsigned char *)*signature, *signature_length, signature_length, sig, sig_length))) {
-#ifdef DEBUG
+#ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
         mender_log_error("Unable to encode signature (-0x%04x: %s)", -ret, err);
 #else

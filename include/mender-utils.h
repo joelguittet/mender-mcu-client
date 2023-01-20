@@ -31,15 +31,6 @@
 #include "mender-common.h"
 
 /**
- * @brief Function used to replace a string in the input buffer
- * @param input Input buffer
- * @param search String to be replaced or regex expression
- * @param replace Replacement string
- * @return New string with replacements if the function succeeds, NULL otherwise
- */
-char *mender_utils_str_replace(char *input, char *search, char *replace);
-
-/**
  * @brief Function used to print HTTP status as string
  * @param status HTTP status code
  * @return HTTP status as string, NULL if it is not found

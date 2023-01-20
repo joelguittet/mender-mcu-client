@@ -116,22 +116,36 @@ mender_api_init(mender_api_config_t *config, mender_api_callbacks_t *callbacks) 
 }
 
 mender_err_t
-mender_api_perform_authentication(char *private_key, char *public_key) {
+mender_api_perform_authentication(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length) {
 
     assert(NULL != private_key);
     assert(NULL != public_key);
     mender_err_t ret;
+    char *       public_key_pem   = NULL;
     char *       payload          = NULL;
     char *       response         = NULL;
     char *       signature        = NULL;
     size_t       signature_length = 0;
     int          status           = 0;
 
+    /* Convert public key to PEM format */
+    size_t olen = 0;
+    mender_tls_pem_write_buffer(public_key, public_key_length, NULL, 0, &olen);
+    if (NULL == (public_key_pem = (char *)malloc(olen))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    if (MENDER_OK != (ret = mender_tls_pem_write_buffer(public_key, public_key_length, public_key_pem, olen, &olen))) {
+        mender_log_error("Unable to convert public key");
+        goto END;
+    }
+
     /* Format payload */
     if (NULL != mender_api_config.tenant_token) {
         if (NULL
             == (payload = malloc(strlen("{ \"id_data\": \"{ \\\"mac\\\": \\\"\\\"}\", \"pubkey\": \"\", \"tenant_token\": \"\" }")
-                                 + strlen(mender_api_config.mac_address) + strlen(public_key) + strlen(mender_api_config.tenant_token) + 1))) {
+                                 + strlen(mender_api_config.mac_address) + strlen(public_key_pem) + strlen(mender_api_config.tenant_token) + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
@@ -139,21 +153,21 @@ mender_api_perform_authentication(char *private_key, char *public_key) {
         sprintf(payload,
                 "{ \"id_data\": \"{ \\\"mac\\\": \\\"%s\\\"}\", \"pubkey\": \"%s\", \"tenant_token\": \"%s\" }",
                 mender_api_config.mac_address,
-                public_key,
+                public_key_pem,
                 mender_api_config.tenant_token);
     } else {
         if (NULL
             == (payload = malloc(strlen("{ \"id_data\": \"{ \\\"mac\\\": \\\"\\\"}\", \"pubkey\": \"\" }") + strlen(mender_api_config.mac_address)
-                                 + strlen(public_key) + 1))) {
+                                 + strlen(public_key_pem) + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(payload, "{ \"id_data\": \"{ \\\"mac\\\": \\\"%s\\\"}\", \"pubkey\": \"%s\" }", mender_api_config.mac_address, public_key);
+        sprintf(payload, "{ \"id_data\": \"{ \\\"mac\\\": \\\"%s\\\"}\", \"pubkey\": \"%s\" }", mender_api_config.mac_address, public_key_pem);
     }
 
     /* Sign payload */
-    if (MENDER_OK != (ret = mender_tls_sign_payload(private_key, payload, &signature, &signature_length))) {
+    if (MENDER_OK != (ret = mender_tls_sign_payload(private_key, private_key_length, payload, &signature, &signature_length))) {
         mender_log_error("Unable to sign payload");
         goto END;
     }
@@ -204,6 +218,9 @@ END:
     }
     if (NULL != payload) {
         free(payload);
+    }
+    if (NULL != public_key_pem) {
+        free(public_key_pem);
     }
 
     return ret;

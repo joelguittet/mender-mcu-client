@@ -38,7 +38,7 @@ mender_err_t mender_storage_init(void);
 
 /**
  * @brief Erase authentication keys
- * @return ESP_OK if the function succeeds, error code otherwise
+ * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_storage_erase_authentication_keys(void);
 
@@ -50,15 +50,20 @@ mender_err_t mender_storage_erase_authentication_keys(void);
  * @param public_key_lentgh Public key length from storage, 0 if not found
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_storage_get_authentication_keys(char **private_key, size_t *private_key_length, char **public_key, size_t *public_key_length);
+mender_err_t mender_storage_get_authentication_keys(unsigned char **private_key,
+                                                    size_t *        private_key_length,
+                                                    unsigned char **public_key,
+                                                    size_t *        public_key_length);
 
 /**
  * @brief Set authentication keys
  * @param private_key Private key to store
+ * @param private_key_lentgh Private key length
  * @param public_key Public key to store
+ * @param public_key_lentgh Public key length
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_storage_set_authentication_keys(char *private_key, char *public_key);
+mender_err_t mender_storage_set_authentication_keys(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length);
 
 /**
  * @brief Get OTA deployment
