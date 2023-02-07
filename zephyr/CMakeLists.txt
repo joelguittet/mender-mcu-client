@@ -1,5 +1,5 @@
 # @file      CMakeLists.txt
-# @brief     Mocks CMakeLists file
+# @brief     mender-mcu-client module CMakeLists file
 #
 # MIT License
 #
@@ -23,9 +23,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Include all mocks
-include(${CMAKE_CURRENT_LIST_DIR}/cjson/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/esp-idf/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/freertos/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/mbedtls/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/zephyr/CMakeLists.txt)
+if(CONFIG_MENDER_MCU_CLIENT)
+    zephyr_include_directories(../include)
+    zephyr_library()
+    zephyr_library_sources(
+        ../core/src/mender-api.c
+        ../core/src/mender-client.c
+        ../core/src/mender-untar.c
+        ../core/src/mender-utils.c
+        ../platform/board/zephyr/src/mender-log.c
+        ../platform/board/zephyr/src/mender-ota.c
+        ../platform/board/zephyr/src/mender-storage.c
+        ../platform/http/zephyr/src/mender-http.c
+        ../platform/rtos/zephyr/src/mender-rtos.c
+        ../platform/tls/mbedtls/src/mender-tls.c
+    )
+endif()

@@ -1,5 +1,6 @@
-# @file      CMakeLists.txt
-# @brief     Mocks CMakeLists file
+#!/bin/bash
+# @file      build_tests.sh
+# @brief     Build all tests
 #
 # MIT License
 #
@@ -23,9 +24,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Include all mocks
-include(${CMAKE_CURRENT_LIST_DIR}/cjson/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/esp-idf/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/freertos/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/mbedtls/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/zephyr/CMakeLists.txt)
+cd tests
+mkdir build
+cd build
+
+# Build ESP-IDF use case
+cmake .. -G "Unix Makefiles" -DCONFIG_MENDER_MCU_CLIENT_BOARD_TYPE="esp-idf" -DCONFIG_MENDER_MCU_CLIENT_HTTP_TYPE="esp-idf" -DCONFIG_MENDER_MCU_CLIENT_RTOS_TYPE="freertos" -DCONFIG_MENDER_MCU_CLIENT_TLS_TYPE="mbedtls"
+make -j$(nproc)
+
+# Build Zephyr use case
+cmake .. -G "Unix Makefiles" -DCONFIG_MENDER_MCU_CLIENT_BOARD_TYPE="zephyr" -DCONFIG_MENDER_MCU_CLIENT_HTTP_TYPE="zephyr" -DCONFIG_MENDER_MCU_CLIENT_RTOS_TYPE="zephyr" -DCONFIG_MENDER_MCU_CLIENT_TLS_TYPE="mbedtls"
+make -j$(nproc)

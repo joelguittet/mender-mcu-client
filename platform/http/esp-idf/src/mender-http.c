@@ -143,7 +143,7 @@ mender_http_perform(char *               jwt,
         char data[512];
         int  read_length = esp_http_client_read(client, data, sizeof(data));
         if (read_length < 0) {
-            mender_log_error("Unable to read data");
+            mender_log_error("An error occured, unable to read data");
             callback(MENDER_HTTP_EVENT_ERROR, NULL, 0, params);
             ret = MENDER_FAIL;
             goto END;
@@ -155,7 +155,7 @@ mender_http_perform(char *               jwt,
             }
         } else {
             if ((ECONNRESET == errno) || (ENOTCONN == errno)) {
-                mender_log_error("Connection closed, errno = %d", errno);
+                mender_log_error("An error occurred, connection has been closed, errno = %d", errno);
                 callback(MENDER_HTTP_EVENT_ERROR, NULL, 0, params);
                 ret = MENDER_FAIL;
                 goto END;

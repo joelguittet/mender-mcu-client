@@ -59,11 +59,14 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
     target_compile_definitions(${APP_EXECUTABLE_NAME} PRIVATE DEBUG)
 endif()
 
-# Define mender-mcu-client library options
-set(CONFIG_MENDER_MCU_CLIENT_BOARD_TYPE "esp-idf")
-set(CONFIG_MENDER_MCU_CLIENT_HTTP_TYPE "esp-idf")
-set(CONFIG_MENDER_MCU_CLIENT_RTOS_TYPE "freertos")
-set(CONFIG_MENDER_MCU_CLIENT_TLS_TYPE "mbedtls")
+# Add definitions depending of the target
+if (CONFIG_MENDER_MCU_CLIENT_BOARD_TYPE MATCHES "zephyr")
+    add_compile_definitions(CONFIG_MENDER_STORAGE_SECTOR_COUNT=4)
+endif()
+if (CONFIG_MENDER_MCU_CLIENT_HTTP_TYPE MATCHES "zephyr")
+    add_compile_definitions(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+    add_compile_definitions(CONFIG_MENDER_HTTP_CA_CERTIFICATE_TAG=1)
+endif()
 
 # Add sources
 file(GLOB_RECURSE SOURCES_TEMP ${CMAKE_CURRENT_LIST_DIR}/src/*.c)

@@ -64,14 +64,10 @@ jobs:
         uses: SonarSource/sonarcloud-github-c-cpp@v1
       - name: Run build-wrapper
         run: |
-          cd tests
-          mkdir build
-          cd build
-          cmake .. -G "Unix Makefiles"
-          build-wrapper-linux-x86-64 --out-dir bw_output make -j$(nproc)
+          build-wrapper-linux-x86-64 --out-dir bw_output ./.github/workflows/build_tests.sh
       - name: Run sonar-scanner
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          sonar-scanner -Dsonar.organization=joelguittet -Dsonar.projectKey=joelguittet_mender-mcu-client -Dsonar.cfamily.cache.enabled=false -Dsonar.inclusions=include/**/*,core/**/*,platform/**/* -Dsonar.projectVersion=$(cat VERSION) -Dsonar.cfamily.build-wrapper-output="tests/build/bw_output"
+          sonar-scanner -Dsonar.organization=joelguittet -Dsonar.projectKey=joelguittet_mender-mcu-client -Dsonar.cfamily.cache.enabled=false -Dsonar.inclusions=include/**/*,core/**/*,platform/**/* -Dsonar.projectVersion=$(cat VERSION) -Dsonar.cfamily.build-wrapper-output=bw_output

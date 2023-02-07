@@ -39,7 +39,7 @@
  * @param priority priority of the task
  * @param handle Task handle if the function succeeds, NULL otherwise
  */
-void mender_rtos_task_create(void (*task_function)(void *), char *name, size_t stack_size, void *arg, uint32_t priority, void **handle);
+void mender_rtos_task_create(void (*task_function)(void *), char *name, size_t stack_size, void *arg, int priority, void **handle);
 
 /**
  * @brief Fucntion used to delete a task

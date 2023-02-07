@@ -1,6 +1,6 @@
 /**
  * @file      mender-storage.c
- * @brief     Mender storage interface for ESP-IDF platform
+ * @brief     Mender storage interface for Zephyr platform
  *
  * MIT License
  *
@@ -25,29 +25,55 @@
  * SOFTWARE.
  */
 
-#include "nvs_flash.h"
+#include <zephyr/drivers/flash.h>
+#include <zephyr/fs/nvs.h>
+#include <zephyr/storage/flash_map.h>
 #include "mender-log.h"
 #include "mender-storage.h"
 
 /**
+ * @brief NVS storage
+ */
+#define MENDER_STORAGE_LABEL  storage_partition
+#define MENDER_STORAGE_DEVICE FIXED_PARTITION_DEVICE(MENDER_STORAGE_LABEL)
+#define MENDER_STORAGE_OFFSET FIXED_PARTITION_OFFSET(MENDER_STORAGE_LABEL)
+
+/**
  * @brief NVS keys
  */
-#define MENDER_STORAGE_NVS_PRIVATE_KEY       "key.der"
-#define MENDER_STORAGE_NVS_PUBLIC_KEY        "pubkey.der"
-#define MENDER_STORAGE_NVS_OTA_ID            "id"
-#define MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME "artifact_name"
+#define MENDER_STORAGE_NVS_PRIVATE_KEY       1
+#define MENDER_STORAGE_NVS_PUBLIC_KEY        2
+#define MENDER_STORAGE_NVS_OTA_ID            3
+#define MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME 4
 
 /**
  * @brief NVS storage handle
  */
-static nvs_handle_t mender_storage_nvs_handle;
+static struct nvs_fs mender_storage_nvs_handle;
 
 mender_err_t
 mender_storage_init(void) {
 
-    /* Open NVS */
-    if (ESP_OK != nvs_open("mender", NVS_READWRITE, &mender_storage_nvs_handle)) {
-        mender_log_error("Unable to open NVS storage");
+    int result;
+
+    /* Get flash info */
+    mender_storage_nvs_handle.flash_device = MENDER_STORAGE_DEVICE;
+    if (!device_is_ready(mender_storage_nvs_handle.flash_device)) {
+        mender_log_error("Flash device not ready");
+        return MENDER_FAIL;
+    }
+    struct flash_pages_info info;
+    mender_storage_nvs_handle.offset = MENDER_STORAGE_OFFSET;
+    if (0 != flash_get_page_info_by_offs(mender_storage_nvs_handle.flash_device, mender_storage_nvs_handle.offset, &info)) {
+        mender_log_error("Unable to get storage page info");
+        return MENDER_FAIL;
+    }
+    mender_storage_nvs_handle.sector_size  = (uint16_t)info.size;
+    mender_storage_nvs_handle.sector_count = CONFIG_MENDER_STORAGE_SECTOR_COUNT;
+
+    /* Mount NVS */
+    if (0 != (result = nvs_mount(&mender_storage_nvs_handle))) {
+        mender_log_error("Unable to mount NVS storage, result = %d", result);
         return MENDER_FAIL;
     }
 
@@ -58,12 +84,8 @@ mender_err_t
 mender_storage_erase_authentication_keys(void) {
 
     /* Erase keys */
-    if ((ESP_OK != nvs_erase_key(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY))
-        || (ESP_OK != nvs_erase_key(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY))) {
-        mender_log_error("Unable to erase authentication keys");
-        return MENDER_FAIL;
-    }
-    if (ESP_OK != nvs_commit(mender_storage_nvs_handle)) {
+    if ((0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY))
+        || (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY))) {
         mender_log_error("Unable to erase authentication keys");
         return MENDER_FAIL;
     }
@@ -78,14 +100,19 @@ mender_storage_get_authentication_keys(unsigned char **private_key, size_t *priv
     assert(NULL != private_key_length);
     assert(NULL != public_key);
     assert(NULL != public_key_length);
+    ssize_t ret;
 
     /* Retrieve length of the keys */
-    nvs_get_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, NULL, private_key_length);
-    nvs_get_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, NULL, public_key_length);
-    if ((0 == *private_key_length) || (0 == *public_key_length)) {
+    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, NULL, 0)) <= 0) {
         mender_log_info("Authentication keys are not available");
         return MENDER_NOT_FOUND;
     }
+    *private_key_length = (size_t)ret;
+    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, NULL, 0)) <= 0) {
+        mender_log_info("Authentication keys are not available");
+        return MENDER_NOT_FOUND;
+    }
+    *public_key_length = (size_t)ret;
 
     /* Allocate memory to copy keys */
     if (NULL == (*private_key = malloc(*private_key_length))) {
@@ -100,8 +127,8 @@ mender_storage_get_authentication_keys(unsigned char **private_key, size_t *priv
     }
 
     /* Read keys */
-    if ((ESP_OK != nvs_get_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, *private_key, private_key_length))
-        || (ESP_OK != nvs_get_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, *public_key, public_key_length))) {
+    if ((nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, *private_key, *private_key_length) < 0)
+        || (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, *public_key, *public_key_length) < 0)) {
         mender_log_error("Unable to read authentication keys");
         free(*private_key);
         *private_key = NULL;
@@ -120,12 +147,8 @@ mender_storage_set_authentication_keys(unsigned char *private_key, size_t privat
     assert(NULL != public_key);
 
     /* Write keys */
-    if ((ESP_OK != nvs_set_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, private_key, private_key_length))
-        || (ESP_OK != nvs_set_blob(mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, public_key, public_key_length))) {
-        mender_log_error("Unable to write authentication keys");
-        return MENDER_FAIL;
-    }
-    if (ESP_OK != nvs_commit(mender_storage_nvs_handle)) {
+    if ((nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, private_key, private_key_length) < 0)
+        || (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, public_key, public_key_length) < 0)) {
         mender_log_error("Unable to write authentication keys");
         return MENDER_FAIL;
     }
@@ -140,21 +163,26 @@ mender_storage_get_ota_deployment(char **ota_id, size_t *ota_id_length, char **o
     assert(NULL != ota_id_length);
     assert(NULL != ota_artifact_name);
     assert(NULL != ota_artifact_name_length);
+    ssize_t ret;
 
     /* Retrieve length of the ID and artifact name */
-    nvs_get_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, NULL, ota_id_length);
-    nvs_get_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, NULL, ota_artifact_name_length);
-    if ((0 == *ota_id_length) || (0 == *ota_artifact_name_length)) {
-        mender_log_info("OTA ID or artifact name not available");
+    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, NULL, 0)) <= 0) {
+        mender_log_info("OTA ID not available");
         return MENDER_NOT_FOUND;
     }
+    *ota_id_length = (size_t)ret;
+    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, NULL, 0)) <= 0) {
+        mender_log_info("Artifact name not available");
+        return MENDER_NOT_FOUND;
+    }
+    *ota_artifact_name_length = (size_t)ret;
 
     /* Allocate memory to copy ID and artifact name */
-    if (NULL == (*ota_id = malloc(*ota_id_length + 1))) {
+    if (NULL == (*ota_id = malloc(*ota_id_length))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
-    if (NULL == (*ota_artifact_name = malloc(*ota_artifact_name_length + 1))) {
+    if (NULL == (*ota_artifact_name = malloc(*ota_artifact_name_length))) {
         mender_log_error("Unable to allocate memory");
         free(*ota_id);
         *ota_id = NULL;
@@ -162,8 +190,8 @@ mender_storage_get_ota_deployment(char **ota_id, size_t *ota_id_length, char **o
     }
 
     /* Read ID and artifact name */
-    if ((ESP_OK != nvs_get_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, *ota_id, ota_id_length))
-        || (ESP_OK != nvs_get_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, *ota_artifact_name, ota_artifact_name_length))) {
+    if ((nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, *ota_id, *ota_id_length) < 0)
+        || (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, *ota_artifact_name, *ota_artifact_name_length) < 0)) {
         mender_log_error("Unable to read OTA ID or artifact name");
         free(*ota_id);
         *ota_id = NULL;
@@ -182,12 +210,8 @@ mender_storage_set_ota_deployment(char *ota_id, char *ota_artifact_name) {
     assert(NULL != ota_artifact_name);
 
     /* Write ID and artifact name */
-    if ((ESP_OK != nvs_set_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, ota_id))
-        || (ESP_OK != nvs_set_str(mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, ota_artifact_name))) {
-        mender_log_error("Unable to write OTA ID or artifact name");
-        return MENDER_FAIL;
-    }
-    if (ESP_OK != nvs_commit(mender_storage_nvs_handle)) {
+    if ((nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, ota_id, strlen(ota_id) + 1) < 0)
+        || (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, ota_artifact_name, strlen(ota_artifact_name) + 1) < 0)) {
         mender_log_error("Unable to write OTA ID or artifact name");
         return MENDER_FAIL;
     }
@@ -199,8 +223,8 @@ mender_err_t
 mender_storage_clear_ota_deployment(void) {
 
     /* Erase ID and artifact name */
-    if ((ESP_OK != nvs_erase_key(mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID))
-        || (ESP_OK != nvs_erase_key(mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME))) {
+    if ((0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID))
+        || (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME))) {
         mender_log_error("Unable to erase OTA ID or artifact name");
         return MENDER_FAIL;
     }
@@ -211,8 +235,6 @@ mender_storage_clear_ota_deployment(void) {
 mender_err_t
 mender_storage_exit(void) {
 
-    /* Close NVS storage */
-    nvs_close(mender_storage_nvs_handle);
-
+    /* Nothing to do */
     return MENDER_OK;
 }
