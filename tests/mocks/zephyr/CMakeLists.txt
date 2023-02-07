@@ -1,5 +1,5 @@
 # @file      CMakeLists.txt
-# @brief     Mocks CMakeLists file
+# @brief     zephyr mock CMakeLists file
 #
 # MIT License
 #
@@ -23,9 +23,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Include all mocks
-include(${CMAKE_CURRENT_LIST_DIR}/cjson/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/esp-idf/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/freertos/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/mbedtls/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/zephyr/CMakeLists.txt)
+# Add sources
+file(GLOB_RECURSE SOURCES_TEMP ${CMAKE_CURRENT_LIST_DIR}/src/*.c)
+target_sources(${APP_EXECUTABLE_NAME} PRIVATE ${SOURCES_TEMP})
+
+# Add include directories
+include_directories(${CMAKE_CURRENT_LIST_DIR}/include)

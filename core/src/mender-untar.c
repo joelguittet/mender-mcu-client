@@ -30,7 +30,7 @@
 /**
  * @brief tar block size
  */
-#define UNTAR_STREAM_BLOCK_SIZE 512
+#define MENDER_UNTAR_STREAM_BLOCK_SIZE (512)
 
 /**
  * @brief tar file header
@@ -109,12 +109,12 @@ mender_untar_parse(mender_untar_ctx_t *ctx, void *input_data, size_t input_lengt
             return -1;
         }
         ctx->data = tmp;
-        memcpy(ctx->data + ctx->data_length, input_data, input_length);
+        memcpy((void *)(((uint8_t *)ctx->data) + ctx->data_length), input_data, input_length);
         ctx->data_length += input_length;
     }
 
     /* Check if enought data are received */
-    if (ctx->data_length < UNTAR_STREAM_BLOCK_SIZE) {
+    if (ctx->data_length < MENDER_UNTAR_STREAM_BLOCK_SIZE) {
         return 0;
     }
 
@@ -206,8 +206,8 @@ mender_untar_parse_file(mender_untar_ctx_t *ctx, void **output_data, size_t *out
 
     /* Compute length to be copied */
     if (0
-        != (*output_length = ((ctx->current_file.size - ctx->current_file.index) > UNTAR_STREAM_BLOCK_SIZE)
-                                 ? UNTAR_STREAM_BLOCK_SIZE
+        != (*output_length = ((ctx->current_file.size - ctx->current_file.index) > MENDER_UNTAR_STREAM_BLOCK_SIZE)
+                                 ? MENDER_UNTAR_STREAM_BLOCK_SIZE
                                  : (ctx->current_file.size - ctx->current_file.index))) {
 
         /* Create new file data block */
@@ -238,19 +238,19 @@ mender_untar_shift_data(mender_untar_ctx_t *ctx) {
     char *tmp;
 
     /* Shift remaining data */
-    if (ctx->data_length > UNTAR_STREAM_BLOCK_SIZE) {
-        memcpy(ctx->data, ctx->data + UNTAR_STREAM_BLOCK_SIZE, ctx->data_length - UNTAR_STREAM_BLOCK_SIZE);
-        if (NULL == (tmp = realloc(ctx->data, ctx->data_length - UNTAR_STREAM_BLOCK_SIZE))) {
+    if (ctx->data_length > MENDER_UNTAR_STREAM_BLOCK_SIZE) {
+        memcpy(ctx->data, (void *)(((uint8_t *)ctx->data) + MENDER_UNTAR_STREAM_BLOCK_SIZE), ctx->data_length - MENDER_UNTAR_STREAM_BLOCK_SIZE);
+        if (NULL == (tmp = realloc(ctx->data, ctx->data_length - MENDER_UNTAR_STREAM_BLOCK_SIZE))) {
             /* Unable to allocate memory */
             return -1;
         }
         ctx->data = tmp;
-        ctx->data_length -= UNTAR_STREAM_BLOCK_SIZE;
+        ctx->data_length -= MENDER_UNTAR_STREAM_BLOCK_SIZE;
     } else {
         free(ctx->data);
         ctx->data        = NULL;
         ctx->data_length = 0;
     }
 
-    return (ctx->data_length >= UNTAR_STREAM_BLOCK_SIZE) ? 1 : 0;
+    return (ctx->data_length >= MENDER_UNTAR_STREAM_BLOCK_SIZE) ? 1 : 0;
 }

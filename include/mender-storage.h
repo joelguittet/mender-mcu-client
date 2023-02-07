@@ -45,9 +45,9 @@ mender_err_t mender_storage_erase_authentication_keys(void);
 /**
  * @brief Get authentication keys
  * @param private_key Private key from storage, NULL if not found
- * @param private_key_lentgh Private key length from storage, 0 if not found
+ * @param private_key_length Private key length from storage, 0 if not found
  * @param public_key Public key from storage, NULL if not found
- * @param public_key_lentgh Public key length from storage, 0 if not found
+ * @param public_key_length Public key length from storage, 0 if not found
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_storage_get_authentication_keys(unsigned char **private_key,
@@ -58,9 +58,9 @@ mender_err_t mender_storage_get_authentication_keys(unsigned char **private_key,
 /**
  * @brief Set authentication keys
  * @param private_key Private key to store
- * @param private_key_lentgh Private key length
+ * @param private_key_length Private key length
  * @param public_key Public key to store
- * @param public_key_lentgh Public key length
+ * @param public_key_length Public key length
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_storage_set_authentication_keys(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length);
@@ -68,9 +68,9 @@ mender_err_t mender_storage_set_authentication_keys(unsigned char *private_key, 
 /**
  * @brief Get OTA deployment
  * @param ota_id OTA ID from storage, NULL if not found
- * @param ota_id_lentgh OTA ID length from storage, 0 if not found
+ * @param ota_id_length OTA ID length from storage, 0 if not found
  * @param ota_artifact_name Artifact name from storage, NULL if not found
- * @param ota_artifact_name_lentgh Artifact name length from storage, 0 if not found
+ * @param ota_artifact_name_length Artifact name length from storage, 0 if not found
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_storage_get_ota_deployment(char **ota_id, size_t *ota_id_length, char **ota_artifact_name, size_t *ota_artifact_name_length);

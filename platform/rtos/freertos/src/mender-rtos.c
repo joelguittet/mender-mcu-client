@@ -37,8 +37,8 @@
 #include "mender-rtos.h"
 
 void
-mender_rtos_task_create(void (*task_function)(void *), char *name, size_t stack_size, void *arg, uint32_t priority, void **handle) {
-    xTaskCreate(task_function, name, (configSTACK_DEPTH_TYPE)(stack_size / sizeof(configSTACK_DEPTH_TYPE)), arg, priority, (TaskHandle_t *)handle);
+mender_rtos_task_create(void (*task_function)(void *), char *name, size_t stack_size, void *arg, int priority, void **handle) {
+    xTaskCreate(task_function, name, (configSTACK_DEPTH_TYPE)(stack_size / sizeof(configSTACK_DEPTH_TYPE)), arg, (UBaseType_t)priority, (TaskHandle_t *)handle);
 }
 
 void
