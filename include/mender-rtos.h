@@ -28,6 +28,10 @@
 #ifndef __MENDER_RTOS_H__
 #define __MENDER_RTOS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mender-common.h"
 
 /**
@@ -83,5 +87,9 @@ void mender_rtos_semaphore_give(void *handle);
  * @param handle Semaphore handle
  */
 void mender_rtos_semaphore_delete(void *handle);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_RTOS_H__ */

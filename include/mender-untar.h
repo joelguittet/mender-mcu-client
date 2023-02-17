@@ -28,6 +28,10 @@
 #ifndef __MENDER_UNTAR_H__
 #define __MENDER_UNTAR_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mender-common.h"
 
 /**
@@ -83,5 +87,9 @@ int mender_untar_parse(
  * @param ctx un-tar context
  */
 void mender_untar_release(mender_untar_ctx_t *ctx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_UNTAR_H__ */

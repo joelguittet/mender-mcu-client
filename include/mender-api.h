@@ -28,6 +28,10 @@
 #ifndef __MENDER_API_H__
 #define __MENDER_API_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mender-common.h"
 
 /**
@@ -106,5 +110,9 @@ mender_err_t mender_api_download_artifact(char *uri);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_api_exit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_API_H__ */

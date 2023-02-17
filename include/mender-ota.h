@@ -28,6 +28,10 @@
 #ifndef __MENDER_OTA_H__
 #define __MENDER_OTA_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mender-common.h"
 
 /**
@@ -79,5 +83,9 @@ mender_err_t mender_ota_mark_app_valid_cancel_rollback(void);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_ota_mark_app_invalid_rollback_and_reboot(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_OTA_H__ */
