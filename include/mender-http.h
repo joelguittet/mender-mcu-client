@@ -28,6 +28,10 @@
 #ifndef __MENDER_HTTP_H__
 #define __MENDER_HTTP_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mender-common.h"
 
 /**
@@ -90,5 +94,9 @@ mender_err_t mender_http_perform(char *               jwt,
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_http_exit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_HTTP_H__ */

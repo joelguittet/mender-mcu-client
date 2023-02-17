@@ -28,6 +28,10 @@
 #ifndef __MENDER_COMMON_H__
 #define __MENDER_COMMON_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -64,5 +68,9 @@ typedef struct {
     char *name;  /**< Name of the item */
     char *value; /**< Value of the item */
 } mender_inventory_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_COMMON_H__ */

@@ -28,6 +28,10 @@
 #ifndef __MENDER_LOG_H__
 #define __MENDER_LOG_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mender-common.h"
 
 /**
@@ -96,5 +100,9 @@ mender_err_t mender_log_print(mender_log_level_t level, const char *filename, co
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_log_exit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_LOG_H__ */

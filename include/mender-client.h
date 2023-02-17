@@ -28,6 +28,10 @@
 #ifndef __MENDER_CLIENT_H__
 #define __MENDER_CLIENT_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mender-common.h"
 
 /**
@@ -82,5 +86,9 @@ mender_err_t mender_client_set_inventory(mender_inventory_t *inventory, size_t i
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_client_exit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_CLIENT_H__ */

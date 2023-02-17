@@ -28,6 +28,10 @@
 #ifndef __MENDER_STORAGE_H__
 #define __MENDER_STORAGE_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mender-common.h"
 
 /**
@@ -94,5 +98,9 @@ mender_err_t mender_storage_clear_ota_deployment(void);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_storage_exit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_STORAGE_H__ */

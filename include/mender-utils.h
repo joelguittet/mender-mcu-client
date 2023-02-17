@@ -28,6 +28,10 @@
 #ifndef __MENDER_UTILS_H__
 #define __MENDER_UTILS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mender-common.h"
 
 /**
@@ -43,5 +47,9 @@ char *mender_utils_http_status_to_string(int status);
  * @return HTTP status as string, NULL if it is not found
  */
 char *mender_utils_deployment_status_to_string(mender_deployment_status_t deployment_status);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_UTILS_H__ */

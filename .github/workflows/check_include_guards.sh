@@ -31,11 +31,11 @@ result=""
 for source_file in `git ls-tree -r HEAD --name-only | grep -E '(.*\.h$|.*\.hpp$)' | grep -vFf .clang-format-ignore`
 do
     uppercase=$(echo $(basename ${source_file^^}) | tr '.' '_' | tr '-' '_')
-    pcregrep -Me "#ifndef __${uppercase}__\n#define __${uppercase}__" ${source_file} > /dev/null 2>&1
+    pcregrep -Me "#ifndef __${uppercase}__\n#define __${uppercase}__\n\n#ifdef __cplusplus\nextern \"C\" {\n#endif" ${source_file} > /dev/null 2>&1
     if [[ ! $? -eq 0 ]]; then
         result="${result}\n${source_file}"
     else
-        pcregrep -Me "#endif /\* __${uppercase}__ \*/" ${source_file} > /dev/null 2>&1
+        pcregrep -Me "#ifdef __cplusplus\n}\n#endif\n\n#endif /\* __${uppercase}__ \*/" ${source_file} > /dev/null 2>&1
         if [[ ! $? -eq 0 ]]; then
             result="${result}\n${source_file}"
         fi

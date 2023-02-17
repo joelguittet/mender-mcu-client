@@ -28,6 +28,10 @@
 #ifndef __MENDER_TLS_H__
 #define __MENDER_TLS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mender-common.h"
 
 /**
@@ -77,5 +81,9 @@ mender_err_t mender_tls_sign_payload(unsigned char *private_key, size_t private_
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_tls_exit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __MENDER_TLS_H__ */
