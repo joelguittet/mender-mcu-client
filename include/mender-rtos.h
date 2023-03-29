@@ -30,66 +30,105 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include "mender-common.h"
 
 /**
- * @brief Function used to create a new task
- * @param task_function Task function
- * @param name Name of the task
- * @param stack_size Stack size
- * @param arg Arguments
- * @param priority priority of the task
- * @param handle Task handle if the function succeeds, NULL otherwise
+ * @brief Work parameters
  */
-void mender_rtos_task_create(void (*task_function)(void *), char *name, size_t stack_size, void *arg, int priority, void **handle);
+typedef struct {
+    mender_err_t (*function)(void); /**< Work function */
+    uint32_t period;                /**< Work period (seconds) */
+    char *   name;                  /**< Work name */
+} mender_rtos_work_params_t;
 
 /**
- * @brief Fucntion used to delete a task
- * @param handle Task handle
+ * @brief Initialization of the RTOS
+ * @return MENDER_OK if the function succeeds, error code otherwise
  */
-void mender_rtos_task_delete(void *handle);
+mender_err_t mender_rtos_init(void);
+
+/**
+ * @brief Function used to register a new work
+ * @param work_params Work parameters
+ * @param handle Work handle if the function succeeds, NULL otherwise
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle);
+
+/**
+ * @brief Function used to activate a work
+ * @param handle Work handle
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_rtos_work_activate(void *handle);
+
+/**
+ * @brief Function used to deactivate a work
+ * @param handle Work handle
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_rtos_work_deactivate(void *handle);
+
+/**
+ * @brief Function used to delete a work
+ * @param handle Work handle
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_rtos_work_delete(void *handle);
 
 /**
  * @brief Function used to initialize handle to be used with mender_rtos_delay_until_* functions
  * @param handle Delay handle
+ * @return MENDER_OK if the function succeeds, error code otherwise
  */
-void mender_rtos_delay_until_init(unsigned long *handle);
+mender_err_t mender_rtos_delay_until_init(unsigned long *handle);
 
 /**
  * @brief Function used to make a delay until a specified time
  * @param delay Delay value (seconds)
+ * @return MENDER_OK if the function succeeds, error code otherwise
  */
-void mender_rtos_delay_until_s(unsigned long *handle, uint32_t delay);
+mender_err_t mender_rtos_delay_until_s(unsigned long *handle, uint32_t delay);
 
 /**
  * @brief Function used to create a mutex
- * @return Sempahore handle if the function succeeds, NULL otherwise
+ * @param handle Mutex handle if the function succeeds, NULL otherwise
+ * @return MENDER_OK if the function succeeds, error code otherwise
  */
-void *mender_rtos_semaphore_create_mutex(void);
+mender_err_t mender_rtos_mutex_create(void **handle);
 
 /**
- * @brief Function used to take a semaphore
- * @param handle Semaphore handle
- * @param delay_ms Delay to obtain the semaphore, -1 to block indefinitely (without a timeout)
+ * @brief Function used to take a mutex
+ * @param handle Mutex handle
+ * @param delay_ms Delay to obtain the mutex, -1 to block indefinitely (without a timeout)
+ * @return MENDER_OK if the function succeeds, error code otherwise
  */
-void mender_rtos_semaphore_take(void *handle, int32_t delay_ms);
+mender_err_t mender_rtos_mutex_take(void *handle, int32_t delay_ms);
 
 /**
- * @brief Function used to give a semaphore
- * @param handle Semaphore handle
+ * @brief Function used to give a mutex
+ * @param handle Mutex handle
+ * @return MENDER_OK if the function succeeds, error code otherwise
  */
-void mender_rtos_semaphore_give(void *handle);
+mender_err_t mender_rtos_mutex_give(void *handle);
 
 /**
- * @brief Function used to delete a semaphore
- * @param handle Semaphore handle
+ * @brief Function used to delete a mutex
+ * @param handle Mutex handle
+ * @return MENDER_OK if the function succeeds, error code otherwise
  */
-void mender_rtos_semaphore_delete(void *handle);
+mender_err_t mender_rtos_mutex_delete(void *handle);
+
+/**
+ * @brief Release mender RTOS
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_rtos_exit(void);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __MENDER_RTOS_H__ */

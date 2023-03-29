@@ -30,7 +30,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include "mender-common.h"
 
@@ -50,6 +50,6 @@ char *mender_utils_deployment_status_to_string(mender_deployment_status_t deploy
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __MENDER_UTILS_H__ */

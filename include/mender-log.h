@@ -30,7 +30,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include "mender-common.h"
 
@@ -93,7 +93,7 @@ mender_err_t mender_log_print(mender_log_level_t level, const char *filename, co
 #define mender_log_debug(...) ({ mender_log_print(MENDER_LOG_DEBUG, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__); })
 #else
 #define mender_log_debug(...)
-#endif
+#endif /* DEBUG */
 
 /**
  * @brief Release mender log
@@ -103,6 +103,6 @@ mender_err_t mender_log_exit(void);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __MENDER_LOG_H__ */

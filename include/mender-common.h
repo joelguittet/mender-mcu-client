@@ -30,7 +30,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +44,7 @@ extern "C" {
  * @brief Mender error codes
  */
 typedef enum {
+    MENDER_DONE      = 1,  /**< Done */
     MENDER_OK        = 0,  /**< OK */
     MENDER_FAIL      = -1, /**< Failure */
     MENDER_NOT_FOUND = -2, /**< Not found */
@@ -61,16 +62,8 @@ typedef enum {
     MENDER_DEPLOYMENT_STATUS_ALREADY_INSTALLED /**< Status is "already installed" */
 } mender_deployment_status_t;
 
-/**
- * @brief Inventory item
- */
-typedef struct {
-    char *name;  /**< Name of the item */
-    char *value; /**< Value of the item */
-} mender_inventory_t;
-
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __MENDER_COMMON_H__ */

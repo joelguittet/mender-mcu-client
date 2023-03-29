@@ -24,18 +24,19 @@
 # SOFTWARE.
 
 # Fetch repository
-set(GIT_REPO_URL    "https://github.com/Mbed-TLS/mbedtls")
-set(GIT_TAG_NAME    "v2.25.0")
+set(GIT_REPO_URL "https://github.com/Mbed-TLS/mbedtls")
+set(GIT_TAG_NAME "v2.25.0")
 
 # Fetch destination
-set(GIT_FOLDER_NAME ${CMAKE_CURRENT_LIST_DIR}/mbedtls)
+set(GIT_FOLDER_NAME "${CMAKE_CURRENT_LIST_DIR}/mbedtls")
 
 # Declare fetch content
 include(FetchContent)
 FetchContent_Declare(
     mbedtls
-    URL             ${GIT_REPO_URL}/archive/refs/tags/${GIT_TAG_NAME}.zip
-    SOURCE_DIR      ${GIT_FOLDER_NAME}
+    URL                        "${GIT_REPO_URL}/archive/refs/tags/${GIT_TAG_NAME}.zip"
+    SOURCE_DIR                 "${GIT_FOLDER_NAME}"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
 # Fetch if not already done
@@ -46,8 +47,8 @@ if(NOT mbedtls_POPULATED)
 endif()
 
 # Add sources
-file(GLOB_RECURSE SOURCES_TEMP ${GIT_FOLDER_NAME}/library/*.c)
+file(GLOB_RECURSE SOURCES_TEMP "${GIT_FOLDER_NAME}/library/*.c")
 target_sources(${APP_EXECUTABLE_NAME} PRIVATE ${SOURCES_TEMP})
 
 # Add include directories
-include_directories(${GIT_FOLDER_NAME}/include)
+include_directories("${GIT_FOLDER_NAME}/include")

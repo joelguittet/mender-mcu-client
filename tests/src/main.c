@@ -28,6 +28,7 @@
 #include <stdio.h>
 
 #include "mender-client.h"
+#include "mender-inventory.h"
 #include "mender-ota.h"
 
 /**
@@ -46,9 +47,7 @@ main(int argc, char **argv) {
                                                     .host                         = "https://hosted.mender.io",
                                                     .tenant_token                 = NULL,
                                                     .authentication_poll_interval = 0,
-                                                    .inventory_poll_interval      = 0,
                                                     .update_poll_interval         = 0,
-                                                    .restart_poll_interval        = 0,
                                                     .recommissioning              = false };
     mender_client_callbacks_t mender_client_callbacks = { .authentication_success = NULL,
                                                           .authentication_failure = NULL,
@@ -61,6 +60,17 @@ main(int argc, char **argv) {
                                                           .restart                = NULL };
 
     mender_client_init(&mender_client_config, &mender_client_callbacks);
+
+    /* Initialize mender add-ons */
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
+    mender_inventory_config_t mender_inventory_config = { .artifact_name = "artifact_name", .device_type = "device_type", .poll_interval = 0 };
+    mender_inventory_init(&mender_inventory_config);
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
+
+    /* Release mender add-ons */
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
+    mender_inventory_exit();
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 
     /* Release mender-client */
     mender_client_exit();

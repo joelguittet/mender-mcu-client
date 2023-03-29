@@ -30,7 +30,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include "mender-common.h"
 
@@ -44,9 +44,7 @@ typedef struct {
     char *   host;                         /**< URL of the mender server */
     char *   tenant_token;                 /**< Tenant token used to authenticate on the mender server (optional) */
     uint32_t authentication_poll_interval; /**< Authentication poll interval, default is 60 seconds */
-    uint32_t inventory_poll_interval;      /**< Inventory poll interval, default is 28800 seconds */
     uint32_t update_poll_interval;         /**< Update poll interval, default is 1800 seconds */
-    uint32_t restart_poll_interval;        /**< Restart poll interval, default is 60 seconds */
     bool     recommissioning;              /**< Used to force creation of new authentication keys */
 } mender_client_config_t;
 
@@ -74,14 +72,6 @@ typedef struct {
 mender_err_t mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *callbacks);
 
 /**
- * @brief Set mender client inventory
- * @param inventory Mender client inventory
- * @param inventory_length Mender client inventory length
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_client_set_inventory(mender_inventory_t *inventory, size_t inventory_length);
-
-/**
  * @brief Release mender client
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
@@ -89,6 +79,6 @@ mender_err_t mender_client_exit(void);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __MENDER_CLIENT_H__ */

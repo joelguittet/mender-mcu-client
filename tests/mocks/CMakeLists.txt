@@ -24,8 +24,8 @@
 # SOFTWARE.
 
 # Include all mocks
-include(${CMAKE_CURRENT_LIST_DIR}/cjson/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/esp-idf/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/freertos/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/mbedtls/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/zephyr/CMakeLists.txt)
+include("${CMAKE_CURRENT_LIST_DIR}/cjson/CMakeLists.txt")
+include("${CMAKE_CURRENT_LIST_DIR}/esp-idf/CMakeLists.txt")
+include("${CMAKE_CURRENT_LIST_DIR}/freertos/CMakeLists.txt")
+include("${CMAKE_CURRENT_LIST_DIR}/mbedtls/CMakeLists.txt")
+include("${CMAKE_CURRENT_LIST_DIR}/zephyr/CMakeLists.txt")

@@ -27,7 +27,7 @@ cmake_minimum_required(VERSION 3.16.3)
 
 # CMake configurations
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs" FORCE)
-if (NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
@@ -55,29 +55,30 @@ message("Executable name: ${APP_EXECUTABLE_NAME}")
 add_executable(${APP_EXECUTABLE_NAME})
 
 # Define compile options
-if (CMAKE_BUILD_TYPE MATCHES "Debug")
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
     target_compile_definitions(${APP_EXECUTABLE_NAME} PRIVATE DEBUG)
 endif()
+add_compile_definitions(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
 
 # Add definitions depending of the target
-if (CONFIG_MENDER_MCU_CLIENT_BOARD_TYPE MATCHES "zephyr")
+if(CONFIG_MENDER_MCU_CLIENT_BOARD_TYPE MATCHES "zephyr")
     add_compile_definitions(CONFIG_MENDER_STORAGE_SECTOR_COUNT=4)
 endif()
-if (CONFIG_MENDER_MCU_CLIENT_HTTP_TYPE MATCHES "zephyr")
+if(CONFIG_MENDER_MCU_CLIENT_HTTP_TYPE MATCHES "zephyr")
     add_compile_definitions(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
     add_compile_definitions(CONFIG_MENDER_HTTP_CA_CERTIFICATE_TAG=1)
 endif()
 
 # Add sources
-file(GLOB_RECURSE SOURCES_TEMP ${CMAKE_CURRENT_LIST_DIR}/src/*.c)
+file(GLOB_RECURSE SOURCES_TEMP "${CMAKE_CURRENT_LIST_DIR}/src/*.c")
 target_sources(${APP_EXECUTABLE_NAME} PRIVATE ${SOURCES_TEMP})
 
 # Include mocks
-include(${CMAKE_CURRENT_LIST_DIR}/mocks/CMakeLists.txt)
+include("${CMAKE_CURRENT_LIST_DIR}/mocks/CMakeLists.txt")
 
 # Include mender-mcu-client library
-include_directories(${CMAKE_CURRENT_LIST_DIR}/../include)
-include(${CMAKE_CURRENT_LIST_DIR}/../CMakeLists.txt)
+include_directories("${CMAKE_CURRENT_LIST_DIR}/../include")
+include("${CMAKE_CURRENT_LIST_DIR}/../CMakeLists.txt")
 
 # Link the executable with the mender-mcu-library
 target_link_libraries(${APP_EXECUTABLE_NAME} mender-mcu-client pthread)
@@ -86,6 +87,6 @@ target_link_libraries(${APP_EXECUTABLE_NAME} mender-mcu-client pthread)
 project(${PROJECT_BASE_NAME} LANGUAGES C ASM)
 
 # Define VERSION if not already done
-file(STRINGS ${CMAKE_CURRENT_LIST_DIR}/../VERSION VERSION_NUMBER LIMIT_COUNT 1)
+file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/../VERSION" VERSION_NUMBER LIMIT_COUNT 1)
 STRING(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\\.([0-9]+)-rc[0-9]+" "\\1.\\2.\\3" VERSION_NUMBER "${VERSION_NUMBER}")
 project(${PROJECT_BASE_NAME} VERSION ${VERSION_NUMBER} LANGUAGES)

@@ -24,40 +24,85 @@
 # SOFTWARE.
 
 menuconfig MENDER_MCU_CLIENT
-	bool"Mender Firmware Over-the-Air support"
-	select BOOTLOADER_MCUBOOT
-	select CJSON
-	select DNS_RESOLVER
-	select FLASH
-	select HTTP_CLIENT
-	select IMG_ENABLE_IMAGE_CHECK
-	select IMG_ERASE_PROGRESSIVELY
-	select IMG_MANAGER
-	select MBEDTLS
-	select MPU_ALLOW_FLASH_WRITE
-	select NETWORKING
-	select NET_TCP
-	select NET_SOCKETS
-	select NET_SOCKETS_POSIX_NAMES
-	select NVS
-	select REBOOT
-	help
-	  Secure, risk tolerant and efficient over-the-air updates for all device software
+    bool "Mender Firmware Over-the-Air support"
+    select BOOTLOADER_MCUBOOT
+    select CJSON
+    select DNS_RESOLVER
+    select FLASH
+    select FLASH_MAP
+    select HTTP_CLIENT
+    select IMG_ENABLE_IMAGE_CHECK
+    select IMG_ERASE_PROGRESSIVELY
+    select IMG_MANAGER
+    select MBEDTLS
+    select MPU_ALLOW_FLASH_WRITE
+    select NETWORKING
+    select NET_TCP
+    select NET_SOCKETS
+    select NET_SOCKETS_POSIX_NAMES
+    select NVS
+    select REBOOT
+    select STREAM_FLASH
+    help
+        Secure, risk tolerant and efficient over-the-air updates for all device software
 
 if MENDER_MCU_CLIENT
 
+config MENDER_SERVER_HOST
+    string "Mender server host URL"
+    default "https://hosted.mender.io"
+    help
+        Set the Mender server host URL to be used on the device.
+
+config MENDER_SERVER_TENANT_TOKEN
+    string "Mender server Tenant Token"
+    help
+        Set the Mender server Tenant Token, to be used with https://hosted.mender.io.
+
+config MENDER_CLIENT_AUTHENTICATION_POLL_INTERVAL
+    int "Mender client Authentication poll interval (seconds)"
+    range 0 3600
+    default 600
+    help
+        Interval used to periodically try to authenticate to the mender server until it succeeds.
+
+config MENDER_CLIENT_UPDATE_POLL_INTERVAL
+    int "Mender client Update poll interval (seconds)"
+    range 0 86400
+    default 1800
+    help
+        Interval used to periodically check for new deployments on the mender server.
+
 config MENDER_STORAGE_SECTOR_COUNT
-	int "Number of sectors of the mender_storage partition"
-	default 2
-	range 2 8
-	help
-	  Number of sectors of the mender_storage partition, must match the configuration of the partition
+    int "Number of sectors of the mender_storage partition"
+    default 2
+    range 2 8
+    help
+    Number of sectors of the mender_storage partition, must match the configuration of the partition
 
 config MENDER_HTTP_CA_CERTIFICATE_TAG
-	int "CA certificate tag"
-	default 1
-	help
-	  A security tag that ROOT CA server credential will be referenced with, see tls_credential_add
+    int "CA certificate tag"
+    default 1
+    help
+        A security tag that ROOT CA server credential will be referenced with, see tls_credential_add
+
+config MENDER_CLIENT_ADD_ON_INVENTORY
+    bool "Mender client Inventory"
+    default y
+    help
+        Inventory add-ons permits to send inventory key-value pairs to the Mender server.
+        It is particurlarly used to send artifact name and device type, and it permits to see the last check-in time of the device.
+
+if MENDER_CLIENT_ADD_ON_INVENTORY
+
+config MENDER_CLIENT_INVENTORY_POLL_INTERVAL
+    int "Mender client Inventory poll interval (seconds)"
+    range 0 86400
+    default 28800
+    help
+        Interval used to periodically send inventory to the mender server.
+
+endif
 
 module = MENDER
 module-str = Log Level for mender

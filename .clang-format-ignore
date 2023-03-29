@@ -26,6 +26,7 @@ tests/mocks/zephyr/include/zephyr/net/socket.h
 tests/mocks/zephyr/include/zephyr/net/tls_credentials.h
 tests/mocks/zephyr/include/zephyr/storage/flash_map.h
 tests/mocks/zephyr/include/zephyr/sys/reboot.h
+tests/mocks/zephyr/include/zephyr/sys/util.h
 tests/mocks/zephyr/include/zephyr/sys/util_macro.h
 tests/mocks/zephyr/include/zephyr/sys_clock.h
 tests/mocks/zephyr/src/device.c

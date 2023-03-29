@@ -1,6 +1,6 @@
 /**
- * @file      mender-ota.h
- * @brief     Mender OTA interface, to be used in mender client callbacks (but you can also have your owns)
+ * @file      mender-inventory.h
+ * @brief     Mender MCU Inventory add-on implementation
  *
  * MIT License
  *
@@ -25,8 +25,8 @@
  * SOFTWARE.
  */
 
-#ifndef __MENDER_OTA_H__
-#define __MENDER_OTA_H__
+#ifndef __MENDER_INVENTORY_H__
+#define __MENDER_INVENTORY_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,58 +34,55 @@ extern "C" {
 
 #include "mender-common.h"
 
-/**
- * @brief Begin new OTA deployment
- * @param name Name of the artifact
- * @param size Size of the artifact
- * @param handle Handle of the deployment to be used with mender OTA functions
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_ota_begin(char *name, size_t size, void **handle);
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 
 /**
- * @brief Write OTA data
- * @param handle Handle from mender_ota_begin
- * @param data Data to be written
- * @param data_length Length of the data to be written
- * @return MENDER_OK if the function succeeds, error code otherwise
+ * @brief Inventory item
  */
-mender_err_t mender_ota_write(void *handle, void *data, size_t data_length);
+typedef struct {
+    char *name;  /**< Name of the item */
+    char *value; /**< Value of the item */
+} mender_inventory_t;
 
 /**
- * @brief Abort OTA
- * @param handle Handle from mender_ota_begin
- * @return MENDER_OK if the function succeeds, error code otherwise
+ * @brief Mender inventory configuration
  */
-mender_err_t mender_ota_abort(void *handle);
+typedef struct {
+    char *   artifact_name; /**< Artifact name */
+    char *   device_type;   /**< Device type */
+    uint32_t poll_interval; /**< Inventory poll interval, default is 28800 seconds */
+} mender_inventory_config_t;
 
 /**
- * @brief End OTA
- * @param handle Handle from mender_ota_begin
+ * @brief Initialize mender inventory add-on
+ * @param config Mender inventory configuration
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_end(void *handle);
+mender_err_t mender_inventory_init(mender_inventory_config_t *config);
 
 /**
- * @brief Set new boot partition to be used at the next boot
+ * @brief Activate mender inventory add-on
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_set_boot_partition(void);
+mender_err_t mender_inventory_activate(void);
 
 /**
- * @brief Mark application valid and cancel rollback if this is still pending
+ * @brief Set mender inventory
+ * @param inventory Mender inventory key/value pairs table, must end with a NULL/NULL element, NULL if not defined
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_mark_app_valid_cancel_rollback(void);
+mender_err_t mender_inventory_set(mender_inventory_t *inventory);
 
 /**
- * @brief Mark application invalid and perform rollback if this is still pending
+ * @brief Release mender inventory add-on
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_mark_app_invalid_rollback_and_reboot(void);
+mender_err_t mender_inventory_exit(void);
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* __MENDER_OTA_H__ */
+#endif /* __MENDER_INVENTORY_H__ */
