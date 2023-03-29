@@ -27,9 +27,9 @@
 
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/socket.h>
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
 #include <zephyr/net/tls_credentials.h>
-#endif
+#endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 #include <errno.h>
 #include "mender-http.h"
 #include "mender-log.h"
@@ -284,7 +284,10 @@ mender_http_connect(const char *host, const char *port, int *sock) {
     hints.ai_protocol = IPPROTO_TCP;
 
     /* Perform DNS resolution of the host */
-    mender_rtos_delay_until_init(&last_wake_time);
+    if (MENDER_OK != (ret = mender_rtos_delay_until_init(&last_wake_time))) {
+        mender_log_error("Unable to initialize delay");
+        goto END;
+    }
     while (resolve_attempts--) {
         if (0 == (result = getaddrinfo(host, port, &hints, &addr))) {
             break;
@@ -300,18 +303,18 @@ mender_http_connect(const char *host, const char *port, int *sock) {
     }
 
     /* Create socket */
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
     if ((result = socket(addr->ai_family, SOCK_STREAM, IPPROTO_TLS_1_2)) < 0) {
 #else
     if ((result = socket(addr->ai_family, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-#endif
+#endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
         mender_log_error("Unable to create socket, result = %d", result);
         ret = MENDER_FAIL;
         goto END;
     }
     *sock = result;
 
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
 
     /* Set TLS_SEC_TAG_LIST option */
     sec_tag_t sec_tag[] = {
@@ -334,10 +337,13 @@ mender_http_connect(const char *host, const char *port, int *sock) {
         goto END;
     }
 
-#endif
+#endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 
     /* Connect to the host */
-    mender_rtos_delay_until_init(&last_wake_time);
+    if (MENDER_OK != (ret = mender_rtos_delay_until_init(&last_wake_time))) {
+        mender_log_error("Unable to initialize delay");
+        goto END;
+    }
     while (connect_attempts--) {
         if (0 == (result = connect(*sock, addr->ai_addr, addr->ai_addrlen))) {
             break;

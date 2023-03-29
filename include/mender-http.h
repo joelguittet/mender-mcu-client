@@ -30,7 +30,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include "mender-common.h"
 
@@ -97,6 +97,6 @@ mender_err_t mender_http_exit(void);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __MENDER_HTTP_H__ */

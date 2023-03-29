@@ -30,7 +30,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include "mender-common.h"
 
@@ -101,6 +101,6 @@ mender_err_t mender_storage_exit(void);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __MENDER_STORAGE_H__ */

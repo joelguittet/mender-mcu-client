@@ -30,9 +30,10 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include "mender-common.h"
+#include "mender-inventory.h"
 
 /**
  * @brief Mender API configuration
@@ -74,14 +75,6 @@ mender_err_t mender_api_init(mender_api_config_t *config, mender_api_callbacks_t
 mender_err_t mender_api_perform_authentication(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length);
 
 /**
- * @brief Publish inventory data of the device to the mender-server
- * @param inventory Inventory array, NULL if not defined
- * @param inventory_length Length of the inventory array, 0 if empty
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_api_publish_inventory_data(mender_inventory_t *inventory, size_t inventory_length);
-
-/**
  * @brief Check for deployments for the device from the mender-server
  * @param id ID of the deployment, if one is pending
  * @param artifact_name Artifact name of the deployment, if one is pending
@@ -105,6 +98,17 @@ mender_err_t mender_api_publish_deployment_status(char *id, mender_deployment_st
  */
 mender_err_t mender_api_download_artifact(char *uri);
 
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
+
+/**
+ * @brief Publish inventory data of the device to the mender-server
+ * @param inventory Mender inventory key/value pairs table, must end with a NULL/NULL element, NULL if not defined
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_api_publish_inventory_data(mender_inventory_t *inventory);
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
+
 /**
  * @brief Release mender API
  * @return MENDER_OK if the function succeeds, error code otherwise
@@ -113,6 +117,6 @@ mender_err_t mender_api_exit(void);
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __MENDER_API_H__ */

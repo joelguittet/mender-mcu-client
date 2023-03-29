@@ -40,7 +40,7 @@ To start using mender-mcu-client, we recommend that you begin with one of the ex
 
 The mender-mcu-client library tries to be very light in order to be used on most projects wanted to have over-the-air updates. The library mainly rely on the presence of an RTOS to have thread, semaphore and memory allocation support.
 
-Additionally, an IP interface is required because communications are done using HTTPS protocol, however it is possible to have an abstraction for example using a WiFi module connected to the MCU with a serial interface and using AT commands.
+Additionally, a TCP/IP interface is required because communications are done using HTTPS protocol, however it is possible to have an abstraction for example using a WiFi module connected to the MCU with a serial interface and using AT commands.
 
 And finally, 4kB of storage should be reserved to save client private and public keys used for authentication with mender server, plus OTA ID and artifact name to be deployed when an update is done (this is used internally to perform OTA report to the server).
 
@@ -79,7 +79,7 @@ This is why I welcome and ask for your contributions. You can for example:
 * provide new platforms support (please read following Architecture section).
 * enhance the current implementation of platform support submitting a Pull Request (please pay attention to the results of the analysis done by the CI, code quality is important).
 * open an issue if you encountered a problem with the existing implementation, and optionally provide a pull request to fix it, this will be reviewed with care.
-* open an issue to discuss a new feature you want (please read following Roadmap section to avoid claiming features that are already in the list).
+* open an issue to discuss a new feature you want (please read following Roadmap section to avoid claiming features that are already in the list, but of course you are free to open an issue to discuss of future features to ask for the progress or just inform about your interest).
 * ...
 
 
@@ -87,10 +87,10 @@ This is why I welcome and ask for your contributions. You can for example:
 
 The organization of the source code permits the mender-mcu-client library to provide support for different kind of platforms and projects.
 
-The source code is separate in two main directories:
+The source code is separate into three main directories:
 * `core` contains the main source files providing the implementation of the mender-mcu-client:
     * `mender-client`: periodically check the availability of updates.
-    * `mender-api`: the implementation of the mender [Device API](https://docs.mender.io/api/#device-apis).
+    * `mender-api`: the implementation of the mender [Device APIs](https://docs.mender.io/api/#device-apis).
     * `mender-untar`: TAR parser to read [mender artifact](https://github.com/mendersoftware/mender-artifact/blob/master/Documentation/artifact-format-v3.md).
     * `mender-utils`: utilities.
 * `platform` contains source files specific to the platform or project, it is separated in several sub-directories for each feature of the client that rely on external dependency specific to the platforms:
@@ -98,12 +98,23 @@ The source code is separate in two main directories:
     * `mender-storage`: provide storage area for the mender-client.
     * `mender-log`: logging API.
     * `mender-http`: implementation of HTTP client.
-    * `mender-rtos`: implementation of RTOS functions.
+    * `mender-rtos`: implementation of RTOS related functions.
     * `mender-tls`: provide TLS support.
+* `add-ons` contains source files of the mender add-ons:
+    * `mender-inventory`: provide inventory key/value pairs to display inventory data on the mender server. This add-on is highly recommended and should be included by default. It is proposed as an add-on only to give the possibility to reduce the final code size for user who don't need it.
 
 The `include` directory contains the header files that define the prototypes for each module of the library. They are common to all platforms and projects and they define the API to be used or implemented.
 
-The usage of the mender-mcu-client library should be to include all the `core` source files each time, and then to pick up wanted platform implementations, or to write your owns (but it's better to share them and open a Pull Request!). For example you may want to use esp-idf with mbedTLS or with a secure element, or using an other RTOS I have not integrated. The combinaisons are infinite.
+The usage of the mender-mcu-client library should be to include all the `core` source files each time, and then to pick up wanted platform implementations, or to write your owns (but it's better to share them and open a Pull Request!). For example you may want to use esp-idf with mbedTLS or with a secure element, or using an other RTOS I have not integrated, or maybe you want to have mender storage located in an external EEPROM. The combinaisons are infinite.
+
+The usage of the add-ons is at your own discretion, they are independant.
+
+The final code size of the mender-mcu-client library depends of your configuration, the following table gives an estimation.
+
+|                      | Code size (-Og) | Code size (-Os) |
+|:---------------------|:----------------|:----------------|
+| mender-client (core) | 22KB            | 20KB            |
+| mender-inventory     | 2KB             | 2KB             |
 
 
 ## Roadmap
@@ -111,10 +122,10 @@ The usage of the mender-mcu-client library should be to include all the `core` s
 The following features are currently in the pipeline. Please note that I haven't set dates in this roadmap because I develop this in my free time, but you can contribute with Pull Requests:
 
 * Support update of [modules](https://docs.mender.io/artifact-creation/create-a-custom-update-module) to perform other kind of updates that could be specific to one project: files, images, etc.
-* Integration of other nice to have Mender APIs: [Device Configure](https://docs.mender.io/api/#device-api-device-configure), [Device Monitor](https://docs.mender.io/api/#devices-api-device-monitor), remote console...
-* Support new board and prove it is cross-platform and that it is able to work on small MCU too: STM32Lx, STM32F7, ATSAMD51...
-* Integration of ATECC608A secure element to perform TLS operations.
-* Support other RTOS and bare metal.
+* Integration of other nice to have Mender APIs as new add-ons: [Device Configure](https://docs.mender.io/api/#device-api-device-configure), [Device Monitor](https://docs.mender.io/api/#devices-api-device-monitor), remote console...
+* Support new board and prove it is cross-platform and that it is able to work on small MCU too: STM32F7, ATSAMD51...
+* Integration of ATECC608B secure element to perform TLS authentication.
+* Support other RTOS (particularly Azure RTOS) and bare metal platforms.
 * ...
 
 

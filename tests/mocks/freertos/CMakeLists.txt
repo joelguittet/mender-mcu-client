@@ -24,18 +24,19 @@
 # SOFTWARE.
 
 # Fetch repository
-set(GIT_REPO_URL    "https://github.com/FreeRTOS/FreeRTOS-Kernel")
-set(GIT_TAG_NAME    "V10.5.1")
+set(GIT_REPO_URL "https://github.com/FreeRTOS/FreeRTOS-Kernel")
+set(GIT_TAG_NAME "V10.5.1")
 
 # Fetch destination
-set(GIT_FOLDER_NAME ${CMAKE_CURRENT_LIST_DIR}/freertos)
+set(GIT_FOLDER_NAME "${CMAKE_CURRENT_LIST_DIR}/freertos")
 
 # Declare fetch content
 include(FetchContent)
 FetchContent_Declare(
     freertos
-    URL             ${GIT_REPO_URL}/archive/refs/tags/${GIT_TAG_NAME}.zip
-    SOURCE_DIR      ${GIT_FOLDER_NAME}
+    URL                        "${GIT_REPO_URL}/archive/refs/tags/${GIT_TAG_NAME}.zip"
+    SOURCE_DIR                 "${GIT_FOLDER_NAME}"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
 # Fetch if not already done
@@ -46,10 +47,21 @@ if(NOT freertos_POPULATED)
 endif()
 
 # Add sources
-target_sources(${APP_EXECUTABLE_NAME} PRIVATE ${GIT_FOLDER_NAME}/croutine.c ${GIT_FOLDER_NAME}/event_groups.c ${GIT_FOLDER_NAME}/list.c ${GIT_FOLDER_NAME}/queue.c ${GIT_FOLDER_NAME}/stream_buffer.c ${GIT_FOLDER_NAME}/tasks.c ${GIT_FOLDER_NAME}/timers.c ${GIT_FOLDER_NAME}/portable/MemMang/heap_3.c ${GIT_FOLDER_NAME}/portable/ThirdParty/GCC/Posix/port.c ${GIT_FOLDER_NAME}/portable/ThirdParty/GCC/Posix/utils/wait_for_event.c)
+target_sources(${APP_EXECUTABLE_NAME} PRIVATE
+    "${GIT_FOLDER_NAME}/croutine.c"
+    "${GIT_FOLDER_NAME}/event_groups.c"
+    "${GIT_FOLDER_NAME}/list.c"
+    "${GIT_FOLDER_NAME}/queue.c"
+    "${GIT_FOLDER_NAME}/stream_buffer.c"
+    "${GIT_FOLDER_NAME}/tasks.c"
+    "${GIT_FOLDER_NAME}/timers.c"
+    "${GIT_FOLDER_NAME}/portable/MemMang/heap_3.c"
+    "${GIT_FOLDER_NAME}/portable/ThirdParty/GCC/Posix/port.c"
+    "${GIT_FOLDER_NAME}/portable/ThirdParty/GCC/Posix/utils/wait_for_event.c"
+)
 
 # Add include directories
-include_directories(${GIT_FOLDER_NAME}/include)
-include_directories(${GIT_FOLDER_NAME}/portable/ThirdParty/GCC/Posix)
-include_directories(${GIT_FOLDER_NAME}/portable/ThirdParty/GCC/Posix/utils)
-include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
+include_directories("${GIT_FOLDER_NAME}/include")
+include_directories("${GIT_FOLDER_NAME}/portable/ThirdParty/GCC/Posix")
+include_directories("${GIT_FOLDER_NAME}/portable/ThirdParty/GCC/Posix/utils")
+include_directories("${CMAKE_CURRENT_LIST_DIR}/include")

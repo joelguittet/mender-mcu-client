@@ -26,94 +26,296 @@
  */
 
 #include <zephyr/kernel.h>
+#include "mender-log.h"
 #include "mender-rtos.h"
 
 /**
- * @brief Mender client task stack
- * @note TODO Should be modified when a dynamic API to create stack will be available
- * @ref https://github.com/zephyrproject-rtos/zephyr/issues/26999
- * @ref https://github.com/zephyrproject-rtos/zephyr/pull/44379
+ * @brief Mender RTOS work queue stack
  */
-#ifndef MENDER_CLIENT_TASK_STACK_SIZE
-#define MENDER_CLIENT_TASK_STACK_SIZE (14 * 1024)
-#endif
-K_THREAD_STACK_DEFINE(mender_client_task_stack, MENDER_CLIENT_TASK_STACK_SIZE);
+#ifndef MENDER_RTOS_WORK_QUEUE_STACK_SIZE
+#define MENDER_RTOS_WORK_QUEUE_STACK_SIZE (12 * 1024)
+#endif /* MENDER_RTOS_WORK_QUEUE_STACK_SIZE */
+K_THREAD_STACK_DEFINE(mender_rtos_work_queue_stack, MENDER_RTOS_WORK_QUEUE_STACK_SIZE);
 
 /**
- * @brief Generic thread entry wrapper
- * @param p1 First param, used to pass task_function
- * @param p2 Second param, used to pass arg
- * @param p3 Third param, not used
+ * @brief Mender RTOS work queue priority
  */
-static void mender_rtos_thread_entry(void *p1, void *p2, void *p3);
+#ifndef MENDER_RTOS_WORK_QUEUE_PRIORITY
+#define MENDER_RTOS_WORK_QUEUE_PRIORITY (5)
+#endif /* MENDER_RTOS_WORK_QUEUE_PRIORITY */
 
-void
-mender_rtos_task_create(void (*task_function)(void *), char *name, size_t stack_size, void *arg, int priority, void **handle) {
-    struct k_thread *thread = malloc(sizeof(struct k_thread));
-    if (NULL != thread) {
-        k_thread_create(
-            thread, mender_client_task_stack, MENDER_CLIENT_TASK_STACK_SIZE, mender_rtos_thread_entry, task_function, arg, NULL, priority, K_USER, K_NO_WAIT);
-        k_thread_name_set(thread, name);
-    }
-    *handle = (void *)thread;
+/**
+ * @brief Work context
+ */
+typedef struct {
+    mender_rtos_work_params_t params;       /**< Work parameters */
+    struct k_sem              sem_handle;   /**< Semaphore used to indicate work is pending or executing */
+    struct k_timer            timer_handle; /**< Timer used to periodically execute work */
+    struct k_work             work_handle;  /**< Work handle used to execute the work function */
+} mender_rtos_work_context_t;
+
+/**
+ * @brief Function used to handle work context timer when it expires
+ * @param handle Timer handler
+ */
+static void mender_rtos_timer_callback(struct k_timer *handle);
+
+/**
+ * @brief Function used to handle work
+ * @param handle Work handler
+ */
+static void mender_rtos_work_handler(struct k_work *handle);
+
+/**
+ * @brief Mender RTOS work queue handle
+ */
+static struct k_work_q mender_rtos_work_queue_handle;
+
+mender_err_t
+mender_rtos_init(void) {
+
+    /* Create and start work queue */
+    k_work_queue_init(&mender_rtos_work_queue_handle);
+    k_work_queue_start(&mender_rtos_work_queue_handle, mender_rtos_work_queue_stack, MENDER_RTOS_WORK_QUEUE_STACK_SIZE, MENDER_RTOS_WORK_QUEUE_PRIORITY, NULL);
+
+    return MENDER_OK;
 }
 
-void
-mender_rtos_task_delete(void *handle) {
-    if (NULL != handle) {
-        k_thread_abort(handle);
+mender_err_t
+mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle) {
+
+    assert(NULL != work_params);
+    assert(NULL != work_params->function);
+    assert(NULL != work_params->name);
+    assert(NULL != handle);
+
+    /* Create work context */
+    mender_rtos_work_context_t *work_context = malloc(sizeof(mender_rtos_work_context_t));
+    if (NULL == work_context) {
+        mender_log_error("Unable to allocate memory");
+        goto FAIL;
     }
+    memset(work_context, 0, sizeof(mender_rtos_work_context_t));
+
+    /* Copy work parameters */
+    work_context->params.function = work_params->function;
+    work_context->params.period   = work_params->period;
+    if (NULL == (work_context->params.name = strdup(work_params->name))) {
+        mender_log_error("Unable to allocate memory");
+        goto FAIL;
+    }
+
+    /* Create semaphore used to protect work function */
+    if (0 != k_sem_init(&work_context->sem_handle, 0, 1)) {
+        mender_log_error("Unable to create semaphore");
+        goto FAIL;
+    }
+
+    /* Create timer to handle the work periodically */
+    k_timer_init(&work_context->timer_handle, mender_rtos_timer_callback, NULL);
+    k_timer_user_data_set(&work_context->timer_handle, (void *)work_context);
+
+    /* Create work used to execute work function */
+    k_work_init(&work_context->work_handle, mender_rtos_work_handler);
+
+    /* Return handle to the new work context */
+    *handle = (void *)work_context;
+
+    return MENDER_OK;
+
+FAIL:
+
+    /* Release memory */
+    if (NULL != work_context) {
+        if (NULL != work_context->params.name) {
+            free(work_context->params.name);
+        }
+        free(work_context);
+    }
+
+    return MENDER_FAIL;
 }
 
-void
+mender_err_t
+mender_rtos_work_activate(void *handle) {
+
+    assert(NULL != handle);
+
+    /* Get work context */
+    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+
+    /* Give timer used to protect the work function */
+    k_sem_give(&work_context->sem_handle);
+
+    /* Start the timer to handle the work */
+    k_timer_start(&work_context->timer_handle, K_NO_WAIT, K_MSEC(1000 * work_context->params.period));
+
+    return MENDER_OK;
+}
+
+mender_err_t
+mender_rtos_work_deactivate(void *handle) {
+
+    assert(NULL != handle);
+
+    /* Get work context */
+    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+
+    /* Stop the timer used to periodically execute the work (if it is running) */
+    k_timer_stop(&work_context->timer_handle);
+
+    /* Wait if the work is pending or executing */
+    if (0 != k_sem_take(&work_context->sem_handle, K_FOREVER)) {
+        mender_log_error("Work '%s' is pending or executing", work_context->params.name);
+        return MENDER_FAIL;
+    }
+
+    return MENDER_OK;
+}
+
+mender_err_t
+mender_rtos_work_delete(void *handle) {
+
+    assert(NULL != handle);
+
+    /* Get work context */
+    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+
+    /* Release memory */
+    if (NULL != work_context->params.name) {
+        free(work_context->params.name);
+    }
+    free(work_context);
+
+    return MENDER_OK;
+}
+
+mender_err_t
 mender_rtos_delay_until_init(unsigned long *handle) {
+
     assert(NULL != handle);
+
+    /* Get uptime */
     *handle = (unsigned long)k_uptime_get();
+
+    return MENDER_OK;
 }
 
-void
+mender_err_t
 mender_rtos_delay_until_s(unsigned long *handle, uint32_t delay) {
+
     assert(NULL != handle);
+
+    /* Compute sleep time and sleep */
     int64_t ms = (1000 * delay) - (k_uptime_get() - *handle);
     k_msleep((ms > 0) ? ((int32_t)ms) : 1);
+
+    /* Update uptime */
     *handle = (unsigned long)k_uptime_get();
+
+    return MENDER_OK;
 }
 
-void *
-mender_rtos_semaphore_create_mutex(void) {
-    struct k_mutex *mutex = malloc(sizeof(struct k_mutex));
-    if (NULL != mutex) {
-        k_mutex_init(mutex);
+mender_err_t
+mender_rtos_mutex_create(void **handle) {
+
+    assert(NULL != handle);
+
+    /* Create mutex */
+    if (NULL == (*handle = malloc(sizeof(struct k_mutex)))) {
+        return MENDER_FAIL;
     }
-    return mutex;
-}
-
-void
-mender_rtos_semaphore_take(void *handle, int32_t delay_ms) {
-    if (delay_ms >= 0) {
-        k_mutex_lock((struct k_mutex *)handle, K_MSEC(delay_ms));
-    } else {
-        k_mutex_lock((struct k_mutex *)handle, K_FOREVER);
+    if (0 != k_mutex_init((struct k_mutex *)(*handle))) {
+        free(*handle);
+        *handle = NULL;
+        return MENDER_FAIL;
     }
+
+    return MENDER_OK;
 }
 
-void
-mender_rtos_semaphore_give(void *handle) {
-    k_mutex_unlock((struct k_mutex *)handle);
+mender_err_t
+mender_rtos_mutex_take(void *handle, int32_t delay_ms) {
+
+    assert(NULL != handle);
+
+    /* Take mutex */
+    if (0 != k_mutex_lock((struct k_mutex *)handle, (delay_ms >= 0) ? K_MSEC(delay_ms) : K_FOREVER)) {
+        return MENDER_FAIL;
+    }
+
+    return MENDER_OK;
 }
 
-void
-mender_rtos_semaphore_delete(void *handle) {
+mender_err_t
+mender_rtos_mutex_give(void *handle) {
+
+    assert(NULL != handle);
+
+    /* Give mutex */
+    if (0 != k_mutex_unlock((struct k_mutex *)handle)) {
+        return MENDER_FAIL;
+    }
+
+    return MENDER_OK;
+}
+
+mender_err_t
+mender_rtos_mutex_delete(void *handle) {
+
+    assert(NULL != handle);
+
+    /* Release memory */
     free(handle);
+
+    return MENDER_OK;
+}
+
+mender_err_t
+mender_rtos_exit(void) {
+
+    /* Nothing to do */
+    return MENDER_OK;
 }
 
 static void
-mender_rtos_thread_entry(void *p1, void *p2, void *p3) {
+mender_rtos_timer_callback(struct k_timer *handle) {
 
-    assert(NULL != p1);
-    void (*task_function)(void *) = p1;
-    (void)p3;
+    assert(NULL != handle);
 
-    /* Call task function */
-    task_function(p2);
+    /* Get work context */
+    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)k_timer_user_data_get(handle);
+    assert(NULL != work_context);
+
+    /* Exit if the work is already pending or executing */
+    if (0 != k_sem_take(&work_context->sem_handle, K_NO_WAIT)) {
+        mender_log_warning("Work '%s' is already pending or executing", work_context->params.name);
+        return;
+    }
+
+    /* Submit the work to the work queue */
+    if (k_work_submit_to_queue(&mender_rtos_work_queue_handle, &work_context->work_handle) < 0) {
+        mender_log_warning("Unable to submit work '%s' to the work queue", work_context->params.name);
+        k_sem_give(&work_context->sem_handle);
+    }
+}
+
+static void
+mender_rtos_work_handler(struct k_work *handle) {
+
+    assert(NULL != handle);
+
+    /* Get work context */
+    mender_rtos_work_context_t *work_context = CONTAINER_OF(handle, mender_rtos_work_context_t, work_handle);
+    assert(NULL != work_context);
+
+    /* Call work function */
+    if (MENDER_DONE == work_context->params.function()) {
+
+        /* Work is done, stop timer used to execute the work periodically */
+        k_timer_stop(&work_context->timer_handle);
+    }
+
+    /* Release semaphore used to protect the work function */
+    k_sem_give(&work_context->sem_handle);
 }

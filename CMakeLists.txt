@@ -26,7 +26,14 @@
 cmake_minimum_required(VERSION 3.16.3)
 
 # List of sources
-file(GLOB SOURCES_TEMP "${CMAKE_CURRENT_LIST_DIR}/core/src/*.c" "${CMAKE_CURRENT_LIST_DIR}/platform/board/${CONFIG_MENDER_MCU_CLIENT_BOARD_TYPE}/src/*.c" "${CMAKE_CURRENT_LIST_DIR}/platform/http/${CONFIG_MENDER_MCU_CLIENT_HTTP_TYPE}/src/*.c" "${CMAKE_CURRENT_LIST_DIR}/platform/rtos/${CONFIG_MENDER_MCU_CLIENT_RTOS_TYPE}/src/*.c" "${CMAKE_CURRENT_LIST_DIR}/platform/tls/${CONFIG_MENDER_MCU_CLIENT_TLS_TYPE}/src/*.c")
+file(GLOB SOURCES_TEMP
+    "${CMAKE_CURRENT_LIST_DIR}/core/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/platform/board/${CONFIG_MENDER_MCU_CLIENT_BOARD_TYPE}/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/platform/http/${CONFIG_MENDER_MCU_CLIENT_HTTP_TYPE}/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/platform/rtos/${CONFIG_MENDER_MCU_CLIENT_RTOS_TYPE}/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/platform/tls/${CONFIG_MENDER_MCU_CLIENT_TLS_TYPE}/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/add-ons/src/*.c"
+)
 
 # Add include directory
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)

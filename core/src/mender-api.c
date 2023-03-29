@@ -227,92 +227,6 @@ END:
 }
 
 mender_err_t
-mender_api_publish_inventory_data(mender_inventory_t *inventory, size_t inventory_length) {
-
-    mender_err_t ret;
-    char *       payload  = NULL;
-    char *       response = NULL;
-    int          status   = 0;
-
-    /* Format payload */
-    cJSON *array = cJSON_CreateArray();
-    if (NULL == array) {
-        mender_log_error("Unable to allocate memory");
-        ret = MENDER_FAIL;
-        goto END;
-    }
-    cJSON *item = cJSON_CreateObject();
-    if (NULL == item) {
-        mender_log_error("Unable to allocate memory");
-        ret = MENDER_FAIL;
-        goto END;
-    }
-    cJSON_AddStringToObject(item, "name", "artifact_name");
-    cJSON_AddStringToObject(item, "value", mender_api_config.artifact_name);
-    cJSON_AddItemToArray(array, item);
-    item = cJSON_CreateObject();
-    if (NULL == item) {
-        mender_log_error("Unable to allocate memory");
-        ret = MENDER_FAIL;
-        goto END;
-    }
-    cJSON_AddStringToObject(item, "name", "device_type");
-    cJSON_AddStringToObject(item, "value", mender_api_config.device_type);
-    cJSON_AddItemToArray(array, item);
-    if (NULL != inventory) {
-        for (size_t index = 0; index < inventory_length; index++) {
-            if (NULL == (item = cJSON_CreateObject())) {
-                mender_log_error("Unable to allocate memory");
-                ret = MENDER_FAIL;
-                goto END;
-            }
-            cJSON_AddStringToObject(item, "name", inventory[index].name);
-            cJSON_AddStringToObject(item, "value", inventory[index].value);
-            cJSON_AddItemToArray(array, item);
-        }
-    }
-    payload = cJSON_Print(array);
-
-    /* Perform HTTP request */
-    if (MENDER_OK
-        != (ret = mender_http_perform(mender_api_jwt,
-                                      MENDER_API_PATH_PUT_DEVICE_ATTRIBUTES,
-                                      MENDER_HTTP_PUT,
-                                      payload,
-                                      NULL,
-                                      &mender_client_http_text_callback,
-                                      (void *)&response,
-                                      &status))) {
-        mender_log_error("Unable to perform HTTP request");
-        goto END;
-    }
-
-    /* Treatment depending of the status */
-    if (200 == status) {
-        /* No response expected */
-        ret = MENDER_OK;
-    } else {
-        mender_api_print_response_error(response, status);
-        ret = MENDER_FAIL;
-    }
-
-END:
-
-    /* Release memory */
-    if (NULL != response) {
-        free(response);
-    }
-    if (NULL != payload) {
-        free(payload);
-    }
-    if (NULL != array) {
-        cJSON_Delete(array);
-    }
-
-    return ret;
-}
-
-mender_err_t
 mender_api_check_for_deployment(char **id, char **artifact_name, char **uri) {
 
     assert(NULL != id);
@@ -499,6 +413,98 @@ END:
 
     return ret;
 }
+
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
+
+mender_err_t
+mender_api_publish_inventory_data(mender_inventory_t *inventory) {
+
+    mender_err_t ret;
+    char *       payload  = NULL;
+    char *       response = NULL;
+    int          status   = 0;
+
+    /* Format payload */
+    cJSON *array = cJSON_CreateArray();
+    if (NULL == array) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    cJSON *item = cJSON_CreateObject();
+    if (NULL == item) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    cJSON_AddStringToObject(item, "name", "artifact_name");
+    cJSON_AddStringToObject(item, "value", mender_api_config.artifact_name);
+    cJSON_AddItemToArray(array, item);
+    item = cJSON_CreateObject();
+    if (NULL == item) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    cJSON_AddStringToObject(item, "name", "device_type");
+    cJSON_AddStringToObject(item, "value", mender_api_config.device_type);
+    cJSON_AddItemToArray(array, item);
+    if (NULL != inventory) {
+        size_t index = 0;
+        while ((NULL != inventory[index].name) && (NULL != inventory[index].value)) {
+            if (NULL == (item = cJSON_CreateObject())) {
+                mender_log_error("Unable to allocate memory");
+                ret = MENDER_FAIL;
+                goto END;
+            }
+            cJSON_AddStringToObject(item, "name", inventory[index].name);
+            cJSON_AddStringToObject(item, "value", inventory[index].value);
+            cJSON_AddItemToArray(array, item);
+            index++;
+        }
+    }
+    payload = cJSON_Print(array);
+
+    /* Perform HTTP request */
+    if (MENDER_OK
+        != (ret = mender_http_perform(mender_api_jwt,
+                                      MENDER_API_PATH_PUT_DEVICE_ATTRIBUTES,
+                                      MENDER_HTTP_PUT,
+                                      payload,
+                                      NULL,
+                                      &mender_client_http_text_callback,
+                                      (void *)&response,
+                                      &status))) {
+        mender_log_error("Unable to perform HTTP request");
+        goto END;
+    }
+
+    /* Treatment depending of the status */
+    if (200 == status) {
+        /* No response expected */
+        ret = MENDER_OK;
+    } else {
+        mender_api_print_response_error(response, status);
+        ret = MENDER_FAIL;
+    }
+
+END:
+
+    /* Release memory */
+    if (NULL != response) {
+        free(response);
+    }
+    if (NULL != payload) {
+        free(payload);
+    }
+    if (NULL != array) {
+        cJSON_Delete(array);
+    }
+
+    return ret;
+}
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 
 mender_err_t
 mender_api_exit(void) {

@@ -1,5 +1,5 @@
 # @file      CMakeLists.txt
-# @brief     esp-idf mock CMakeLists file
+# @brief     mender-mcu-client esp-idf component CMakeLists file
 #
 # MIT License
 #
@@ -23,9 +23,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Add sources
-file(GLOB_RECURSE SOURCES_TEMP "${CMAKE_CURRENT_LIST_DIR}/src/*.c")
-target_sources(${APP_EXECUTABLE_NAME} PRIVATE ${SOURCES_TEMP})
+# List of sources
+list(APPEND srcs
+    "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-api.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-client.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-untar.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-utils.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/board/esp-idf/src/mender-log.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/board/esp-idf/src/mender-ota.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/board/esp-idf/src/mender-storage.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/http/esp-idf/src/mender-http.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/rtos/freertos/src/mender-rtos.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/mbedtls/src/mender-tls.c"
+)
+if(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
+    list(APPEND srcs
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-inventory.c"
+    )
+endif()
 
-# Add include directories
-include_directories("${CMAKE_CURRENT_LIST_DIR}/include")
+# Register mender-mcu-client component
+idf_component_register(
+    SRCS ${srcs}
+    INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/../include"
+    REQUIRES app_update esp_http_client json mbedtls nvs_flash
+)

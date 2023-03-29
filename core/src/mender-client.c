@@ -41,36 +41,12 @@
 /**
  * @brief Default authentication poll interval (seconds)
  */
-#define MENDER_CLIENT_DEFAULT_AUTHENTICATION_POLL_INTERVAL (60)
-
-/**
- * @brief Default inventory poll interval (seconds)
- */
-#define MENDER_CLIENT_DEFAULT_INVENTORY_POLL_INTERVAL (28800)
+#define MENDER_CLIENT_DEFAULT_AUTHENTICATION_POLL_INTERVAL (600)
 
 /**
  * @brief Default update poll interval (seconds)
  */
 #define MENDER_CLIENT_DEFAULT_UPDATE_POLL_INTERVAL (1800)
-
-/**
- * @brief Default restart poll interval (seconds)
- */
-#define MENDER_CLIENT_DEFAULT_RESTART_POLL_INTERVAL (60)
-
-/**
- * @brief Mender client task size configuration (10% margin included)
- */
-#ifndef MENDER_CLIENT_TASK_STACK_SIZE
-#define MENDER_CLIENT_TASK_STACK_SIZE (14 * 1024)
-#endif
-
-/**
- * @brief Mender client task priority configuration
- */
-#ifndef MENDER_CLIENT_TASK_PRIORITY
-#define MENDER_CLIENT_TASK_PRIORITY (5)
-#endif
 
 /**
  * @brief Mender client configuration
@@ -97,22 +73,29 @@ static char *mender_client_ota_id            = NULL;
 static char *mender_client_ota_artifact_name = NULL;
 
 /**
- * @brief Mender client inventory
+ * @brief Mender client work handles
  */
-static mender_inventory_t *mender_client_inventory        = NULL;
-static size_t              mender_client_inventory_length = 0;
-static void *              mender_client_inventory_mutex  = NULL;
+static void *mender_client_initialization_work_handle = NULL;
+static void *mender_client_authentication_work_handle = NULL;
+static void *mender_client_update_work_handle         = NULL;
 
 /**
- * @brief Mender client task handle
+ * @brief Mender client initialization work function
+ * @return MENDER_OK if the function succeeds, error code otherwise
  */
-static void *mender_client_task_handle = NULL;
+static mender_err_t mender_client_initialization_work_function(void);
 
 /**
- * @brief Mender client task
- * @param arg Argument
+ * @brief Mender client authentication work function
+ * @return MENDER_OK if the function succeeds, error code otherwise
  */
-static void mender_client_task(void *arg);
+static mender_err_t mender_client_authentication_work_function(void);
+
+/**
+ * @brief Mender client update work function
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t mender_client_update_work_function(void);
 
 /**
  * @brief Publish deployment status of the device to the mender-server and invoke deployment status callback
@@ -175,20 +158,10 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     } else {
         mender_client_config.authentication_poll_interval = MENDER_CLIENT_DEFAULT_AUTHENTICATION_POLL_INTERVAL;
     }
-    if (0 != config->inventory_poll_interval) {
-        mender_client_config.inventory_poll_interval = config->inventory_poll_interval;
-    } else {
-        mender_client_config.inventory_poll_interval = MENDER_CLIENT_DEFAULT_INVENTORY_POLL_INTERVAL;
-    }
     if (0 != config->update_poll_interval) {
         mender_client_config.update_poll_interval = config->update_poll_interval;
     } else {
         mender_client_config.update_poll_interval = MENDER_CLIENT_DEFAULT_UPDATE_POLL_INTERVAL;
-    }
-    if (0 != config->restart_poll_interval) {
-        mender_client_config.restart_poll_interval = config->restart_poll_interval;
-    } else {
-        mender_client_config.restart_poll_interval = MENDER_CLIENT_DEFAULT_RESTART_POLL_INTERVAL;
     }
     mender_client_config.recommissioning = config->recommissioning;
 
@@ -196,6 +169,10 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     memcpy(&mender_client_callbacks, callbacks, sizeof(mender_client_callbacks_t));
 
     /* Initializations */
+    if (MENDER_OK != (ret = mender_rtos_init())) {
+        mender_log_error("Unable to initialize rtos");
+        return ret;
+    }
     if (MENDER_OK != (ret = mender_log_init())) {
         mender_log_error("Unable to initialize log");
         return ret;
@@ -226,55 +203,37 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
         return ret;
     }
 
-    /* Create inventory mutex */
-    if (NULL == (mender_client_inventory_mutex = mender_rtos_semaphore_create_mutex())) {
-        mender_log_error("Unable to create inventory mutex");
-        return MENDER_FAIL;
+    /* Create mender client works */
+    mender_rtos_work_params_t initialization_work_params;
+    initialization_work_params.function = mender_client_initialization_work_function;
+    initialization_work_params.period   = mender_client_config.authentication_poll_interval;
+    initialization_work_params.name     = "mender_client_initialization";
+    if (MENDER_OK != (ret = mender_rtos_work_create(&initialization_work_params, &mender_client_initialization_work_handle))) {
+        mender_log_error("Unable to create initialization work");
+        return ret;
+    }
+    mender_rtos_work_params_t authentication_work_params;
+    authentication_work_params.function = mender_client_authentication_work_function;
+    authentication_work_params.period   = mender_client_config.authentication_poll_interval;
+    authentication_work_params.name     = "mender_client_authentication";
+    if (MENDER_OK != (ret = mender_rtos_work_create(&authentication_work_params, &mender_client_authentication_work_handle))) {
+        mender_log_error("Unable to create authentication work");
+        return ret;
+    }
+    mender_rtos_work_params_t update_work_params;
+    update_work_params.function = mender_client_update_work_function;
+    update_work_params.period   = mender_client_config.update_poll_interval;
+    update_work_params.name     = "mender_client_update";
+    if (MENDER_OK != (ret = mender_rtos_work_create(&update_work_params, &mender_client_update_work_handle))) {
+        mender_log_error("Unable to create update work");
+        return ret;
     }
 
-    /* Create mender client task */
-    mender_rtos_task_create(mender_client_task, "mender_client", MENDER_CLIENT_TASK_STACK_SIZE, NULL, MENDER_CLIENT_TASK_PRIORITY, &mender_client_task_handle);
-
-    return MENDER_OK;
-}
-
-mender_err_t
-mender_client_set_inventory(mender_inventory_t *inventory, size_t inventory_length) {
-
-    mender_rtos_semaphore_take(mender_client_inventory_mutex, -1);
-
-    /* Release previous inventory */
-    if (NULL != mender_client_inventory) {
-        for (size_t index = 0; index < mender_client_inventory_length; index++) {
-            if (NULL != mender_client_inventory[index].name) {
-                free(mender_client_inventory[index].name);
-            }
-            if (NULL != mender_client_inventory[index].value) {
-                free(mender_client_inventory[index].value);
-            }
-        }
-        free(mender_client_inventory);
-        mender_client_inventory = NULL;
+    /* Activate initialization work */
+    if (MENDER_OK != (ret = mender_rtos_work_activate(mender_client_initialization_work_handle))) {
+        mender_log_error("Unable to activate initialization work");
+        return ret;
     }
-
-    /* Copy the new inventory */
-    if (NULL == (mender_client_inventory = (mender_inventory_t *)malloc(inventory_length * sizeof(mender_inventory_t)))) {
-        mender_log_error("Unable to allocate memory");
-        mender_rtos_semaphore_give(mender_client_inventory_mutex);
-        return MENDER_FAIL;
-    }
-    memset(mender_client_inventory, 0, inventory_length * sizeof(mender_inventory_t));
-    for (size_t index = 0; index < inventory_length; index++) {
-        if (NULL == (mender_client_inventory[index].name = strdup(inventory[index].name))) {
-            mender_log_error("Unable to allocate memory");
-        }
-        if (NULL == (mender_client_inventory[index].value = strdup(inventory[index].value))) {
-            mender_log_error("Unable to allocate memory");
-        }
-    }
-    mender_client_inventory_length = inventory_length;
-
-    mender_rtos_semaphore_give(mender_client_inventory_mutex);
 
     return MENDER_OK;
 }
@@ -282,15 +241,25 @@ mender_client_set_inventory(mender_inventory_t *inventory, size_t inventory_leng
 mender_err_t
 mender_client_exit(void) {
 
-    /* Stop mender-client task */
-    mender_rtos_task_delete(mender_client_task_handle);
-    mender_client_task_handle = NULL;
+    /* Deactivate mender client works */
+    mender_rtos_work_deactivate(mender_client_initialization_work_handle);
+    mender_rtos_work_deactivate(mender_client_authentication_work_handle);
+    mender_rtos_work_deactivate(mender_client_update_work_handle);
+
+    /* Delete mender client works */
+    mender_rtos_work_delete(mender_client_initialization_work_handle);
+    mender_client_initialization_work_handle = NULL;
+    mender_rtos_work_delete(mender_client_authentication_work_handle);
+    mender_client_authentication_work_handle = NULL;
+    mender_rtos_work_delete(mender_client_update_work_handle);
+    mender_client_update_work_handle = NULL;
 
     /* Release all modules */
     mender_api_exit();
     mender_tls_exit();
     mender_storage_exit();
     mender_log_exit();
+    mender_rtos_exit();
 
     /* Release memory */
     if (NULL != mender_client_config.mac_address) {
@@ -314,9 +283,7 @@ mender_client_exit(void) {
         mender_client_config.tenant_token = NULL;
     }
     mender_client_config.authentication_poll_interval = 0;
-    mender_client_config.inventory_poll_interval      = 0;
     mender_client_config.update_poll_interval         = 0;
-    mender_client_config.restart_poll_interval        = 0;
     if (NULL != mender_client_private_key) {
         free(mender_client_private_key);
         mender_client_private_key = NULL;
@@ -335,28 +302,14 @@ mender_client_exit(void) {
         free(mender_client_ota_artifact_name);
         mender_client_ota_artifact_name = NULL;
     }
-    if (NULL != mender_client_inventory) {
-        for (size_t index = 0; index < mender_client_inventory_length; index++) {
-            if (NULL != mender_client_inventory[index].name) {
-                free(mender_client_inventory[index].name);
-            }
-            if (NULL != mender_client_inventory[index].value) {
-                free(mender_client_inventory[index].value);
-            }
-        }
-        free(mender_client_inventory);
-        mender_client_inventory = NULL;
-    }
-    mender_client_inventory_length = 0;
-    mender_rtos_semaphore_delete(mender_client_inventory_mutex);
 
     return MENDER_OK;
 }
 
-static void
-mender_client_task(void *arg) {
+static mender_err_t
+mender_client_initialization_work_function(void) {
 
-    (void)arg;
+    mender_err_t ret;
 
     /* Check if recommissioning is forced */
     if (true == mender_client_config.recommissioning) {
@@ -364,7 +317,7 @@ mender_client_task(void *arg) {
         /* Erase authentication keys */
         mender_log_info("Erasing authentication keys...");
         if (MENDER_OK != mender_storage_erase_authentication_keys()) {
-            mender_log_error("Unable to erase authentication keys");
+            mender_log_warning("Unable to erase authentication keys");
         }
     }
 
@@ -376,204 +329,204 @@ mender_client_task(void *arg) {
         /* Generate authentication keys */
         mender_log_info("Generating authentication keys...");
         if (MENDER_OK
-            != mender_tls_generate_authentication_keys(
-                &mender_client_private_key, &mender_client_private_key_length, &mender_client_public_key, &mender_client_public_key_length)) {
+            != (ret = mender_tls_generate_authentication_keys(
+                    &mender_client_private_key, &mender_client_private_key_length, &mender_client_public_key, &mender_client_public_key_length))) {
             mender_log_error("Unable to generate authentication keys");
-            goto END;
+            return ret;
         }
 
         /* Record keys */
         if (MENDER_OK
-            != mender_storage_set_authentication_keys(
-                mender_client_private_key, mender_client_private_key_length, mender_client_public_key, mender_client_public_key_length)) {
+            != (ret = mender_storage_set_authentication_keys(
+                    mender_client_private_key, mender_client_private_key_length, mender_client_public_key, mender_client_public_key_length))) {
             mender_log_error("Unable to record authentication keys");
-            goto END;
+            return ret;
         }
     }
 
     /* Retrieve OTA ID if it is found (following an update) */
-    mender_err_t ret;
-    size_t       ota_id_length            = 0;
-    size_t       ota_artifact_name_length = 0;
+    size_t ota_id_length            = 0;
+    size_t ota_artifact_name_length = 0;
     if (MENDER_OK
         != (ret = mender_storage_get_ota_deployment(&mender_client_ota_id, &ota_id_length, &mender_client_ota_artifact_name, &ota_artifact_name_length))) {
         if (MENDER_NOT_FOUND != ret) {
             mender_log_error("Unable to get OTA ID");
-            goto END;
+            return ret;
         }
     }
 
-    /* Loop until authentication is done or rebooting is required */
-    unsigned long last_wake_time = 0;
-    mender_rtos_delay_until_init(&last_wake_time);
-    while (true) {
+    /* Activate authentication work */
+    if (MENDER_OK != (ret = mender_rtos_work_activate(mender_client_authentication_work_handle))) {
+        mender_log_error("Unable to activate authentication work");
+        return ret;
+    }
 
-        /* Perform authentication with the mender server */
-        if (MENDER_OK
-            != mender_api_perform_authentication(
-                mender_client_private_key, mender_client_private_key_length, mender_client_public_key, mender_client_public_key_length)) {
+    return MENDER_DONE;
+}
 
-            /* Invoke authentication error callback */
-            if (NULL != mender_client_callbacks.authentication_failure) {
-                if (MENDER_OK != mender_client_callbacks.authentication_failure()) {
+static mender_err_t
+mender_client_authentication_work_function(void) {
 
-                    /* Check if OTA is pending */
-                    if ((NULL != mender_client_ota_id) && (NULL != mender_client_ota_artifact_name)) {
-                        /* Authentication error callback inform the reboot should be done, probably something is broken and it prefers to rollback */
-                        mender_log_error("Authentication error callback failed, rebooting");
-                        goto REBOOT;
-                    }
+    mender_err_t ret;
+
+    /* Perform authentication with the mender server */
+    if (MENDER_OK
+        != (ret = mender_api_perform_authentication(
+                mender_client_private_key, mender_client_private_key_length, mender_client_public_key, mender_client_public_key_length))) {
+
+        /* Invoke authentication error callback */
+        if (NULL != mender_client_callbacks.authentication_failure) {
+            if (MENDER_OK != mender_client_callbacks.authentication_failure()) {
+
+                /* Check if OTA is pending */
+                if ((NULL != mender_client_ota_id) && (NULL != mender_client_ota_artifact_name)) {
+                    /* Authentication error callback inform the reboot should be done, probably something is broken and it prefers to rollback */
+                    mender_log_error("Authentication error callback failed, rebooting");
+                    goto REBOOT;
                 }
             }
+        }
+
+        return ret;
+    }
+
+    /* Invoke authentication success callback */
+    if (NULL != mender_client_callbacks.authentication_success) {
+        if (MENDER_OK != mender_client_callbacks.authentication_success()) {
+
+            /* Check if OTA is pending */
+            if ((NULL != mender_client_ota_id) && (NULL != mender_client_ota_artifact_name)) {
+                /* Authentication success callback inform the reboot should be done, probably something is broken and it prefers to rollback */
+                mender_log_error("Authentication success callback failed, rebooting");
+                goto REBOOT;
+            }
+        }
+    }
+
+    /* Check if OTA is pending */
+    if ((NULL != mender_client_ota_id) && (NULL != mender_client_ota_artifact_name)) {
+
+        /* Check if artifact running is the pending one, fails if rollback occurred */
+        if ((NULL != mender_client_ota_artifact_name) && (strcmp(mender_client_ota_artifact_name, mender_client_config.artifact_name))) {
+
+            /* Publish deployment status failure */
+            mender_client_publish_deployment_status(mender_client_ota_id, MENDER_DEPLOYMENT_STATUS_FAILURE);
 
         } else {
 
-            /* Invoke authentication success callback */
-            if (NULL != mender_client_callbacks.authentication_success) {
-                if (MENDER_OK != mender_client_callbacks.authentication_success()) {
-
-                    /* Check if OTA is pending */
-                    if ((NULL != mender_client_ota_id) && (NULL != mender_client_ota_artifact_name)) {
-                        /* Authentication sucess callback inform the reboot should be done, probably something is broken and it prefers to rollback */
-                        mender_log_error("Authentication success callback failed, rebooting");
-                        goto REBOOT;
-                    }
-
-                } else {
-
-                    /* Check if OTA is pending */
-                    if ((NULL != mender_client_ota_id) && (NULL != mender_client_ota_artifact_name)) {
-
-                        /* Check if artifact running is the pending one, fails if rollback occurred */
-                        if ((NULL != mender_client_ota_artifact_name) && (strcmp(mender_client_ota_artifact_name, mender_client_config.artifact_name))) {
-
-                            /* Publish deployment status failure */
-                            mender_client_publish_deployment_status(mender_client_ota_id, MENDER_DEPLOYMENT_STATUS_FAILURE);
-
-                        } else {
-
-                            /* Publish deployment status success */
-                            mender_client_publish_deployment_status(mender_client_ota_id, MENDER_DEPLOYMENT_STATUS_SUCCESS);
-                        }
-
-                        /* Clear pending OTA */
-                        mender_storage_clear_ota_deployment();
-                    }
-                }
-            }
-            break;
+            /* Publish deployment status success */
+            mender_client_publish_deployment_status(mender_client_ota_id, MENDER_DEPLOYMENT_STATUS_SUCCESS);
         }
 
-        /* Wait before trying again */
-        mender_rtos_delay_until_s(&last_wake_time, mender_client_config.authentication_poll_interval);
+        /* Clear pending OTA */
+        mender_storage_clear_ota_deployment();
     }
 
-    /* Loop until rebooting is required */
-    uint32_t inventory_timeout            = 0;
-    uint32_t check_for_deployment_timeout = 0;
-    mender_rtos_delay_until_init(&last_wake_time);
-    while (true) {
-
-        /* Check if it's time to send inventory */
-        if (0 == inventory_timeout) {
-
-            /* Publish inventory */
-            mender_rtos_semaphore_take(mender_client_inventory_mutex, -1);
-            if (MENDER_OK != mender_api_publish_inventory_data(mender_client_inventory, mender_client_inventory_length)) {
-                mender_log_error("Unable to publish inventory data");
-            }
-            mender_rtos_semaphore_give(mender_client_inventory_mutex);
-
-            /* Reload timeout */
-            inventory_timeout = mender_client_config.inventory_poll_interval;
-        }
-
-        /* Check if it's time to check for deployment */
-        if (0 == check_for_deployment_timeout) {
-
-            /* Check for deployment */
-            char *id            = NULL;
-            char *artifact_name = NULL;
-            char *uri           = NULL;
-            if (MENDER_OK != mender_api_check_for_deployment(&id, &artifact_name, &uri)) {
-                mender_log_error("Unable to check for deployment");
-            } else if ((NULL != id) && (NULL != artifact_name) && (NULL != uri)) {
-                /* Check if artifact is already installed (should not occur) */
-                if (!strcmp(artifact_name, mender_client_config.artifact_name)) {
-                    mender_log_error("Artifact is already installed");
-                    mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
-                } else {
-                    /* Download deployment artifact */
-                    mender_log_info("Downloading deployment artifact with id '%s', artifact name '%s' and uri '%s'", id, artifact_name, uri);
-                    mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_DOWNLOADING);
-                    if (MENDER_OK != mender_api_download_artifact(uri)) {
-                        mender_log_error("Unable to download artifact");
-                        mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
-                    } else {
-                        mender_log_info("Download done, installing artifact");
-                        mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_INSTALLING);
-                        /* Set boot partition */
-                        if (MENDER_OK != mender_client_callbacks.ota_set_boot_partition()) {
-                            mender_log_error("Unable to set boot partition");
-                            mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
-                        } else {
-                            /* Save OTA ID to publish deployment status after rebooting */
-                            if (MENDER_OK != mender_storage_set_ota_deployment(id, artifact_name)) {
-                                mender_log_error("Unable to save OTA ID");
-                                mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
-                            } else {
-                                /* Now need to reboot to apply the update */
-                                mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_REBOOTING);
-                                goto REBOOT;
-                            }
-                        }
-                    }
-                }
-            } else {
-                mender_log_info("No deployment available");
-            }
-
-            /* Release memory */
-            if (NULL != id) {
-                free(id);
-            }
-            if (NULL != artifact_name) {
-                free(artifact_name);
-            }
-            if (NULL != uri) {
-                free(uri);
-            }
-
-            /* Reload timeout */
-            check_for_deployment_timeout = mender_client_config.update_poll_interval;
-        }
-
-        /* Management of timeouts */
-        uint32_t delay = (check_for_deployment_timeout <= inventory_timeout) ? check_for_deployment_timeout : inventory_timeout;
-        mender_rtos_delay_until_s(&last_wake_time, delay);
-        check_for_deployment_timeout -= delay;
-        inventory_timeout -= delay;
+    /* Activate update work */
+    if (MENDER_OK != (ret = mender_rtos_work_activate(mender_client_update_work_handle))) {
+        mender_log_error("Unable to activate update work");
+        return ret;
     }
+
+    return MENDER_DONE;
 
 REBOOT:
 
-    /* Infinite loop, when reaching this point this means you are waiting to reboot */
-    mender_rtos_delay_until_init(&last_wake_time);
-    while (true) {
-
-        /* Invoke restart callback */
-        if (NULL != mender_client_callbacks.restart) {
-            mender_client_callbacks.restart();
-        }
-
-        /* Wait before trying again */
-        mender_rtos_delay_until_s(&last_wake_time, mender_client_config.restart_poll_interval);
+    /* Invoke restart callback, application is responsible to shutdown properly and restart the system */
+    if (NULL != mender_client_callbacks.restart) {
+        mender_client_callbacks.restart();
     }
+
+    return MENDER_DONE;
+}
+
+static mender_err_t
+mender_client_update_work_function(void) {
+
+    mender_err_t ret;
+
+    /* Check for deployment */
+    char *id            = NULL;
+    char *artifact_name = NULL;
+    char *uri           = NULL;
+    if (MENDER_OK != (ret = mender_api_check_for_deployment(&id, &artifact_name, &uri))) {
+        mender_log_error("Unable to check for deployment");
+        goto END;
+    }
+
+    /* Check if deployment is available */
+    if ((NULL == id) || (NULL == artifact_name) || (NULL == uri)) {
+        mender_log_info("No deployment available");
+        goto END;
+    }
+
+    /* Check if artifact is already installed (should not occur) */
+    if (!strcmp(artifact_name, mender_client_config.artifact_name)) {
+        mender_log_error("Artifact is already installed");
+        mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_ALREADY_INSTALLED);
+        goto END;
+    }
+
+    /* Download deployment artifact */
+    mender_log_info("Downloading deployment artifact with id '%s', artifact name '%s' and uri '%s'", id, artifact_name, uri);
+    mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_DOWNLOADING);
+    if (MENDER_OK != (ret = mender_api_download_artifact(uri))) {
+        mender_log_error("Unable to download artifact");
+        mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
+        goto END;
+    }
+
+    /* Set boot partition */
+    mender_log_info("Download done, installing artifact");
+    mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_INSTALLING);
+    if (MENDER_OK != (ret = mender_client_callbacks.ota_set_boot_partition())) {
+        mender_log_error("Unable to set boot partition");
+        mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
+        goto END;
+    }
+
+    /* Save OTA ID to publish deployment status after rebooting */
+    if (MENDER_OK != (ret = mender_storage_set_ota_deployment(id, artifact_name))) {
+        mender_log_error("Unable to save OTA ID");
+        mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
+        goto END;
+    }
+
+    /* Now need to reboot to apply the update */
+    mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_REBOOTING);
+
+    /* Release memory */
+    if (NULL != id) {
+        free(id);
+    }
+    if (NULL != artifact_name) {
+        free(artifact_name);
+    }
+    if (NULL != uri) {
+        free(uri);
+    }
+
+    /* Invoke restart callback, application is responsible to shutdown properly and restart the system */
+    if (NULL != mender_client_callbacks.restart) {
+        mender_client_callbacks.restart();
+    }
+
+    return MENDER_DONE;
 
 END:
 
-    /* Delete myself */
-    mender_rtos_task_delete(NULL);
+    /* Release memory */
+    if (NULL != id) {
+        free(id);
+    }
+    if (NULL != artifact_name) {
+        free(artifact_name);
+    }
+    if (NULL != uri) {
+        free(uri);
+    }
+
+    return ret;
 }
 
 static mender_err_t

@@ -30,6 +30,8 @@ on:
       - '**'
   pull_request:
     types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '0 0 1 * *'
 jobs:
   check:
     name: Check code format
@@ -70,4 +72,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          sonar-scanner -Dsonar.organization=joelguittet -Dsonar.projectKey=joelguittet_mender-mcu-client -Dsonar.cfamily.cache.enabled=false -Dsonar.inclusions=include/**/*,core/**/*,platform/**/* -Dsonar.projectVersion=$(cat VERSION) -Dsonar.cfamily.build-wrapper-output=bw_output
+          sonar-scanner -Dsonar.organization=joelguittet -Dsonar.projectKey=joelguittet_mender-mcu-client -Dsonar.inclusions=include/**/*,core/**/*,platform/**/* -Dsonar.projectVersion=$(cat VERSION) -Dsonar.cfamily.build-wrapper-output=bw_output
