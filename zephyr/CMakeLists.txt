@@ -28,8 +28,8 @@ if(CONFIG_MENDER_MCU_CLIENT)
     zephyr_library()
     zephyr_library_sources(
         "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-api.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-artifact.c"
         "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-client.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-untar.c"
         "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-utils.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-log.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-ota.c"

@@ -32,6 +32,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include <cJSON.h>
 #include "mender-common.h"
 #include "mender-inventory.h"
 
@@ -47,22 +48,11 @@ typedef struct {
 } mender_api_config_t;
 
 /**
- * @brief Mender API callbacks
- */
-typedef struct {
-    mender_err_t (*ota_begin)(char *, size_t, void **); /**< Invoked when the OTA starts */
-    mender_err_t (*ota_write)(void *, void *, size_t);  /**< Invoked to write data received from the mender server */
-    mender_err_t (*ota_abort)(void *);                  /**< Invoked to abort current OTA */
-    mender_err_t (*ota_end)(void *);                    /**< Invoked to indicate the end of the artifact */
-} mender_api_callbacks_t;
-
-/**
  * @brief Initialization of the API
  * @param config Mender API configuration
- * @param callbacks Mender API callbacks
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_init(mender_api_config_t *config, mender_api_callbacks_t *callbacks);
+mender_err_t mender_api_init(mender_api_config_t *config);
 
 /**
  * @brief Perform authentication of the device, retrieve token from mender-server used for the next requests
@@ -94,9 +84,10 @@ mender_err_t mender_api_publish_deployment_status(char *id, mender_deployment_st
 /**
  * @brief Download artifact from the mender-server
  * @param uri URI of the deployment received from mender_api_check_for_deployment function
+ * @param callback Callback function to be invoked to perform the treatment of the data from the artifact
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_download_artifact(char *uri);
+mender_err_t mender_api_download_artifact(char *uri, mender_err_t (*callback)(char *, cJSON *, char *, size_t, void *, size_t, size_t));
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 

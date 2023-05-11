@@ -28,10 +28,10 @@
 #include "cJSON.h"
 
 #include "mender-api.h"
+#include "mender-artifact.h"
 #include "mender-http.h"
 #include "mender-log.h"
 #include "mender-tls.h"
-#include "mender-untar.h"
 #include "mender-utils.h"
 
 /**
@@ -46,11 +46,6 @@
  * @brief Mender API configuration
  */
 static mender_api_config_t mender_api_config;
-
-/**
- * @brief Mender API callbacks
- */
-static mender_api_callbacks_t mender_api_callbacks;
 
 /**
  * @brief Authentication token
@@ -85,25 +80,17 @@ static mender_err_t mender_client_http_artifact_callback(mender_http_client_even
 static void mender_api_print_response_error(char *response, int status);
 
 mender_err_t
-mender_api_init(mender_api_config_t *config, mender_api_callbacks_t *callbacks) {
+mender_api_init(mender_api_config_t *config) {
 
     assert(NULL != config);
     assert(NULL != config->mac_address);
     assert(NULL != config->artifact_name);
     assert(NULL != config->device_type);
     assert(NULL != config->host);
-    assert(NULL != callbacks);
-    assert(NULL != callbacks->ota_begin);
-    assert(NULL != callbacks->ota_write);
-    assert(NULL != callbacks->ota_abort);
-    assert(NULL != callbacks->ota_end);
     mender_err_t ret;
 
     /* Save configuration */
     memcpy(&mender_api_config, config, sizeof(mender_api_config_t));
-
-    /* Save callbacks */
-    memcpy(&mender_api_callbacks, callbacks, sizeof(mender_api_callbacks_t));
 
     /* Initializations */
     mender_http_config_t mender_http_config = { .host = mender_api_config.host };
@@ -388,14 +375,15 @@ END:
 }
 
 mender_err_t
-mender_api_download_artifact(char *uri) {
+mender_api_download_artifact(char *uri, mender_err_t (*callback)(char *, cJSON *, char *, size_t, void *, size_t, size_t)) {
 
     assert(NULL != uri);
+    assert(NULL != callback);
     mender_err_t ret;
     int          status = 0;
 
     /* Perform HTTP request */
-    if (MENDER_OK != (ret = mender_http_perform(NULL, uri, MENDER_HTTP_GET, NULL, NULL, &mender_client_http_artifact_callback, NULL, &status))) {
+    if (MENDER_OK != (ret = mender_http_perform(NULL, uri, MENDER_HTTP_GET, NULL, NULL, &mender_client_http_artifact_callback, callback, &status))) {
         mender_log_error("Unable to perform HTTP request");
         goto END;
     }
@@ -535,11 +523,13 @@ mender_client_http_text_callback(mender_http_client_event_t event, void *data, s
             /* Nothing to do */
             break;
         case MENDER_HTTP_EVENT_DATA_RECEIVED:
+            /* Check input data */
             if ((NULL == data) || (0 == data_length)) {
                 mender_log_error("Invalid data received");
                 ret = MENDER_FAIL;
                 break;
             }
+            /* Concatenate data to the response */
             size_t response_length = (NULL != *response) ? strlen(*response) : 0;
             if (NULL == (tmp = realloc(*response, response_length + data_length + 1))) {
                 mender_log_error("Unable to allocate memory");
@@ -554,6 +544,7 @@ mender_client_http_text_callback(mender_http_client_event_t event, void *data, s
             /* Nothing to do */
             break;
         case MENDER_HTTP_EVENT_ERROR:
+            /* Downloading the response fails */
             mender_log_error("An error occurred");
             ret = MENDER_FAIL;
             break;
@@ -569,104 +560,53 @@ mender_client_http_text_callback(mender_http_client_event_t event, void *data, s
 static mender_err_t
 mender_client_http_artifact_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params) {
 
-    (void)params;
-    mender_err_t           ret             = MENDER_OK;
-    mender_untar_header_t *header          = NULL;
-    void *                 output_data     = NULL;
-    size_t                 output_length   = 0;
-    static bool            ota_in_progress = false;
+    assert(NULL != params);
+    mender_err_t ret = MENDER_OK;
 
-    /* un-tar context */
-    static mender_untar_ctx_t *mender_untar_ctx = NULL;
-
-    /* OTA handle, can be used to store temporary reference to write OTA data */
-    static void *ota_handle = NULL;
+    /* Artifact context */
+    static mender_artifact_ctx_t *mender_artifact_ctx = NULL;
 
     /* Treatment depending of the event */
     switch (event) {
         case MENDER_HTTP_EVENT_CONNECTED:
-            /* Create new un-tar context */
-            if (NULL == (mender_untar_ctx = mender_untar_init())) {
-                mender_log_error("Unable to allocate memory");
+            /* Create new artifact context */
+            if (NULL == (mender_artifact_ctx = mender_artifact_create_ctx())) {
+                mender_log_error("Unable to create artifact context");
                 ret = MENDER_FAIL;
                 break;
             }
             break;
         case MENDER_HTTP_EVENT_DATA_RECEIVED:
-            if (NULL == mender_untar_ctx) {
-                mender_log_error("Invalid un-tar context");
-                ret = MENDER_FAIL;
-                break;
-            }
+            /* Check input data */
             if ((NULL == data) || (0 == data_length)) {
                 mender_log_error("Invalid data received");
                 ret = MENDER_FAIL;
                 break;
             }
-
-            /* Parse input data */
-            if (mender_untar_parse(mender_untar_ctx, data, data_length, &header, &output_data, &output_length) < 0) {
-                mender_log_error("Unable to parse data received");
+            /* Check artifact context */
+            if (NULL == mender_artifact_ctx) {
+                mender_log_error("Invalid artifact context");
                 ret = MENDER_FAIL;
                 break;
             }
-
-            /* Check if header or output data are available */
-            while ((NULL != header) || (NULL != output_data)) {
-                if (NULL != header) {
-                    /* Check file name */
-                    if ((strcmp(header->name, "version")) && (strcmp(header->name, "manifest")) && (strcmp(header->name, "header-info"))
-                        && (strcmp(header->name, "headers/0000/type-info")) && (strcmp(header->name, "headers/0000/meta-data"))) {
-                        /* Binary file found, open the OTA handle */
-                        if (MENDER_OK != (ret = mender_api_callbacks.ota_begin(header->name, header->size, &ota_handle))) {
-                            mender_log_error("Unable to open OTA handle");
-                        } else {
-                            ota_in_progress = true;
-                        }
-                    } else {
-                        ota_in_progress = false;
-                    }
-                    free(header);
-                    header = NULL;
-                }
-                if (NULL != output_data) {
-                    if (true == ota_in_progress) {
-                        if (MENDER_OK != (ret = mender_api_callbacks.ota_write(ota_handle, output_data, output_length))) {
-                            mender_log_error("Unable to write OTA data");
-                        }
-                    }
-                    free(output_data);
-                    output_data = NULL;
-                }
-                output_length = 0;
-
-                /* Parse next data */
-                if (mender_untar_parse(mender_untar_ctx, NULL, 0, &header, &output_data, &output_length) < 0) {
-                    mender_log_error("Unable to parse data received");
-                    ret = MENDER_FAIL;
-                }
+            /* Parse input data */
+            if (MENDER_OK != (ret = mender_artifact_process_data(mender_artifact_ctx, data, data_length, params))) {
+                mender_log_error("Unable to process data");
+                break;
             }
             break;
         case MENDER_HTTP_EVENT_DISCONNECTED:
-            /* Close OTA handle */
-            if (MENDER_OK != (ret = mender_api_callbacks.ota_end(ota_handle))) {
-                mender_log_error("Unable to close OTA handle");
-            }
-            ota_in_progress = false;
-            /* Release un-tar context */
-            mender_untar_release(mender_untar_ctx);
-            mender_untar_ctx = NULL;
+            /* Release artifact context */
+            mender_artifact_release_ctx(mender_artifact_ctx);
+            mender_artifact_ctx = NULL;
             break;
         case MENDER_HTTP_EVENT_ERROR:
+            /* Downloading the artifact fails */
             mender_log_error("An error occurred");
             ret = MENDER_FAIL;
-            /* Abort current OTA */
-            mender_api_callbacks.ota_abort(ota_handle);
-            mender_api_callbacks.ota_end(ota_handle);
-            ota_in_progress = false;
-            /* Release un-tar context */
-            mender_untar_release(mender_untar_ctx);
-            mender_untar_ctx = NULL;
+            /* Release artifact context */
+            mender_artifact_release_ctx(mender_artifact_ctx);
+            mender_artifact_ctx = NULL;
             break;
         default:
             /* Should not occur */
