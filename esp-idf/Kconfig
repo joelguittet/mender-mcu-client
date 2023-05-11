@@ -41,20 +41,20 @@ menu "Mender client Configuration"
         range 0 3600
         default 600
         help
-            Interval used to periodically try to authenticate to the mender server until it succeeds.
+            Interval used to periodically try to authenticate to the Mender server until it succeeds.
 
     config MENDER_CLIENT_UPDATE_POLL_INTERVAL
         int "Mender client Update poll interval (seconds)"
         range 0 86400
         default 1800
         help
-            Interval used to periodically check for new deployments on the mender server.
+            Interval used to periodically check for new deployments on the Mender server.
 
     config MENDER_CLIENT_ADD_ON_INVENTORY
         bool "Mender client Inventory"
         default y
         help
-            Inventory add-ons permits to send inventory key-value pairs to the Mender server.
+            Inventory add-on permits to send inventory key-value pairs to the Mender server.
             It is particurlarly used to send artifact name and device type, and it permits to see the last check-in time of the device.
 
     if MENDER_CLIENT_ADD_ON_INVENTORY
@@ -64,7 +64,7 @@ menu "Mender client Configuration"
             range 0 86400
             default 28800
             help
-                Interval used to periodically send inventory to the mender server.
+                Interval used to periodically send inventory to the Mender server.
 
     endif
 
