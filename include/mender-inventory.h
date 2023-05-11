@@ -48,8 +48,6 @@ typedef struct {
  * @brief Mender inventory configuration
  */
 typedef struct {
-    char *   artifact_name; /**< Artifact name */
-    char *   device_type;   /**< Device type */
     uint32_t poll_interval; /**< Inventory poll interval, default is 28800 seconds */
 } mender_inventory_config_t;
 

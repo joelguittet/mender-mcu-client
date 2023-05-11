@@ -66,14 +66,6 @@ mender_inventory_init(mender_inventory_config_t *config) {
     mender_err_t ret;
 
     /* Save configuration */
-    if (NULL == (mender_inventory_config.artifact_name = strdup(config->artifact_name))) {
-        mender_log_error("Unable to save artifact name");
-        return MENDER_FAIL;
-    }
-    if (NULL == (mender_inventory_config.device_type = strdup(config->device_type))) {
-        mender_log_error("Unable to save device type");
-        return MENDER_FAIL;
-    }
     if (0 != config->poll_interval) {
         mender_inventory_config.poll_interval = config->poll_interval;
     } else {
@@ -179,14 +171,6 @@ mender_inventory_exit(void) {
     mender_inventory_work_handle = NULL;
 
     /* Release memory */
-    if (NULL != mender_inventory_config.artifact_name) {
-        free(mender_inventory_config.artifact_name);
-        mender_inventory_config.artifact_name = NULL;
-    }
-    if (NULL != mender_inventory_config.device_type) {
-        free(mender_inventory_config.device_type);
-        mender_inventory_config.device_type = NULL;
-    }
     mender_inventory_config.poll_interval = 0;
     if (NULL != mender_inventory) {
         size_t index = 0;
