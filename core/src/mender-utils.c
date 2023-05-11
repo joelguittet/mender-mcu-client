@@ -101,6 +101,48 @@ mender_utils_http_status_to_string(int status) {
 }
 
 char *
+mender_utils_strrstr(const char *haystack, const char *needle) {
+
+    char *r = NULL;
+
+    if (!needle[0])
+        return (char *)haystack + strlen(haystack);
+
+    while (1) {
+        char *p = strstr(haystack, needle);
+        if (!p) {
+            return r;
+        }
+        r        = p;
+        haystack = p + 1;
+    }
+}
+
+bool
+mender_utils_strbeginwith(const char *s1, const char *s2) {
+
+    /* Check parameters */
+    if ((NULL == s1) || (NULL == s2)) {
+        return false;
+    }
+
+    /* Compare the begining of the string */
+    return (0 == strncmp(s1, s2, strlen(s2)));
+}
+
+bool
+mender_utils_strendwith(const char *s1, const char *s2) {
+
+    /* Check parameters */
+    if ((NULL == s1) || (NULL == s2)) {
+        return false;
+    }
+
+    /* Compare the end of the string */
+    return (0 == strncmp(s1 + strlen(s1) - strlen(s2), s2, strlen(s2)));
+}
+
+char *
 mender_utils_deployment_status_to_string(mender_deployment_status_t deployment_status) {
 
     /* Return deployment status as string */

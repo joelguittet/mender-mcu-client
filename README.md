@@ -91,7 +91,7 @@ The source code is separate into three main directories:
 * `core` contains the main source files providing the implementation of the mender-mcu-client:
     * `mender-client`: periodically check the availability of updates.
     * `mender-api`: the implementation of the mender [Device APIs](https://docs.mender.io/api/#device-apis).
-    * `mender-untar`: TAR parser to read [mender artifact](https://github.com/mendersoftware/mender-artifact/blob/master/Documentation/artifact-format-v3.md).
+    * `mender-artifact`: parser to read [mender artifact](https://github.com/mendersoftware/mender-artifact/blob/master/Documentation/artifact-format-v3.md).
     * `mender-utils`: utilities.
 * `platform` contains source files specific to the platform or project, it is separated in several sub-directories for each feature of the client that rely on external dependency specific to the platforms:
     * `mender-ota`: implementation of functions used to write artifact in the memory.

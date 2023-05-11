@@ -34,16 +34,19 @@
 mender_err_t
 mender_ota_begin(char *name, size_t size, void **handle) {
 
+    assert(NULL != handle);
     int result;
 
     /* Print current file name and size */
     mender_log_info("Start flashing OTA artifact '%s' with size %d", name, size);
 
-    /* Begin OTA with sequential writes */
+    /* Allocate memory to store the OTA handle */
     if (NULL == (*handle = malloc(sizeof(struct flash_img_context)))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
+
+    /* Begin OTA with sequential writes */
     if ((result = flash_img_init((struct flash_img_context *)*handle)) < 0) {
         mender_log_error("flash_img_init failed (%d)", result);
         return MENDER_FAIL;
@@ -53,13 +56,19 @@ mender_ota_begin(char *name, size_t size, void **handle) {
 }
 
 mender_err_t
-mender_ota_write(void *handle, void *data, size_t data_length) {
+mender_ota_write(void *handle, void *data, size_t index, size_t length) {
 
-    assert(NULL != handle);
+    (void)index;
     int result;
 
+    /* Check OTA handle */
+    if (NULL == handle) {
+        mender_log_error("Invalid OTA handle");
+        return MENDER_FAIL;
+    }
+
     /* Write data received to the update partition */
-    if ((result = flash_img_buffered_write((struct flash_img_context *)handle, (const uint8_t *)data, data_length, false)) < 0) {
+    if ((result = flash_img_buffered_write((struct flash_img_context *)handle, (const uint8_t *)data, length, false)) < 0) {
         mender_log_error("flash_img_buffered_write failed (%d)", result);
         return MENDER_FAIL;
     }
@@ -70,10 +79,12 @@ mender_ota_write(void *handle, void *data, size_t data_length) {
 mender_err_t
 mender_ota_abort(void *handle) {
 
-    assert(NULL != handle);
+    /* Check OTA handle */
+    if (NULL != handle) {
 
-    /* Release memory */
-    free(handle);
+        /* Release memory */
+        free(handle);
+    }
 
     return MENDER_OK;
 }
@@ -81,8 +92,13 @@ mender_ota_abort(void *handle) {
 mender_err_t
 mender_ota_end(void *handle) {
 
-    assert(NULL != handle);
     int result;
+
+    /* Check OTA handle */
+    if (NULL == handle) {
+        mender_log_error("Invalid OTA handle");
+        return MENDER_FAIL;
+    }
 
     /* Flush data received to the update partition */
     if ((result = flash_img_buffered_write((struct flash_img_context *)handle, NULL, 0, true)) < 0) {
@@ -90,21 +106,25 @@ mender_ota_end(void *handle) {
         return MENDER_FAIL;
     }
 
-    /* Release memory */
-    free(handle);
-
     return MENDER_OK;
 }
 
 mender_err_t
-mender_ota_set_boot_partition(void) {
+mender_ota_set_boot_partition(void *handle) {
 
     int result;
 
-    /* Set new boot partition */
-    if ((result = boot_request_upgrade(BOOT_UPGRADE_TEST)) < 0) {
-        mender_log_error("boot_request_upgrade failed (%d)", result);
-        return MENDER_FAIL;
+    /* Check OTA handle */
+    if (NULL != handle) {
+
+        /* Set new boot partition */
+        if ((result = boot_request_upgrade(BOOT_UPGRADE_TEST)) < 0) {
+            mender_log_error("boot_request_upgrade failed (%d)", result);
+            return MENDER_FAIL;
+        }
+
+        /* Release memory */
+        free(handle);
     }
 
     return MENDER_OK;

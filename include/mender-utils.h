@@ -48,6 +48,30 @@ char *mender_utils_http_status_to_string(int status);
  */
 char *mender_utils_deployment_status_to_string(mender_deployment_status_t deployment_status);
 
+/**
+ * @brief Function used to locate last substring in string
+ * @param haystack String to look for a substring
+ * @param needle Substring to look for
+ * @return Pointer to the beginning of the substring, NULL is the substring is not found
+ */
+char *mender_utils_strrstr(const char *haystack, const char *needle);
+
+/**
+ * @brief Function used to check if string begins with wanted substring
+ * @param s1 String to be checked
+ * @param s2 Substring to look for at the beginning of the string
+ * @return true if the string begins with wanted substring, false otherwise
+ */
+bool mender_utils_strbeginwith(const char *s1, const char *s2);
+
+/**
+ * @brief Function used to check if string ends with wanted substring
+ * @param s1 String to be checked
+ * @param s2 Substring to look for at the end of the string
+ * @return true if the string ends with wanted substring, false otherwise
+ */
+bool mender_utils_strendwith(const char *s1, const char *s2);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

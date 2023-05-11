@@ -47,10 +47,11 @@ mender_err_t mender_ota_begin(char *name, size_t size, void **handle);
  * @brief Write OTA data
  * @param handle Handle from mender_ota_begin
  * @param data Data to be written
- * @param data_length Length of the data to be written
+ * @param index Index of the data to be written
+ * @param length Length of the data to be written
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_write(void *handle, void *data, size_t data_length);
+mender_err_t mender_ota_write(void *handle, void *data, size_t index, size_t length);
 
 /**
  * @brief Abort OTA
@@ -68,9 +69,10 @@ mender_err_t mender_ota_end(void *handle);
 
 /**
  * @brief Set new boot partition to be used at the next boot
+ * @param handle Handle from mender_ota_begin
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_set_boot_partition(void);
+mender_err_t mender_ota_set_boot_partition(void *handle);
 
 /**
  * @brief Mark application valid and cancel rollback if this is still pending

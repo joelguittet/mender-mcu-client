@@ -25,6 +25,7 @@
  * SOFTWARE.
  */
 
+#include <cJSON.h>
 #include "mender-api.h"
 #include "mender-client.h"
 #include "mender-log.h"
@@ -80,6 +81,11 @@ static void *mender_client_authentication_work_handle = NULL;
 static void *mender_client_update_work_handle         = NULL;
 
 /**
+ * @brief OTA handle used to store temporary reference to write OTA data
+ */
+static void *mender_client_ota_handle = NULL;
+
+/**
  * @brief Mender client initialization work function
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
@@ -96,6 +102,20 @@ static mender_err_t mender_client_authentication_work_function(void);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 static mender_err_t mender_client_update_work_function(void);
+
+/**
+ * @brief Callback function to be invoked to perform the treatment of the data from the artifact
+ * @param type Type from header-info payloads
+ * @param meta_data Meta-data from header tarball
+ * @param filename Artifact filename
+ * @param size Artifact file size
+ * @param data Artifact data
+ * @param index Artifact data index
+ * @param length Artifact data length
+ * @return MENDER_OK if the function succeeds, error code if an error occured
+ */
+static mender_err_t mender_client_download_artifact_callback(
+    char *type, cJSON *meta_data, char *filename, size_t size, void *data, size_t index, size_t length);
 
 /**
  * @brief Publish deployment status of the device to the mender-server and invoke deployment status callback
@@ -192,13 +212,7 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
         .host          = mender_client_config.host,
         .tenant_token  = mender_client_config.tenant_token,
     };
-    mender_api_callbacks_t mender_api_callbacks = {
-        .ota_begin = mender_client_callbacks.ota_begin,
-        .ota_write = mender_client_callbacks.ota_write,
-        .ota_abort = mender_client_callbacks.ota_abort,
-        .ota_end   = mender_client_callbacks.ota_end,
-    };
-    if (MENDER_OK != (ret = mender_api_init(&mender_api_config, &mender_api_callbacks))) {
+    if (MENDER_OK != (ret = mender_api_init(&mender_api_config))) {
         mender_log_error("Unable to initialize API");
         return ret;
     }
@@ -449,6 +463,7 @@ mender_client_update_work_function(void) {
     char *id            = NULL;
     char *artifact_name = NULL;
     char *uri           = NULL;
+    mender_log_info("Checking for deployment...");
     if (MENDER_OK != (ret = mender_api_check_for_deployment(&id, &artifact_name, &uri))) {
         mender_log_error("Unable to check for deployment");
         goto END;
@@ -470,16 +485,17 @@ mender_client_update_work_function(void) {
     /* Download deployment artifact */
     mender_log_info("Downloading deployment artifact with id '%s', artifact name '%s' and uri '%s'", id, artifact_name, uri);
     mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_DOWNLOADING);
-    if (MENDER_OK != (ret = mender_api_download_artifact(uri))) {
+    if (MENDER_OK != (ret = mender_api_download_artifact(uri, mender_client_download_artifact_callback))) {
         mender_log_error("Unable to download artifact");
         mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
+        mender_client_callbacks.ota_abort(mender_client_ota_handle);
         goto END;
     }
 
     /* Set boot partition */
     mender_log_info("Download done, installing artifact");
     mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_INSTALLING);
-    if (MENDER_OK != (ret = mender_client_callbacks.ota_set_boot_partition())) {
+    if (MENDER_OK != (ret = mender_client_callbacks.ota_set_boot_partition(mender_client_ota_handle))) {
         mender_log_error("Unable to set boot partition");
         mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
         goto END;
@@ -525,6 +541,58 @@ END:
     if (NULL != uri) {
         free(uri);
     }
+
+    return ret;
+}
+
+static mender_err_t
+mender_client_download_artifact_callback(char *type, cJSON *meta_data, char *filename, size_t size, void *data, size_t index, size_t length) {
+
+    assert(NULL != type);
+    (void)meta_data;
+    mender_err_t ret = MENDER_OK;
+
+    /* Treatment depending of the type */
+    if (!strcmp(type, "rootfs-image")) {
+
+        /* Check if the filename is provided */
+        if (NULL != filename) {
+
+            /* Check if the OTA handle must be opened */
+            if (0 == index) {
+
+                /* Open the OTA handle */
+                if (MENDER_OK != (ret = mender_client_callbacks.ota_begin(filename, size, &mender_client_ota_handle))) {
+                    mender_log_error("Unable to open OTA handle");
+                    goto END;
+                }
+            }
+
+            /* Write data */
+            if (MENDER_OK != (ret = mender_client_callbacks.ota_write(mender_client_ota_handle, data, index, length))) {
+                mender_log_error("Unable to write OTA data");
+                goto END;
+            }
+
+            /* Check if the OTA handle must be closed */
+            if (index + length >= size) {
+
+                /* Close the OTA handle */
+                if (MENDER_OK != (ret = mender_client_callbacks.ota_end(mender_client_ota_handle))) {
+                    mender_log_error("Unable to close OTA handle");
+                    goto END;
+                }
+            }
+        }
+
+    } else {
+
+        /* Content is not supported by the mender-mcu-client */
+        mender_log_error("Unable to handle artifact type '%s'", type);
+        ret = MENDER_FAIL;
+    }
+
+END:
 
     return ret;
 }
