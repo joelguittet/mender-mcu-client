@@ -44,7 +44,7 @@ char *mender_utils_http_status_to_string(int status);
 /**
  * @brief Function used to print deployment status as string
  * @param deployment_status Deployment status
- * @return HTTP status as string, NULL if it is not found
+ * @return Deployment status as string, NULL if it is not found
  */
 char *mender_utils_deployment_status_to_string(mender_deployment_status_t deployment_status);
 
