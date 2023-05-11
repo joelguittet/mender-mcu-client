@@ -63,7 +63,7 @@ main(int argc, char **argv) {
 
     /* Initialize mender add-ons */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
-    mender_inventory_config_t mender_inventory_config = { .artifact_name = "artifact_name", .device_type = "device_type", .poll_interval = 0 };
+    mender_inventory_config_t mender_inventory_config = { .poll_interval = 0 };
     mender_inventory_init(&mender_inventory_config);
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 
