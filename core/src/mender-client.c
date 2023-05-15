@@ -329,9 +329,9 @@ mender_client_initialization_work_function(void) {
     if (true == mender_client_config.recommissioning) {
 
         /* Erase authentication keys */
-        mender_log_info("Erasing authentication keys...");
-        if (MENDER_OK != mender_storage_erase_authentication_keys()) {
-            mender_log_warning("Unable to erase authentication keys");
+        mender_log_info("Delete authentication keys...");
+        if (MENDER_OK != mender_storage_delete_authentication_keys()) {
+            mender_log_warning("Unable to delete authentication keys");
         }
     }
 
@@ -359,10 +359,7 @@ mender_client_initialization_work_function(void) {
     }
 
     /* Retrieve OTA ID if it is found (following an update) */
-    size_t ota_id_length            = 0;
-    size_t ota_artifact_name_length = 0;
-    if (MENDER_OK
-        != (ret = mender_storage_get_ota_deployment(&mender_client_ota_id, &ota_id_length, &mender_client_ota_artifact_name, &ota_artifact_name_length))) {
+    if (MENDER_OK != (ret = mender_storage_get_ota_deployment(&mender_client_ota_id, &mender_client_ota_artifact_name))) {
         if (MENDER_NOT_FOUND != ret) {
             mender_log_error("Unable to get OTA ID");
             return ret;
@@ -432,8 +429,8 @@ mender_client_authentication_work_function(void) {
             mender_client_publish_deployment_status(mender_client_ota_id, MENDER_DEPLOYMENT_STATUS_SUCCESS);
         }
 
-        /* Clear pending OTA */
-        mender_storage_clear_ota_deployment();
+        /* Delete pending OTA */
+        mender_storage_delete_ota_deployment();
     }
 
     /* Activate update work */

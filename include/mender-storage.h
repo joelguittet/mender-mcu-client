@@ -41,10 +41,14 @@ extern "C" {
 mender_err_t mender_storage_init(void);
 
 /**
- * @brief Erase authentication keys
+ * @brief Set authentication keys
+ * @param private_key Private key to store
+ * @param private_key_length Private key length
+ * @param public_key Public key to store
+ * @param public_key_length Public key length
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_storage_erase_authentication_keys(void);
+mender_err_t mender_storage_set_authentication_keys(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length);
 
 /**
  * @brief Get authentication keys
@@ -60,24 +64,10 @@ mender_err_t mender_storage_get_authentication_keys(unsigned char **private_key,
                                                     size_t *        public_key_length);
 
 /**
- * @brief Set authentication keys
- * @param private_key Private key to store
- * @param private_key_length Private key length
- * @param public_key Public key to store
- * @param public_key_length Public key length
+ * @brief Delete authentication keys
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_storage_set_authentication_keys(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length);
-
-/**
- * @brief Get OTA deployment
- * @param ota_id OTA ID from storage, NULL if not found
- * @param ota_id_length OTA ID length from storage, 0 if not found
- * @param ota_artifact_name Artifact name from storage, NULL if not found
- * @param ota_artifact_name_length Artifact name length from storage, 0 if not found
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_storage_get_ota_deployment(char **ota_id, size_t *ota_id_length, char **ota_artifact_name, size_t *ota_artifact_name_length);
+mender_err_t mender_storage_delete_authentication_keys(void);
 
 /**
  * @brief Set OTA deployment
@@ -88,10 +78,18 @@ mender_err_t mender_storage_get_ota_deployment(char **ota_id, size_t *ota_id_len
 mender_err_t mender_storage_set_ota_deployment(char *ota_id, char *ota_artifact_name);
 
 /**
- * @brief Erase OTA deployment
+ * @brief Get OTA deployment
+ * @param ota_id OTA ID from storage, NULL if not found
+ * @param ota_artifact_name Artifact name from storage, NULL if not found
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_storage_clear_ota_deployment(void);
+mender_err_t mender_storage_get_ota_deployment(char **ota_id, char **ota_artifact_name);
+
+/**
+ * @brief Delete OTA deployment
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_storage_delete_ota_deployment(void);
 
 /**
  * @brief Release mender storage
