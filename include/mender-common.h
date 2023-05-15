@@ -62,6 +62,19 @@ typedef enum {
     MENDER_DEPLOYMENT_STATUS_ALREADY_INSTALLED /**< Status is "already installed" */
 } mender_deployment_status_t;
 
+/**
+ * @brief Key-store item
+ */
+typedef struct {
+    char *name;  /**< Name of the item */
+    char *value; /**< Value of the item */
+} mender_keystore_item_t;
+
+/**
+ * @brief Key-store
+ */
+typedef mender_keystore_item_t mender_keystore_t;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

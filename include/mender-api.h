@@ -34,7 +34,6 @@ extern "C" {
 
 #include <cJSON.h>
 #include "mender-common.h"
-#include "mender-inventory.h"
 
 /**
  * @brief Mender API configuration
@@ -96,7 +95,7 @@ mender_err_t mender_api_download_artifact(char *uri, mender_err_t (*callback)(ch
  * @param inventory Mender inventory key/value pairs table, must end with a NULL/NULL element, NULL if not defined
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_publish_inventory_data(mender_inventory_t *inventory);
+mender_err_t mender_api_publish_inventory_data(mender_keystore_t *inventory);
 
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 

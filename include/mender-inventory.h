@@ -37,14 +37,6 @@ extern "C" {
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 
 /**
- * @brief Inventory item
- */
-typedef struct {
-    char *name;  /**< Name of the item */
-    char *value; /**< Value of the item */
-} mender_inventory_t;
-
-/**
  * @brief Mender inventory configuration
  */
 typedef struct {
@@ -69,7 +61,7 @@ mender_err_t mender_inventory_activate(void);
  * @param inventory Mender inventory key/value pairs table, must end with a NULL/NULL element, NULL if not defined
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_inventory_set(mender_inventory_t *inventory);
+mender_err_t mender_inventory_set(mender_keystore_t *inventory);
 
 /**
  * @brief Release mender inventory add-on

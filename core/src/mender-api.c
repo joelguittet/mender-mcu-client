@@ -404,7 +404,7 @@ END:
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 
 mender_err_t
-mender_api_publish_inventory_data(mender_inventory_t *inventory) {
+mender_api_publish_inventory_data(mender_keystore_t *inventory) {
 
     mender_err_t ret;
     char *       payload  = NULL;
@@ -450,7 +450,7 @@ mender_api_publish_inventory_data(mender_inventory_t *inventory) {
             index++;
         }
     }
-    if (NULL == (payload = cJSON_Print(object))) {
+    if (NULL == (payload = cJSON_PrintUnformatted(object))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
