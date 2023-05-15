@@ -1,8 +1,8 @@
 #ifndef __ESP_OTA_OPS_H__
 #define __ESP_OTA_OPS_H__
 
-#include "esp_partition.h"
-#include "esp_flash_partitions.h"
+#include <esp_partition.h>
+#include <esp_flash_partitions.h>
 
 #define OTA_SIZE_UNKNOWN           0xffffffff
 #define OTA_WITH_SEQUENTIAL_WRITES 0xfffffffe

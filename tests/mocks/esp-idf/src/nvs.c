@@ -1,4 +1,4 @@
-#include "nvs.h"
+#include <nvs.h>
 
 esp_err_t
 nvs_open(const char *name, nvs_open_mode_t open_mode, nvs_handle_t *out_handle) {

@@ -25,7 +25,7 @@
  * SOFTWARE.
  */
 
-#include "nvs_flash.h"
+#include <nvs_flash.h>
 #include "mender-log.h"
 #include "mender-storage.h"
 

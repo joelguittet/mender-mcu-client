@@ -25,7 +25,7 @@
  * SOFTWARE.
  */
 
-#include "esp_log.h"
+#include <esp_log.h>
 #include "mender-log.h"
 
 mender_err_t

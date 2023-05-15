@@ -25,8 +25,7 @@
  * SOFTWARE.
  */
 
-#include "cJSON.h"
-
+#include <cJSON.h>
 #include "mender-api.h"
 #include "mender-artifact.h"
 #include "mender-http.h"
