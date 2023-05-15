@@ -412,8 +412,8 @@ mender_api_publish_inventory_data(mender_inventory_t *inventory) {
     int          status   = 0;
 
     /* Format payload */
-    cJSON *array = cJSON_CreateArray();
-    if (NULL == array) {
+    cJSON *object = cJSON_CreateArray();
+    if (NULL == object) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
@@ -426,7 +426,7 @@ mender_api_publish_inventory_data(mender_inventory_t *inventory) {
     }
     cJSON_AddStringToObject(item, "name", "artifact_name");
     cJSON_AddStringToObject(item, "value", mender_api_config.artifact_name);
-    cJSON_AddItemToArray(array, item);
+    cJSON_AddItemToArray(object, item);
     item = cJSON_CreateObject();
     if (NULL == item) {
         mender_log_error("Unable to allocate memory");
@@ -435,7 +435,7 @@ mender_api_publish_inventory_data(mender_inventory_t *inventory) {
     }
     cJSON_AddStringToObject(item, "name", "device_type");
     cJSON_AddStringToObject(item, "value", mender_api_config.device_type);
-    cJSON_AddItemToArray(array, item);
+    cJSON_AddItemToArray(object, item);
     if (NULL != inventory) {
         size_t index = 0;
         while ((NULL != inventory[index].name) && (NULL != inventory[index].value)) {
@@ -446,11 +446,15 @@ mender_api_publish_inventory_data(mender_inventory_t *inventory) {
             }
             cJSON_AddStringToObject(item, "name", inventory[index].name);
             cJSON_AddStringToObject(item, "value", inventory[index].value);
-            cJSON_AddItemToArray(array, item);
+            cJSON_AddItemToArray(object, item);
             index++;
         }
     }
-    payload = cJSON_Print(array);
+    if (NULL == (payload = cJSON_Print(object))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
 
     /* Perform HTTP request */
     if (MENDER_OK
@@ -484,8 +488,8 @@ END:
     if (NULL != payload) {
         free(payload);
     }
-    if (NULL != array) {
-        cJSON_Delete(array);
+    if (NULL != object) {
+        cJSON_Delete(object);
     }
 
     return ret;
