@@ -25,16 +25,16 @@
  * SOFTWARE.
  */
 
-#include "mbedtls/base64.h"
-#include "mbedtls/bignum.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/entropy.h"
+#include <mbedtls/base64.h>
+#include <mbedtls/bignum.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
 #ifdef MBEDTLS_ERROR_C
-#include "mbedtls/error.h"
+#include <mbedtls/error.h>
 #endif /* MBEDTLS_ERROR_C */
-#include "mbedtls/pk.h"
-#include "mbedtls/rsa.h"
-#include "mbedtls/x509.h"
+#include <mbedtls/pk.h>
+#include <mbedtls/rsa.h>
+#include <mbedtls/x509.h>
 #include "mender-log.h"
 #include "mender-tls.h"
 

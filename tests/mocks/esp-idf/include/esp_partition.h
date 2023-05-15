@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "esp_err.h"
+#include <esp_err.h>
 
 typedef enum {
     ESP_PARTITION_TYPE_APP  = 0x00,

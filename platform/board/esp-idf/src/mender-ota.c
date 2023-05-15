@@ -25,7 +25,7 @@
  * SOFTWARE.
  */
 
-#include "esp_ota_ops.h"
+#include <esp_ota_ops.h>
 #include "mender-log.h"
 #include "mender-ota.h"
 

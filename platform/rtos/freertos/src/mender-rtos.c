@@ -26,15 +26,15 @@
  */
 
 #if __has_include("FreeRTOS.h")
-#include "FreeRTOS.h"
-#include "semphr.h"
-#include "task.h"
-#include "timers.h"
+#include <FreeRTOS.h>
+#include <semphr.h>
+#include <task.h>
+#include <timers.h>
 #else
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/task.h"
-#include "freertos/timers.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+#include <freertos/task.h>
+#include <freertos/timers.h>
 #endif /* __has_include("FreeRTOS.h") */
 #include "mender-log.h"
 #include "mender-rtos.h"
