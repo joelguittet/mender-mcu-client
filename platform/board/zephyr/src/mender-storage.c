@@ -81,12 +81,15 @@ mender_storage_init(void) {
 }
 
 mender_err_t
-mender_storage_erase_authentication_keys(void) {
+mender_storage_set_authentication_keys(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length) {
 
-    /* Erase keys */
-    if ((0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY))
-        || (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY))) {
-        mender_log_error("Unable to erase authentication keys");
+    assert(NULL != private_key);
+    assert(NULL != public_key);
+
+    /* Write keys */
+    if ((nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, private_key, private_key_length) < 0)
+        || (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, public_key, public_key_length) < 0)) {
+        mender_log_error("Unable to write authentication keys");
         return MENDER_FAIL;
     }
 
@@ -141,62 +144,12 @@ mender_storage_get_authentication_keys(unsigned char **private_key, size_t *priv
 }
 
 mender_err_t
-mender_storage_set_authentication_keys(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length) {
+mender_storage_delete_authentication_keys(void) {
 
-    assert(NULL != private_key);
-    assert(NULL != public_key);
-
-    /* Write keys */
-    if ((nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, private_key, private_key_length) < 0)
-        || (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, public_key, public_key_length) < 0)) {
-        mender_log_error("Unable to write authentication keys");
-        return MENDER_FAIL;
-    }
-
-    return MENDER_OK;
-}
-
-mender_err_t
-mender_storage_get_ota_deployment(char **ota_id, size_t *ota_id_length, char **ota_artifact_name, size_t *ota_artifact_name_length) {
-
-    assert(NULL != ota_id);
-    assert(NULL != ota_id_length);
-    assert(NULL != ota_artifact_name);
-    assert(NULL != ota_artifact_name_length);
-    ssize_t ret;
-
-    /* Retrieve length of the ID and artifact name */
-    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, NULL, 0)) <= 0) {
-        mender_log_info("OTA ID not available");
-        return MENDER_NOT_FOUND;
-    }
-    *ota_id_length = (size_t)ret;
-    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, NULL, 0)) <= 0) {
-        mender_log_info("Artifact name not available");
-        return MENDER_NOT_FOUND;
-    }
-    *ota_artifact_name_length = (size_t)ret;
-
-    /* Allocate memory to copy ID and artifact name */
-    if (NULL == (*ota_id = malloc(*ota_id_length))) {
-        mender_log_error("Unable to allocate memory");
-        return MENDER_FAIL;
-    }
-    if (NULL == (*ota_artifact_name = malloc(*ota_artifact_name_length))) {
-        mender_log_error("Unable to allocate memory");
-        free(*ota_id);
-        *ota_id = NULL;
-        return MENDER_FAIL;
-    }
-
-    /* Read ID and artifact name */
-    if ((nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, *ota_id, *ota_id_length) < 0)
-        || (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, *ota_artifact_name, *ota_artifact_name_length) < 0)) {
-        mender_log_error("Unable to read OTA ID or artifact name");
-        free(*ota_id);
-        *ota_id = NULL;
-        free(*ota_artifact_name);
-        *ota_artifact_name = NULL;
+    /* Erase keys */
+    if ((0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY))
+        || (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY))) {
+        mender_log_error("Unable to erase authentication keys");
         return MENDER_FAIL;
     }
 
@@ -220,12 +173,59 @@ mender_storage_set_ota_deployment(char *ota_id, char *ota_artifact_name) {
 }
 
 mender_err_t
-mender_storage_clear_ota_deployment(void) {
+mender_storage_get_ota_deployment(char **ota_id, char **ota_artifact_name) {
 
-    /* Erase ID and artifact name */
+    assert(NULL != ota_id);
+    assert(NULL != ota_artifact_name);
+    size_t  ota_id_length            = 0;
+    size_t  ota_artifact_name_length = 0;
+    ssize_t ret;
+
+    /* Retrieve length of the ID and artifact name */
+    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, NULL, 0)) <= 0) {
+        mender_log_info("OTA ID not available");
+        return MENDER_NOT_FOUND;
+    }
+    ota_id_length = (size_t)ret;
+    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, NULL, 0)) <= 0) {
+        mender_log_info("Artifact name not available");
+        return MENDER_NOT_FOUND;
+    }
+    ota_artifact_name_length = (size_t)ret;
+
+    /* Allocate memory to copy ID and artifact name */
+    if (NULL == (*ota_id = malloc(ota_id_length))) {
+        mender_log_error("Unable to allocate memory");
+        return MENDER_FAIL;
+    }
+    if (NULL == (*ota_artifact_name = malloc(ota_artifact_name_length))) {
+        mender_log_error("Unable to allocate memory");
+        free(*ota_id);
+        *ota_id = NULL;
+        return MENDER_FAIL;
+    }
+
+    /* Read ID and artifact name */
+    if ((nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, *ota_id, ota_id_length) < 0)
+        || (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, *ota_artifact_name, ota_artifact_name_length) < 0)) {
+        mender_log_error("Unable to read OTA ID or artifact name");
+        free(*ota_id);
+        *ota_id = NULL;
+        free(*ota_artifact_name);
+        *ota_artifact_name = NULL;
+        return MENDER_FAIL;
+    }
+
+    return MENDER_OK;
+}
+
+mender_err_t
+mender_storage_delete_ota_deployment(void) {
+
+    /* Delete ID and artifact name */
     if ((0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID))
         || (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME))) {
-        mender_log_error("Unable to erase OTA ID or artifact name");
+        mender_log_error("Unable to delete OTA ID or artifact name");
         return MENDER_FAIL;
     }
 
