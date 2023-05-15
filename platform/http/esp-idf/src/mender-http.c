@@ -26,8 +26,8 @@
  */
 
 #include <errno.h>
-#include "esp_http_client.h"
-#include "esp_crt_bundle.h"
+#include <esp_http_client.h>
+#include <esp_crt_bundle.h>
 #include "mender-http.h"
 #include "mender-log.h"
 
@@ -131,14 +131,15 @@ mender_http_perform(char *               jwt,
     }
 
     /* Fetch headers, this returns the content length */
-    if (esp_http_client_fetch_headers(client) < 0) {
+    int content_length = esp_http_client_fetch_headers(client);
+    if (content_length < 0) {
         mender_log_error("Unable to fetch headers");
         ret = MENDER_FAIL;
         goto END;
     }
 
     /* Read data until all have been received */
-    while (false == esp_http_client_is_complete_data_received(client)) {
+    while (content_length > 0) {
 
         char data[512];
         int  read_length = esp_http_client_read(client, data, sizeof(data));
@@ -153,6 +154,7 @@ mender_http_perform(char *               jwt,
                 mender_log_error("An error occurred, stop reading data");
                 goto END;
             }
+            content_length -= read_length;
         } else {
             if ((ECONNRESET == errno) || (ENOTCONN == errno)) {
                 mender_log_error("An error occurred, connection has been closed, errno = %d", errno);
