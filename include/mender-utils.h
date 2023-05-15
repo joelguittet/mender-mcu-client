@@ -72,6 +72,61 @@ bool mender_utils_strbeginwith(const char *s1, const char *s2);
  */
 bool mender_utils_strendwith(const char *s1, const char *s2);
 
+/**
+ * @brief Function used to create a key-store
+ * @param length Length of the key-store
+ * @return Key-store if the function succeeds, NULL otherwise
+ */
+mender_keystore_t *mender_utils_keystore_new(size_t length);
+
+/**
+ * @brief Function used to copy key-store
+ * @param dst_keystore Destination key-store to create
+ * @param src_keystore Source key-store to copy
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_utils_keystore_copy(mender_keystore_t **dst_keystore, mender_keystore_t *src_keystore);
+
+/**
+ * @brief Function used to set key-store from JSON string
+ * @param keystore Key-store
+ * @param data JSON string
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_utils_keystore_from_string(mender_keystore_t **keystore, char *data);
+
+/**
+ * @brief Function used to format key-store to JSON string
+ * @param keystore Key-store
+ * @param data JSON string
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_utils_keystore_to_string(mender_keystore_t *keystore, char **data);
+
+/**
+ * @brief Function used to set key-store item name and value
+ * @param keystore Key-store to be updated
+ * @param index Index of the item in the key-store
+ * @param name Name of the item
+ * @param value Value of the item
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_utils_keystore_set_item(mender_keystore_t *keystore, size_t index, char *name, char *value);
+
+/**
+ * @brief Function used to get length of key-store
+ * @param keystore Key-store
+ * @return Length of the key-store
+ */
+size_t mender_utils_keystore_length(mender_keystore_t *keystore);
+
+/**
+ * @brief Function used to delete key-store
+ * @param keystore Key-store to be deleted
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_utils_keystore_delete(mender_keystore_t *keystore);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

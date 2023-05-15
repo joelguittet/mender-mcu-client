@@ -29,6 +29,7 @@
 #include "mender-inventory.h"
 #include "mender-log.h"
 #include "mender-rtos.h"
+#include "mender-utils.h"
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 
@@ -45,8 +46,8 @@ static mender_inventory_config_t mender_inventory_config;
 /**
  * @brief Mender inventory
  */
-static mender_inventory_t *mender_inventory       = NULL;
-static void *              mender_inventory_mutex = NULL;
+static mender_keystore_t *mender_inventory_keystore = NULL;
+static void *             mender_inventory_mutex    = NULL;
 
 /**
  * @brief Mender inventory work handle
@@ -88,7 +89,7 @@ mender_inventory_init(mender_inventory_config_t *config) {
         return ret;
     }
 
-    return MENDER_OK;
+    return ret;
 }
 
 mender_err_t
@@ -102,59 +103,35 @@ mender_inventory_activate(void) {
         return ret;
     }
 
-    return MENDER_OK;
+    return ret;
 }
 
 mender_err_t
-mender_inventory_set(mender_inventory_t *inventory) {
+mender_inventory_set(mender_keystore_t *inventory) {
 
     mender_err_t ret;
 
-    /* Take mutex used to protect access to the inventory list */
+    /* Take mutex used to protect access to the inventory key-store */
     if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_inventory_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
 
     /* Release previous inventory */
-    if (NULL != mender_inventory) {
-        size_t index = 0;
-        while ((NULL != mender_inventory[index].name) || (NULL != mender_inventory[index].value)) {
-            if (NULL != mender_inventory[index].name) {
-                free(mender_inventory[index].name);
-            }
-            if (NULL != mender_inventory[index].value) {
-                free(mender_inventory[index].value);
-            }
-            index++;
-        }
-        free(mender_inventory);
-        mender_inventory = NULL;
+    if (MENDER_OK != (ret = mender_utils_keystore_delete(mender_inventory_keystore))) {
+        mender_log_error("Unable to delete inventory");
+        goto END;
     }
 
     /* Copy the new inventory */
-    size_t inventory_length = 0;
-    if (NULL != inventory) {
-        while ((NULL != inventory[inventory_length].name) && (NULL != inventory[inventory_length].value)) {
-            inventory_length++;
-        }
-    }
-    if (NULL == (mender_inventory = (mender_inventory_t *)malloc((inventory_length + 1) * sizeof(mender_inventory_t)))) {
-        mender_log_error("Unable to allocate memory");
-        mender_rtos_mutex_give(mender_inventory_mutex);
-        return MENDER_FAIL;
-    }
-    memset(mender_inventory, 0, (inventory_length + 1) * sizeof(mender_inventory_t));
-    for (size_t index = 0; index < inventory_length; index++) {
-        if (NULL == (mender_inventory[index].name = strdup(inventory[index].name))) {
-            mender_log_error("Unable to allocate memory");
-        }
-        if (NULL == (mender_inventory[index].value = strdup(inventory[index].value))) {
-            mender_log_error("Unable to allocate memory");
-        }
+    if (MENDER_OK != (ret = mender_utils_keystore_copy(&mender_inventory_keystore, inventory))) {
+        mender_log_error("Unable to copy inventory");
+        goto END;
     }
 
-    /* Release mutex used to protect access to the inventory list */
+END:
+
+    /* Release mutex used to protect access to the inventory key-store */
     mender_rtos_mutex_give(mender_inventory_mutex);
 
     return ret;
@@ -163,6 +140,8 @@ mender_inventory_set(mender_inventory_t *inventory) {
 mender_err_t
 mender_inventory_exit(void) {
 
+    mender_err_t ret;
+
     /* Deactivate mender inventory work */
     mender_rtos_work_deactivate(mender_inventory_work_handle);
 
@@ -170,25 +149,20 @@ mender_inventory_exit(void) {
     mender_rtos_work_delete(mender_inventory_work_handle);
     mender_inventory_work_handle = NULL;
 
+    /* Take mutex used to protect access to the inventory key-store */
+    if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_inventory_mutex, -1))) {
+        mender_log_error("Unable to take mutex");
+        return ret;
+    }
+
     /* Release memory */
     mender_inventory_config.poll_interval = 0;
-    if (NULL != mender_inventory) {
-        size_t index = 0;
-        while ((NULL != mender_inventory[index].name) || (NULL != mender_inventory[index].value)) {
-            if (NULL != mender_inventory[index].name) {
-                free(mender_inventory[index].name);
-            }
-            if (NULL != mender_inventory[index].value) {
-                free(mender_inventory[index].value);
-            }
-            index++;
-        }
-        free(mender_inventory);
-        mender_inventory = NULL;
-    }
+    mender_utils_keystore_delete(mender_inventory_keystore);
+    mender_inventory_keystore = NULL;
+    mender_rtos_mutex_give(mender_inventory_mutex);
     mender_rtos_mutex_delete(mender_inventory_mutex);
 
-    return MENDER_OK;
+    return ret;
 }
 
 static mender_err_t
@@ -196,18 +170,18 @@ mender_inventory_work_function(void) {
 
     mender_err_t ret;
 
-    /* Take mutex used to protect access to the inventory list */
+    /* Take mutex used to protect access to the inventory key-store */
     if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_inventory_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
 
     /* Publish inventory */
-    if (MENDER_OK != (ret = mender_api_publish_inventory_data(mender_inventory))) {
+    if (MENDER_OK != (ret = mender_api_publish_inventory_data(mender_inventory_keystore))) {
         mender_log_error("Unable to publish inventory data");
     }
 
-    /* Release mutex used to protect access to the inventory list */
+    /* Release mutex used to protect access to the inventory key-store */
     mender_rtos_mutex_give(mender_inventory_mutex);
 
     return ret;
