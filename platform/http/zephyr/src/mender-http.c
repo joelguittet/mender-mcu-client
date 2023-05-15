@@ -59,9 +59,9 @@
  * @brief Request context
  */
 typedef struct {
-    mender_err_t (*callback)(mender_http_client_event_t, void *, size_t, void *);
-    void *params;
-    int   sock;
+    mender_err_t (*callback)(mender_http_client_event_t, void *, size_t, void *); /**< Callback to be invoked when data are received */
+    void *       params;                                                          /**< Callback parameters */
+    mender_err_t ret;                                                             /**< Last callback return value */
 } mender_http_request_context;
 
 /**
@@ -136,6 +136,7 @@ mender_http_perform(char *               jwt,
     char *                      host             = NULL;
     char *                      port             = NULL;
     char *                      url              = NULL;
+    int                         sock             = -1;
 
     /* Initialize request */
     memset(&request, 0, sizeof(struct http_request));
@@ -143,7 +144,7 @@ mender_http_perform(char *               jwt,
     /* Initialize request context */
     request_context.callback = callback;
     request_context.params   = params;
-    request_context.sock     = -1;
+    request_context.ret      = MENDER_OK;
 
     /* Retrieve host, port and url */
     if (MENDER_OK != (ret = mender_http_get_host_port_url(path, &host, &port, &url))) {
@@ -193,7 +194,7 @@ mender_http_perform(char *               jwt,
     request.header_fields = (0 != header_index) ? ((const char **)header_fields) : NULL;
 
     /* Open HTTP client connection */
-    if (MENDER_OK != (ret = mender_http_connect(host, port, &request_context.sock))) {
+    if (MENDER_OK != (ret = mender_http_connect(host, port, &sock))) {
         mender_log_error("Unable to open HTTP client connection");
         goto END;
     }
@@ -203,9 +204,14 @@ mender_http_perform(char *               jwt,
     }
 
     /* Perform HTTP request */
-    if (http_client_req(request_context.sock, &request, MENDER_HTTP_REQUEST_TIMEOUT, (void *)&request_context) < 0) {
+    if (http_client_req(sock, &request, MENDER_HTTP_REQUEST_TIMEOUT, (void *)&request_context) < 0) {
         mender_log_error("Unable to write data");
         ret = MENDER_FAIL;
+        goto END;
+    }
+
+    /* Check if an error occured during the treatment of data */
+    if (MENDER_OK != (ret = request_context.ret)) {
         goto END;
     }
 
@@ -226,9 +232,7 @@ mender_http_perform(char *               jwt,
 END:
 
     /* Close socket */
-    if (request_context.sock >= 0) {
-        close(request_context.sock);
-    }
+    close(sock);
 
     /* Release memory */
     if (NULL != host) {
@@ -377,19 +381,17 @@ mender_http_response_cb(struct http_response *response, enum http_final_call fin
     (void)final_call;
     assert(NULL != user_data);
 
+    /* Retrieve request context */
+    mender_http_request_context *request_context = (mender_http_request_context *)user_data;
+
     /* Check if data is available */
-    if ((true == response->body_found) && (NULL != response->body_frag_start) && (0 != response->body_frag_len)) {
+    if ((true == response->body_found) && (NULL != response->body_frag_start) && (0 != response->body_frag_len) && (MENDER_OK == request_context->ret)) {
 
         /* Transmit data received to the upper layer */
         if (MENDER_OK
-            != ((mender_http_request_context *)user_data)
-                   ->callback(MENDER_HTTP_EVENT_DATA_RECEIVED,
-                              (void *)response->body_frag_start,
-                              response->body_frag_len,
-                              ((mender_http_request_context *)user_data)->params)) {
+            != (request_context->ret = request_context->callback(
+                    MENDER_HTTP_EVENT_DATA_RECEIVED, (void *)response->body_frag_start, response->body_frag_len, request_context->params))) {
             mender_log_error("An error occurred, stop reading data");
-            close(((mender_http_request_context *)user_data)->sock);
-            ((mender_http_request_context *)user_data)->sock = -1;
         }
     }
 }
