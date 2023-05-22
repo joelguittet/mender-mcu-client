@@ -249,7 +249,7 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
         return ret;
     }
 
-    return MENDER_OK;
+    return ret;
 }
 
 mender_err_t
@@ -417,16 +417,18 @@ mender_client_authentication_work_function(void) {
     /* Check if OTA is pending */
     if ((NULL != mender_client_ota_id) && (NULL != mender_client_ota_artifact_name)) {
 
-        /* Check if artifact running is the pending one, fails if rollback occurred */
-        if ((NULL != mender_client_ota_artifact_name) && (strcmp(mender_client_ota_artifact_name, mender_client_config.artifact_name))) {
-
-            /* Publish deployment status failure */
-            mender_client_publish_deployment_status(mender_client_ota_id, MENDER_DEPLOYMENT_STATUS_FAILURE);
-
-        } else {
+        /* Check if artifact running is the pending one or if the configuration deployed is the expected one, fails if rollback occurred */
+        if ((!strcmp(mender_client_ota_artifact_name, mender_client_config.artifact_name))
+            || ((mender_utils_strbeginwith(mender_client_ota_artifact_name, "configuration"))
+                && (!strcmp(mender_client_ota_artifact_name + strlen("configuration") + 1, mender_client_ota_id)))) {
 
             /* Publish deployment status success */
             mender_client_publish_deployment_status(mender_client_ota_id, MENDER_DEPLOYMENT_STATUS_SUCCESS);
+
+        } else {
+
+            /* Publish deployment status failure */
+            mender_client_publish_deployment_status(mender_client_ota_id, MENDER_DEPLOYMENT_STATUS_FAILURE);
         }
 
         /* Delete pending OTA */
@@ -581,6 +583,37 @@ mender_client_download_artifact_callback(char *type, cJSON *meta_data, char *fil
                 }
             }
         }
+
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
+#ifdef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
+
+    } else if (!strcmp(type, "mender-configure")) {
+
+        /* Check meta-data */
+        if (NULL != meta_data) {
+
+            /* Record the configuration */
+            char *device_config = cJSON_PrintUnformatted(meta_data);
+            if (NULL != device_config) {
+                if (MENDER_OK != (ret = mender_storage_set_device_config(device_config))) {
+                    mender_log_error("Unable to record configuration");
+                }
+                free(device_config);
+            } else {
+                mender_log_error("Unable to format configuration");
+                ret = MENDER_FAIL;
+            }
+
+        } else {
+
+            /* Delete the configuration */
+            if (MENDER_OK != (ret = mender_storage_delete_device_config())) {
+                mender_log_error("Unable to delete configuration");
+            }
+        }
+
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 
     } else {
 

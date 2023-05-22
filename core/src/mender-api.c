@@ -34,12 +34,14 @@
 #include "mender-utils.h"
 
 /**
- * @brief Paths of the mender-server api
+ * @brief Paths of the mender-server APIs
  */
 #define MENDER_API_PATH_POST_AUTHENTICATION_REQUESTS "/api/devices/v1/authentication/auth_requests"
-#define MENDER_API_PATH_PUT_DEVICE_ATTRIBUTES        "/api/devices/v1/inventory/device/attributes"
 #define MENDER_API_PATH_GET_NEXT_DEPLOYMENT          "/api/devices/v1/deployments/device/deployments/next"
 #define MENDER_API_PATH_PUT_DEPLOYMENT_STATUS        "/api/devices/v1/deployments/device/deployments/%s/status"
+#define MENDER_API_PATH_GET_DEVICE_CONFIGURATION     "/api/devices/v1/deviceconfig/configuration"
+#define MENDER_API_PATH_PUT_DEVICE_CONFIGURATION     "/api/devices/v1/deviceconfig/configuration"
+#define MENDER_API_PATH_PUT_DEVICE_ATTRIBUTES        "/api/devices/v1/inventory/device/attributes"
 
 /**
  * @brief Mender API configuration
@@ -98,7 +100,7 @@ mender_api_init(mender_api_config_t *config) {
         return ret;
     }
 
-    return MENDER_OK;
+    return ret;
 }
 
 mender_err_t
@@ -400,6 +402,106 @@ END:
 
     return ret;
 }
+
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
+
+mender_err_t
+mender_api_download_configuration_data(mender_keystore_t **configuration) {
+
+    assert(NULL != configuration);
+    mender_err_t ret;
+    char *       response = NULL;
+    int          status   = 0;
+
+    /* Perform HTTP request */
+    if (MENDER_OK
+        != (ret = mender_http_perform(mender_api_jwt,
+                                      MENDER_API_PATH_GET_DEVICE_CONFIGURATION,
+                                      MENDER_HTTP_GET,
+                                      NULL,
+                                      NULL,
+                                      &mender_client_http_text_callback,
+                                      (void *)&response,
+                                      &status))) {
+        mender_log_error("Unable to perform HTTP request");
+        goto END;
+    }
+
+    /* Treatment depending of the status */
+    if (200 == status) {
+        if (MENDER_OK != (ret = mender_utils_keystore_from_string(configuration, response))) {
+            mender_log_error("Unable to set configuration");
+            goto END;
+        }
+    } else {
+        mender_api_print_response_error(response, status);
+        ret = MENDER_FAIL;
+    }
+
+END:
+
+    /* Release memory */
+    if (NULL != response) {
+        free(response);
+    }
+
+    return ret;
+}
+
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
+
+mender_err_t
+mender_api_publish_configuration_data(mender_keystore_t *configuration) {
+
+    mender_err_t ret;
+    char *       payload  = NULL;
+    char *       response = NULL;
+    int          status   = 0;
+
+    /* Format payload */
+    if (MENDER_OK != (ret = mender_utils_keystore_to_string(configuration, &payload))) {
+        mender_log_error("Unable to format payload");
+        goto END;
+    }
+
+    /* Perform HTTP request */
+    if (MENDER_OK
+        != (ret = mender_http_perform(mender_api_jwt,
+                                      MENDER_API_PATH_PUT_DEVICE_CONFIGURATION,
+                                      MENDER_HTTP_PUT,
+                                      payload,
+                                      NULL,
+                                      &mender_client_http_text_callback,
+                                      (void *)&response,
+                                      &status))) {
+        mender_log_error("Unable to perform HTTP request");
+        goto END;
+    }
+
+    /* Treatment depending of the status */
+    if (204 == status) {
+        /* No response expected */
+        ret = MENDER_OK;
+    } else {
+        mender_api_print_response_error(response, status);
+        ret = MENDER_FAIL;
+    }
+
+END:
+
+    /* Release memory */
+    if (NULL != response) {
+        free(response);
+    }
+    if (NULL != payload) {
+        free(payload);
+    }
+
+    return ret;
+}
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 

@@ -58,6 +58,7 @@ add_executable(${APP_EXECUTABLE_NAME})
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
     target_compile_definitions(${APP_EXECUTABLE_NAME} PRIVATE DEBUG)
 endif()
+add_compile_definitions(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE)
 add_compile_definitions(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
 
 # Add definitions depending of the target

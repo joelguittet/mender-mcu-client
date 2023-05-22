@@ -50,6 +50,29 @@ menu "Mender client Configuration"
         help
             Interval used to periodically check for new deployments on the Mender server.
 
+    config MENDER_CLIENT_ADD_ON_CONFIGURE
+        bool "Mender client Configure"
+        default n
+        help
+            Configure add-on permits to get/set configuration key-value pairs to/from the Mender server.
+
+    if MENDER_CLIENT_ADD_ON_CONFIGURE
+
+        config MENDER_CLIENT_CONFIGURE_STORAGE
+            bool "Mender client Configure storage"
+            default y
+            help
+                Activate this option to save the configuration from the Mender server in the storage area of the device.
+
+        config MENDER_CLIENT_CONFIGURE_REFRESH_INTERVAL
+            int "Mender client Configure refresh interval (seconds)"
+            range 0 86400
+            default 28800
+            help
+                Interval used to periodically refresh configuration to/from the Mender server.
+
+    endif
+
     config MENDER_CLIENT_ADD_ON_INVENTORY
         bool "Mender client Inventory"
         default y

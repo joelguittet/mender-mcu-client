@@ -28,6 +28,7 @@
 #include <stdio.h>
 
 #include "mender-client.h"
+#include "mender-configure.h"
 #include "mender-inventory.h"
 #include "mender-ota.h"
 
@@ -62,6 +63,15 @@ main(int argc, char **argv) {
     mender_client_init(&mender_client_config, &mender_client_callbacks);
 
     /* Initialize mender add-ons */
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
+    mender_configure_config_t    mender_configure_config    = { .refresh_interval = 0 };
+    mender_configure_callbacks_t mender_configure_callbacks = {
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
+        .config_updated = NULL,
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
+    };
+    mender_configure_init(&mender_configure_config, &mender_configure_callbacks);
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
     mender_inventory_config_t mender_inventory_config = { .poll_interval = 0 };
     mender_inventory_init(&mender_inventory_config);
@@ -71,6 +81,9 @@ main(int argc, char **argv) {
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
     mender_inventory_exit();
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
+    mender_configure_exit();
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 
     /* Release mender-client */
     mender_client_exit();
