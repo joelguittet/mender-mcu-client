@@ -20,7 +20,7 @@ This repository is not a fork of [mender](https://github.com/mendersoftware/mend
 
 Robustness is ensured with *atomic* image-based deployments using a dual A/B partition layout on the MCU. This makes it always possible to roll back to a working state, even when losing power at any time during the update process.
 
-The project currently support firmware upgrade which is the main interest, and inventory key-value pair management. It will also provide in a near future some other Mender features that could make sense on MCU.
+The project currently support firmware upgrade which is the main interest, Device Inventory and Device Configure add-ons. It will also provide in a near future some other Mender features that could make sense on MCU.
 
 ![Mender logo](https://github.com/mendersoftware/mender/raw/master/mender_logo.png)
 
@@ -102,6 +102,7 @@ The source code is separate into three main directories:
     * `mender-tls`: provide TLS support.
 * `add-ons` contains source files of the mender add-ons:
     * `mender-inventory`: provide inventory key/value pairs to display inventory data on the mender server. This add-on is highly recommended and should be included by default. It is proposed as an add-on only to give the possibility to reduce the final code size for user who don't need it.
+    * `mender-configure`: provide configuration key/value pairs to manage devide configuration from the mender server. Build options of this add-on permit to save the configuration in the storage area.
 
 The `include` directory contains the header files that define the prototypes for each module of the library. They are common to all platforms and projects and they define the API to be used or implemented.
 
@@ -113,8 +114,9 @@ The final code size of the mender-mcu-client library depends of your configurati
 
 |                      | Code size (-Og) | Code size (-Os) |
 |:---------------------|:----------------|:----------------|
-| mender-client (core) | 22KB            | 20KB            |
-| mender-inventory     | 2KB             | 2KB             |
+| mender-client (core) | 24KB            | 21KB            |
+| mender-inventory     | 3KB             | 2KB             |
+| mender-configure     | 4KB             | 4KB             |
 
 
 ## Roadmap
@@ -122,7 +124,7 @@ The final code size of the mender-mcu-client library depends of your configurati
 The following features are currently in the pipeline. Please note that I haven't set dates in this roadmap because I develop this in my free time, but you can contribute with Pull Requests:
 
 * Support update of [modules](https://docs.mender.io/artifact-creation/create-a-custom-update-module) to perform other kind of updates that could be specific to one project: files, images, etc.
-* Integration of other nice to have Mender APIs as new add-ons: [Device Configure](https://docs.mender.io/api/#device-api-device-configure), [Device Monitor](https://docs.mender.io/api/#devices-api-device-monitor), remote console...
+* Integration of other nice to have Mender APIs as new add-ons: [Device Monitor](https://docs.mender.io/api/#devices-api-device-monitor), remote console...
 * Support new board and prove it is cross-platform and that it is able to work on small MCU too: STM32F7, ATSAMD51...
 * Integration of ATECC608B secure element to perform TLS authentication.
 * Support other RTOS (particularly Azure RTOS) and bare metal platforms.
