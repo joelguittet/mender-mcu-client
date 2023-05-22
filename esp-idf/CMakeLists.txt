@@ -36,6 +36,11 @@ list(APPEND srcs
     "${CMAKE_CURRENT_LIST_DIR}/../platform/rtos/freertos/src/mender-rtos.c"
     "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/mbedtls/src/mender-tls.c"
 )
+if(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE)
+    list(APPEND srcs
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-configure.c"
+    )
+endif()
 if(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
     list(APPEND srcs
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-inventory.c"

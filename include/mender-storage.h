@@ -91,6 +91,32 @@ mender_err_t mender_storage_get_ota_deployment(char **ota_id, char **ota_artifac
  */
 mender_err_t mender_storage_delete_ota_deployment(void);
 
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
+#ifdef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
+
+/**
+ * @brief Set device configuration
+ * @param device_config Device configuration
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_storage_set_device_config(char *device_config);
+
+/**
+ * @brief Get device configuration
+ * @param device_config Device configuration
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_storage_get_device_config(char **device_config);
+
+/**
+ * @brief Delete device configuration
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_storage_delete_device_config(void);
+
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
+
 /**
  * @brief Release mender storage
  * @return MENDER_OK if the function succeeds, error code otherwise

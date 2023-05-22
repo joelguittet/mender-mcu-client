@@ -88,6 +88,27 @@ mender_err_t mender_api_publish_deployment_status(char *id, mender_deployment_st
  */
 mender_err_t mender_api_download_artifact(char *uri, mender_err_t (*callback)(char *, cJSON *, char *, size_t, void *, size_t, size_t));
 
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
+
+/**
+ * @brief Download configure data of the device from the mender-server
+ * @param configuration Mender configuration key/value pairs table, ends with a NULL/NULL element, NULL if not defined
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_api_download_configuration_data(mender_keystore_t **configuration);
+
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
+
+/**
+ * @brief Publish configure data of the device to the mender-server
+ * @param configuration Mender configuration key/value pairs table, must end with a NULL/NULL element, NULL if not defined
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_api_publish_configuration_data(mender_keystore_t *configuration);
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
+
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 
 /**
