@@ -40,7 +40,7 @@ extern "C" {
  * @brief Mender inventory configuration
  */
 typedef struct {
-    uint32_t poll_interval; /**< Inventory poll interval, default is 28800 seconds */
+    uint32_t refresh_interval; /**< Inventory refresh interval, default is 28800 seconds */
 } mender_inventory_config_t;
 
 /**
