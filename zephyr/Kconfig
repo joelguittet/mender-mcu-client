@@ -118,8 +118,8 @@ if MENDER_MCU_CLIENT
 
     if MENDER_CLIENT_ADD_ON_INVENTORY
 
-        config MENDER_CLIENT_INVENTORY_POLL_INTERVAL
-            int "Mender client Inventory poll interval (seconds)"
+        config MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL
+            int "Mender client Inventory refresh interval (seconds)"
             range 0 86400
             default 28800
             help

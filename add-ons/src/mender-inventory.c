@@ -34,9 +34,9 @@
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 
 /**
- * @brief Default inventory poll interval (seconds)
+ * @brief Default inventory refresh interval (seconds)
  */
-#define MENDER_INVENTORY_DEFAULT_POLL_INTERVAL (28800)
+#define MENDER_INVENTORY_DEFAULT_REFRESH_INTERVAL (28800)
 
 /**
  * @brief Mender inventory configuration
@@ -67,10 +67,10 @@ mender_inventory_init(mender_inventory_config_t *config) {
     mender_err_t ret;
 
     /* Save configuration */
-    if (0 != config->poll_interval) {
-        mender_inventory_config.poll_interval = config->poll_interval;
+    if (0 != config->refresh_interval) {
+        mender_inventory_config.refresh_interval = config->refresh_interval;
     } else {
-        mender_inventory_config.poll_interval = MENDER_INVENTORY_DEFAULT_POLL_INTERVAL;
+        mender_inventory_config.refresh_interval = MENDER_INVENTORY_DEFAULT_REFRESH_INTERVAL;
     }
 
     /* Create inventory mutex */
@@ -82,7 +82,7 @@ mender_inventory_init(mender_inventory_config_t *config) {
     /* Create mender inventory work */
     mender_rtos_work_params_t inventory_work_params;
     inventory_work_params.function = mender_inventory_work_function;
-    inventory_work_params.period   = mender_inventory_config.poll_interval;
+    inventory_work_params.period   = mender_inventory_config.refresh_interval;
     inventory_work_params.name     = "mender_inventory";
     if (MENDER_OK != (ret = mender_rtos_work_create(&inventory_work_params, &mender_inventory_work_handle))) {
         mender_log_error("Unable to create inventory work");
@@ -156,7 +156,7 @@ mender_inventory_exit(void) {
     }
 
     /* Release memory */
-    mender_inventory_config.poll_interval = 0;
+    mender_inventory_config.refresh_interval = 0;
     mender_utils_keystore_delete(mender_inventory_keystore);
     mender_inventory_keystore = NULL;
     mender_rtos_mutex_give(mender_inventory_mutex);

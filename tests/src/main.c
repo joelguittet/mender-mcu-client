@@ -73,7 +73,7 @@ main(int argc, char **argv) {
     mender_configure_init(&mender_configure_config, &mender_configure_callbacks);
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
-    mender_inventory_config_t mender_inventory_config = { .poll_interval = 0 };
+    mender_inventory_config_t mender_inventory_config = { .refresh_interval = 0 };
     mender_inventory_init(&mender_inventory_config);
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 
