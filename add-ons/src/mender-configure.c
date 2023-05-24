@@ -30,7 +30,6 @@
 #include "mender-log.h"
 #include "mender-rtos.h"
 #include "mender-storage.h"
-#include "mender-utils.h"
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
 

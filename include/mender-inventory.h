@@ -32,7 +32,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include "mender-common.h"
+#include "mender-utils.h"
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 

@@ -32,7 +32,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include "mender-common.h"
+#include "mender-utils.h"
 
 /**
  * @brief Mender HTTP configuration

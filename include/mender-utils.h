@@ -32,7 +32,49 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include "mender-common.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <assert.h>
+#include <cJSON.h>
+
+/**
+ * @brief Mender error codes
+ */
+typedef enum {
+    MENDER_DONE      = 1,  /**< Done */
+    MENDER_OK        = 0,  /**< OK */
+    MENDER_FAIL      = -1, /**< Failure */
+    MENDER_NOT_FOUND = -2, /**< Not found */
+} mender_err_t;
+
+/**
+ * @brief Deployment status
+ */
+typedef enum {
+    MENDER_DEPLOYMENT_STATUS_DOWNLOADING,      /**< Status is "downloading" */
+    MENDER_DEPLOYMENT_STATUS_INSTALLING,       /**< Status is "installing" */
+    MENDER_DEPLOYMENT_STATUS_REBOOTING,        /**< Status is "rebooting" */
+    MENDER_DEPLOYMENT_STATUS_SUCCESS,          /**< Status is "success" */
+    MENDER_DEPLOYMENT_STATUS_FAILURE,          /**< Status is "failure" */
+    MENDER_DEPLOYMENT_STATUS_ALREADY_INSTALLED /**< Status is "already installed" */
+} mender_deployment_status_t;
+
+/**
+ * @brief Key-store item
+ */
+typedef struct {
+    char *name;  /**< Name of the item */
+    char *value; /**< Value of the item */
+} mender_keystore_item_t;
+
+/**
+ * @brief Key-store
+ */
+typedef mender_keystore_item_t mender_keystore_t;
 
 /**
  * @brief Function used to print HTTP status as string

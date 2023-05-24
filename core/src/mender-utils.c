@@ -25,9 +25,7 @@
  * SOFTWARE.
  */
 
-#include <cJSON.h>
 #include "mender-log.h"
-#include "mender-utils.h"
 
 char *
 mender_utils_http_status_to_string(int status) {
