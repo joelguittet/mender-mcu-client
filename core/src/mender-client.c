@@ -25,14 +25,12 @@
  * SOFTWARE.
  */
 
-#include <cJSON.h>
 #include "mender-api.h"
 #include "mender-client.h"
 #include "mender-log.h"
 #include "mender-rtos.h"
 #include "mender-storage.h"
 #include "mender-tls.h"
-#include "mender-utils.h"
 
 /**
  * @brief Default host

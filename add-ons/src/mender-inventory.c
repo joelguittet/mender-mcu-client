@@ -29,7 +29,6 @@
 #include "mender-inventory.h"
 #include "mender-log.h"
 #include "mender-rtos.h"
-#include "mender-utils.h"
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 

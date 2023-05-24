@@ -32,8 +32,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include <cJSON.h>
-#include "mender-common.h"
+#include "mender-utils.h"
 
 /**
  * @brief Artifact state machine used to process input data stream

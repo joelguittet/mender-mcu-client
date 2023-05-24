@@ -25,10 +25,8 @@
  * SOFTWARE.
  */
 
-#include <cJSON.h>
 #include "mender-artifact.h"
 #include "mender-log.h"
-#include "mender-utils.h"
 
 /**
  * @brief TAR block size
