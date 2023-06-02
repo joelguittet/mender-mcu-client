@@ -127,6 +127,20 @@ if MENDER_MCU_CLIENT
 
     endif
 
+    config MENDER_RTOS_WORK_QUEUE_STACK_SIZE
+        int "Mender RTOS Work Queue Stack Size (kB)"
+        range 0 64
+        default 12
+        help
+            Mender RTOS work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+
+    config MENDER_RTOS_WORK_QUEUE_PRIORITY
+        int "Mender RTOS Work Queue Priority"
+        range 0 128
+        default 5
+        help
+            Mender RTOS work queue priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+
     module = MENDER
     module-str = Log Level for mender
     module-help = Enables logging for mender code.
