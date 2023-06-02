@@ -40,27 +40,6 @@
 #include "mender-rtos.h"
 
 /**
- * @brief Mender RTOS work queue stack
- */
-#ifndef MENDER_RTOS_WORK_QUEUE_STACK_SIZE
-#define MENDER_RTOS_WORK_QUEUE_STACK_SIZE (12 * 1024)
-#endif /* MENDER_RTOS_WORK_QUEUE_STACK_SIZE */
-
-/**
- * @brief Mender RTOS work queue priority
- */
-#ifndef MENDER_RTOS_WORK_QUEUE_PRIORITY
-#define MENDER_RTOS_WORK_QUEUE_PRIORITY (5)
-#endif /* MENDER_RTOS_WORK_QUEUE_PRIORITY */
-
-/**
- * @brief Mender RTOS work queue lenght
- */
-#ifndef MENDER_RTOS_WORK_QUEUE_LENGTH
-#define MENDER_RTOS_WORK_QUEUE_LENGTH (10)
-#endif /* MENDER_RTOS_WORK_QUEUE_LENGTH */
-
-/**
  * @brief Work context
  */
 typedef struct {
@@ -90,16 +69,16 @@ mender_err_t
 mender_rtos_init(void) {
 
     /* Create and start work queue */
-    if (NULL == (mender_rtos_work_queue_handle = xQueueCreate(MENDER_RTOS_WORK_QUEUE_LENGTH, sizeof(mender_rtos_work_context_t *)))) {
+    if (NULL == (mender_rtos_work_queue_handle = xQueueCreate(CONFIG_MENDER_RTOS_WORK_QUEUE_LENGTH, sizeof(mender_rtos_work_context_t *)))) {
         mender_log_error("Unable to create work queue");
         return MENDER_FAIL;
     }
     if (pdPASS
         != xTaskCreate(mender_rtos_work_queue_thread,
                        "mender",
-                       (configSTACK_DEPTH_TYPE)(MENDER_RTOS_WORK_QUEUE_STACK_SIZE / sizeof(configSTACK_DEPTH_TYPE)),
+                       (configSTACK_DEPTH_TYPE)(CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE * 1024 / sizeof(configSTACK_DEPTH_TYPE)),
                        NULL,
-                       MENDER_RTOS_WORK_QUEUE_PRIORITY,
+                       CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY,
                        NULL)) {
         mender_log_error("Unable to create work queue thread");
         return MENDER_FAIL;

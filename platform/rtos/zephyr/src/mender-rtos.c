@@ -30,21 +30,6 @@
 #include "mender-rtos.h"
 
 /**
- * @brief Mender RTOS work queue stack
- */
-#ifndef MENDER_RTOS_WORK_QUEUE_STACK_SIZE
-#define MENDER_RTOS_WORK_QUEUE_STACK_SIZE (12 * 1024)
-#endif /* MENDER_RTOS_WORK_QUEUE_STACK_SIZE */
-K_THREAD_STACK_DEFINE(mender_rtos_work_queue_stack, MENDER_RTOS_WORK_QUEUE_STACK_SIZE);
-
-/**
- * @brief Mender RTOS work queue priority
- */
-#ifndef MENDER_RTOS_WORK_QUEUE_PRIORITY
-#define MENDER_RTOS_WORK_QUEUE_PRIORITY (5)
-#endif /* MENDER_RTOS_WORK_QUEUE_PRIORITY */
-
-/**
  * @brief Work context
  */
 typedef struct {
@@ -53,6 +38,11 @@ typedef struct {
     struct k_timer            timer_handle; /**< Timer used to periodically execute work */
     struct k_work             work_handle;  /**< Work handle used to execute the work function */
 } mender_rtos_work_context_t;
+
+/**
+ * @brief Mender RTOS work queue stack
+ */
+K_THREAD_STACK_DEFINE(mender_rtos_work_queue_stack, CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE * 1024);
 
 /**
  * @brief Function used to handle work context timer when it expires
@@ -76,7 +66,11 @@ mender_rtos_init(void) {
 
     /* Create and start work queue */
     k_work_queue_init(&mender_rtos_work_queue_handle);
-    k_work_queue_start(&mender_rtos_work_queue_handle, mender_rtos_work_queue_stack, MENDER_RTOS_WORK_QUEUE_STACK_SIZE, MENDER_RTOS_WORK_QUEUE_PRIORITY, NULL);
+    k_work_queue_start(&mender_rtos_work_queue_handle,
+                       mender_rtos_work_queue_stack,
+                       CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE * 1024,
+                       CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY,
+                       NULL);
 
     return MENDER_OK;
 }

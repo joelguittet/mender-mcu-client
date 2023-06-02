@@ -92,3 +92,30 @@ menu "Mender client Configuration"
     endif
 
 endmenu
+
+menu "Mender advanced Configuration"
+
+    config MENDER_RTOS_WORK_QUEUE_STACK_SIZE
+        int "Mender RTOS Work Queue Stack Size (kB)"
+        range 0 64
+        default 20
+        help
+            Mender RTOS work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+            The default TLS configuration of ESP-IDF v4.4.x allows to decrease the stack size down to 12kB.
+            The default stack size is 20kB because the default TLS configuration of ESP-IDF V5.x consumes more memory.
+
+    config MENDER_RTOS_WORK_QUEUE_PRIORITY
+        int "Mender RTOS Work Queue Priority"
+        range 0 24
+        default 5
+        help
+            Mender RTOS work queue priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+
+    config MENDER_RTOS_WORK_QUEUE_LENGTH
+        int "Mender RTOS Work Queue Length"
+        range 0 64
+        default 10
+        help
+            Mender RTOS work queue length, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+
+endmenu
