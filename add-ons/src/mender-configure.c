@@ -36,7 +36,9 @@
 /**
  * @brief Default configure refresh interval (seconds)
  */
-#define MENDER_CONFIGURE_DEFAULT_REFRESH_INTERVAL (28800)
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_REFRESH_INTERVAL
+#define CONFIG_MENDER_CLIENT_CONFIGURE_REFRESH_INTERVAL (28800)
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_REFRESH_INTERVAL */
 
 /**
  * @brief Mender configure configuration
@@ -75,7 +77,7 @@ mender_configure_init(mender_configure_config_t *config, mender_configure_callba
     if (0 != config->refresh_interval) {
         mender_configure_config.refresh_interval = config->refresh_interval;
     } else {
-        mender_configure_config.refresh_interval = MENDER_CONFIGURE_DEFAULT_REFRESH_INTERVAL;
+        mender_configure_config.refresh_interval = CONFIG_MENDER_CLIENT_CONFIGURE_REFRESH_INTERVAL;
     }
 
     /* Save callbacks */

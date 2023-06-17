@@ -30,6 +30,20 @@
 #include "mender-rtos.h"
 
 /**
+ * @brief Default work queue stack size (kB)
+ */
+#ifndef CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE
+#define CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE (12)
+#endif /* CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE */
+
+/**
+ * @brief Default work queue priority
+ */
+#ifndef CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY
+#define CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY (5)
+#endif /* CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY */
+
+/**
  * @brief Work context
  */
 typedef struct {
@@ -138,7 +152,7 @@ mender_rtos_work_activate(void *handle) {
     /* Get work context */
     mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
 
-    /* Give timer used to protect the work function */
+    /* Give semaphore used to protect the work function */
     k_sem_give(&work_context->sem_handle);
 
     /* Start the timer to handle the work */

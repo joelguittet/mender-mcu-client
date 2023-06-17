@@ -40,6 +40,27 @@
 #include "mender-rtos.h"
 
 /**
+ * @brief Default work queue stack size (kB)
+ */
+#ifndef CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE
+#define CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE (20)
+#endif /* CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE */
+
+/**
+ * @brief Default work queue priority
+ */
+#ifndef CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY
+#define CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY (5)
+#endif /* CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY */
+
+/**
+ * @brief Default work queue length
+ */
+#ifndef CONFIG_MENDER_RTOS_WORK_QUEUE_LENGTH
+#define CONFIG_MENDER_RTOS_WORK_QUEUE_LENGTH (10)
+#endif /* CONFIG_MENDER_RTOS_WORK_QUEUE_LENGTH */
+
+/**
  * @brief Work context
  */
 typedef struct {
@@ -157,7 +178,7 @@ mender_rtos_work_activate(void *handle) {
     /* Get work context */
     mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
 
-    /* Give timer used to protect the work function */
+    /* Give semaphore used to protect the work function */
     if (pdTRUE != xSemaphoreGive(work_context->sem_handle)) {
         mender_log_error("Unable to give semaphore");
         return MENDER_FAIL;
