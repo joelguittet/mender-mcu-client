@@ -40,6 +40,7 @@ typedef struct {
 mender_err_t
 mender_ota_begin(char *name, size_t size, void **handle) {
 
+    assert(NULL != name);
     assert(NULL != handle);
     esp_err_t err;
 
