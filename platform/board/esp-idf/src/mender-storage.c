@@ -272,8 +272,8 @@ mender_storage_delete_device_config(void) {
     return MENDER_OK;
 }
 
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 
 mender_err_t
 mender_storage_exit(void) {
