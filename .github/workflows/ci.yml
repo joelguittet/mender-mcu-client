@@ -64,6 +64,10 @@ jobs:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Install sonar-scanner and build-wrapper
         uses: SonarSource/sonarcloud-github-c-cpp@v1
+      - name: Install libcurl
+        run: |
+          wget -q -O - https://github.com/curl/curl/archive/refs/tags/curl-8_1_2.tar.gz | tar xz
+          cd curl-curl-8_1_2 && autoreconf -fi && ./configure --with-openssl && make && sudo make install
       - name: Run build-wrapper
         run: |
           build-wrapper-linux-x86-64 --out-dir bw_output ./.github/workflows/build_tests.sh
