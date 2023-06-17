@@ -35,7 +35,9 @@
 /**
  * @brief Default inventory refresh interval (seconds)
  */
-#define MENDER_INVENTORY_DEFAULT_REFRESH_INTERVAL (28800)
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL
+#define CONFIG_MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL (28800)
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL */
 
 /**
  * @brief Mender inventory configuration
@@ -69,7 +71,7 @@ mender_inventory_init(mender_inventory_config_t *config) {
     if (0 != config->refresh_interval) {
         mender_inventory_config.refresh_interval = config->refresh_interval;
     } else {
-        mender_inventory_config.refresh_interval = MENDER_INVENTORY_DEFAULT_REFRESH_INTERVAL;
+        mender_inventory_config.refresh_interval = CONFIG_MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL;
     }
 
     /* Create inventory mutex */

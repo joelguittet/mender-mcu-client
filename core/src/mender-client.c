@@ -35,17 +35,30 @@
 /**
  * @brief Default host
  */
-#define MENDER_CLIENT_DEFAULT_HOST "https://hosted.mender.io"
+#ifndef CONFIG_MENDER_SERVER_HOST
+#define CONFIG_MENDER_SERVER_HOST "https://hosted.mender.io"
+#endif /* CONFIG_MENDER_SERVER_HOST */
+
+/**
+ * @brief Default tenant token
+ */
+#ifndef CONFIG_MENDER_SERVER_TENANT_TOKEN
+#define CONFIG_MENDER_SERVER_TENANT_TOKEN NULL
+#endif /* CONFIG_MENDER_SERVER_TENANT_TOKEN */
 
 /**
  * @brief Default authentication poll interval (seconds)
  */
-#define MENDER_CLIENT_DEFAULT_AUTHENTICATION_POLL_INTERVAL (600)
+#ifndef CONFIG_MENDER_CLIENT_AUTHENTICATION_POLL_INTERVAL
+#define CONFIG_MENDER_CLIENT_AUTHENTICATION_POLL_INTERVAL (600)
+#endif /* CONFIG_MENDER_CLIENT_AUTHENTICATION_POLL_INTERVAL */
 
 /**
  * @brief Default update poll interval (seconds)
  */
-#define MENDER_CLIENT_DEFAULT_UPDATE_POLL_INTERVAL (1800)
+#ifndef CONFIG_MENDER_CLIENT_UPDATE_POLL_INTERVAL
+#define CONFIG_MENDER_CLIENT_UPDATE_POLL_INTERVAL (1800)
+#endif /* CONFIG_MENDER_CLIENT_UPDATE_POLL_INTERVAL */
 
 /**
  * @brief Mender client configuration
@@ -140,46 +153,28 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     mender_err_t ret;
 
     /* Save configuration */
-    if (NULL == (mender_client_config.mac_address = strdup(config->mac_address))) {
-        mender_log_error("Unable to save MAC address");
-        return MENDER_FAIL;
-    }
-    if (NULL == (mender_client_config.artifact_name = strdup(config->artifact_name))) {
-        mender_log_error("Unable to save artifact name");
-        return MENDER_FAIL;
-    }
-    if (NULL == (mender_client_config.device_type = strdup(config->device_type))) {
-        mender_log_error("Unable to save device type");
-        return MENDER_FAIL;
-    }
-    if (NULL != config->host) {
-        if (NULL == (mender_client_config.host = strdup(config->host))) {
-            mender_log_error("Unable to save host");
-            return MENDER_FAIL;
-        }
+    mender_client_config.mac_address   = config->mac_address;
+    mender_client_config.artifact_name = config->artifact_name;
+    mender_client_config.device_type   = config->device_type;
+    if ((NULL != config->host) && (strlen(config->host) > 0)) {
+        mender_client_config.host = config->host;
     } else {
-        if (NULL == (mender_client_config.host = strdup(MENDER_CLIENT_DEFAULT_HOST))) {
-            mender_log_error("Unable to save host");
-            return MENDER_FAIL;
-        }
+        mender_client_config.host = CONFIG_MENDER_SERVER_HOST;
     }
     if ((NULL != config->tenant_token) && (strlen(config->tenant_token) > 0)) {
-        if (NULL == (mender_client_config.tenant_token = strdup(config->tenant_token))) {
-            mender_log_error("Unable to save tenant token");
-            return MENDER_FAIL;
-        }
+        mender_client_config.tenant_token = config->tenant_token;
     } else {
-        mender_client_config.tenant_token = NULL;
+        mender_client_config.tenant_token = CONFIG_MENDER_SERVER_TENANT_TOKEN;
     }
     if (0 != config->authentication_poll_interval) {
         mender_client_config.authentication_poll_interval = config->authentication_poll_interval;
     } else {
-        mender_client_config.authentication_poll_interval = MENDER_CLIENT_DEFAULT_AUTHENTICATION_POLL_INTERVAL;
+        mender_client_config.authentication_poll_interval = CONFIG_MENDER_CLIENT_AUTHENTICATION_POLL_INTERVAL;
     }
     if (0 != config->update_poll_interval) {
         mender_client_config.update_poll_interval = config->update_poll_interval;
     } else {
-        mender_client_config.update_poll_interval = MENDER_CLIENT_DEFAULT_UPDATE_POLL_INTERVAL;
+        mender_client_config.update_poll_interval = CONFIG_MENDER_CLIENT_UPDATE_POLL_INTERVAL;
     }
     mender_client_config.recommissioning = config->recommissioning;
 
@@ -274,26 +269,11 @@ mender_client_exit(void) {
     mender_rtos_exit();
 
     /* Release memory */
-    if (NULL != mender_client_config.mac_address) {
-        free(mender_client_config.mac_address);
-        mender_client_config.mac_address = NULL;
-    }
-    if (NULL != mender_client_config.artifact_name) {
-        free(mender_client_config.artifact_name);
-        mender_client_config.artifact_name = NULL;
-    }
-    if (NULL != mender_client_config.device_type) {
-        free(mender_client_config.device_type);
-        mender_client_config.device_type = NULL;
-    }
-    if (NULL != mender_client_config.host) {
-        free(mender_client_config.host);
-        mender_client_config.host = NULL;
-    }
-    if (NULL != mender_client_config.tenant_token) {
-        free(mender_client_config.tenant_token);
-        mender_client_config.tenant_token = NULL;
-    }
+    mender_client_config.mac_address                  = NULL;
+    mender_client_config.artifact_name                = NULL;
+    mender_client_config.device_type                  = NULL;
+    mender_client_config.host                         = NULL;
+    mender_client_config.tenant_token                 = NULL;
     mender_client_config.authentication_poll_interval = 0;
     mender_client_config.update_poll_interval         = 0;
     if (NULL != mender_client_private_key) {
