@@ -130,8 +130,8 @@ mender_api_perform_authentication(unsigned char *private_key, size_t private_key
     /* Format payload */
     if (NULL != mender_api_config.tenant_token) {
         if (NULL
-            == (payload = malloc(strlen("{ \"id_data\": \"{ \\\"mac\\\": \\\"\\\"}\", \"pubkey\": \"\", \"tenant_token\": \"\" }")
-                                 + strlen(mender_api_config.mac_address) + strlen(public_key_pem) + strlen(mender_api_config.tenant_token) + 1))) {
+            == (payload = (char *)malloc(strlen("{ \"id_data\": \"{ \\\"mac\\\": \\\"\\\"}\", \"pubkey\": \"\", \"tenant_token\": \"\" }")
+                                         + strlen(mender_api_config.mac_address) + strlen(public_key_pem) + strlen(mender_api_config.tenant_token) + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
@@ -143,8 +143,8 @@ mender_api_perform_authentication(unsigned char *private_key, size_t private_key
                 mender_api_config.tenant_token);
     } else {
         if (NULL
-            == (payload = malloc(strlen("{ \"id_data\": \"{ \\\"mac\\\": \\\"\\\"}\", \"pubkey\": \"\" }") + strlen(mender_api_config.mac_address)
-                                 + strlen(public_key_pem) + 1))) {
+            == (payload = (char *)malloc(strlen("{ \"id_data\": \"{ \\\"mac\\\": \\\"\\\"}\", \"pubkey\": \"\" }") + strlen(mender_api_config.mac_address)
+                                         + strlen(public_key_pem) + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
@@ -225,8 +225,8 @@ mender_api_check_for_deployment(char **id, char **artifact_name, char **uri) {
 
     /* Compute path */
     if (NULL
-        == (path = malloc(strlen("?artifact_name=&device_type=") + strlen(MENDER_API_PATH_GET_NEXT_DEPLOYMENT) + strlen(mender_api_config.artifact_name)
-                          + strlen(mender_api_config.device_type) + 1))) {
+        == (path = (char *)malloc(strlen("?artifact_name=&device_type=") + strlen(MENDER_API_PATH_GET_NEXT_DEPLOYMENT) + strlen(mender_api_config.artifact_name)
+                                  + strlen(mender_api_config.device_type) + 1))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
@@ -326,7 +326,7 @@ mender_api_publish_deployment_status(char *id, mender_deployment_status_t deploy
     }
 
     /* Format payload */
-    if (NULL == (payload = malloc(strlen("{ \"status\": \"\" }") + strlen(value) + 1))) {
+    if (NULL == (payload = (char *)malloc(strlen("{ \"status\": \"\" }") + strlen(value) + 1))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
@@ -334,7 +334,7 @@ mender_api_publish_deployment_status(char *id, mender_deployment_status_t deploy
     sprintf(payload, "{ \"status\": \"%s\" }", value);
 
     /* Compute path */
-    if (NULL == (path = malloc(strlen(MENDER_API_PATH_PUT_DEPLOYMENT_STATUS) - strlen("%s") + strlen(id) + 1))) {
+    if (NULL == (path = (char *)malloc(strlen(MENDER_API_PATH_PUT_DEPLOYMENT_STATUS) - strlen("%s") + strlen(id) + 1))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;

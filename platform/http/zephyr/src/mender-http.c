@@ -167,7 +167,7 @@ mender_http_perform(char *               jwt,
     }
     request.recv_buf_len = MENDER_HTTP_RECV_BUF_LENGTH;
     if (NULL != jwt) {
-        if (NULL == (header_fields[header_index] = malloc(strlen("Authorization: Bearer ") + strlen(jwt) + strlen("\r\n") + 1))) {
+        if (NULL == (header_fields[header_index] = (char *)malloc(strlen("Authorization: Bearer ") + strlen(jwt) + strlen("\r\n") + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
@@ -176,7 +176,7 @@ mender_http_perform(char *               jwt,
         header_index++;
     }
     if (NULL != signature) {
-        if (NULL == (header_fields[header_index] = malloc(strlen("X-MEN-Signature: ") + strlen(signature) + strlen("\r\n") + 1))) {
+        if (NULL == (header_fields[header_index] = (char *)malloc(strlen("X-MEN-Signature: ") + strlen(signature) + strlen("\r\n") + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
@@ -431,7 +431,7 @@ mender_http_get_host_port_url(char *path, char **host, char **port, char **url) 
     char *pch2 = strchr(pch1, ':');
     if (NULL != pch2) {
         /* Port is specified */
-        if (NULL == (*host = malloc(pch2 - pch1 + 1))) {
+        if (NULL == (*host = (char *)malloc(pch2 - pch1 + 1))) {
             mender_log_error("Unable to allocate memory");
             free(tmp);
             return MENDER_FAIL;

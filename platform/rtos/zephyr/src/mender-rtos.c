@@ -98,7 +98,7 @@ mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle) {
     assert(NULL != handle);
 
     /* Create work context */
-    mender_rtos_work_context_t *work_context = malloc(sizeof(mender_rtos_work_context_t));
+    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)malloc(sizeof(mender_rtos_work_context_t));
     if (NULL == work_context) {
         mender_log_error("Unable to allocate memory");
         goto FAIL;
