@@ -126,7 +126,7 @@ mender_artifact_create_ctx(void) {
     mender_artifact_ctx_t *ctx;
 
     /* Create new context */
-    if (NULL == (ctx = malloc(sizeof(mender_artifact_ctx_t)))) {
+    if (NULL == (ctx = (mender_artifact_ctx_t *)malloc(sizeof(mender_artifact_ctx_t)))) {
         return NULL;
     }
     memset(ctx, 0, sizeof(mender_artifact_ctx_t));
@@ -307,7 +307,7 @@ mender_artifact_parse_tar_header(mender_artifact_ctx_t *ctx) {
 
     /* Compute the new file name */
     if (NULL != ctx->file.name) {
-        if (NULL == (tmp = malloc(strlen(ctx->file.name) + strlen("/") + strlen(tar_header->name) + 1))) {
+        if (NULL == (tmp = (char *)malloc(strlen(ctx->file.name) + strlen("/") + strlen(tar_header->name) + 1))) {
             mender_log_error("Unable to allocate memory");
             return MENDER_FAIL;
         }

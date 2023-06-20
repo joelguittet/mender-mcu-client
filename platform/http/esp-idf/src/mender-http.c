@@ -76,7 +76,7 @@ mender_http_perform(char *               jwt,
 
     /* Compute URL if required */
     if (strncmp(path, "http", strlen("http"))) {
-        if (NULL == (url = malloc(strlen(mender_http_config.host) + strlen(path) + 1))) {
+        if (NULL == (url = (char *)malloc(strlen(mender_http_config.host) + strlen(path) + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
@@ -95,7 +95,7 @@ mender_http_perform(char *               jwt,
     }
     esp_http_client_set_method(client, mender_http_method_to_esp_http_client_method(method));
     if (NULL != jwt) {
-        if (NULL == (bearer = malloc(strlen("Bearer ") + strlen(jwt) + 1))) {
+        if (NULL == (bearer = (char *)malloc(strlen("Bearer ") + strlen(jwt) + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;

@@ -119,11 +119,11 @@ mender_storage_get_authentication_keys(unsigned char **private_key, size_t *priv
     *public_key_length = (size_t)ret;
 
     /* Allocate memory to copy keys */
-    if (NULL == (*private_key = malloc(*private_key_length))) {
+    if (NULL == (*private_key = (unsigned char *)malloc(*private_key_length))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
-    if (NULL == (*public_key = malloc(*public_key_length))) {
+    if (NULL == (*public_key = (unsigned char *)malloc(*public_key_length))) {
         mender_log_error("Unable to allocate memory");
         free(*private_key);
         *private_key = NULL;
@@ -195,11 +195,11 @@ mender_storage_get_ota_deployment(char **ota_id, char **ota_artifact_name) {
     ota_artifact_name_length = (size_t)ret;
 
     /* Allocate memory to copy ID and artifact name */
-    if (NULL == (*ota_id = malloc(ota_id_length))) {
+    if (NULL == (*ota_id = (char *)malloc(ota_id_length))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
-    if (NULL == (*ota_artifact_name = malloc(ota_artifact_name_length))) {
+    if (NULL == (*ota_artifact_name = (char *)malloc(ota_artifact_name_length))) {
         mender_log_error("Unable to allocate memory");
         free(*ota_id);
         *ota_id = NULL;
@@ -265,7 +265,7 @@ mender_storage_get_device_config(char **device_config) {
     device_config_length = (size_t)ret;
 
     /* Allocate memory to copy device configuration */
-    if (NULL == (*device_config = malloc(device_config_length))) {
+    if (NULL == (*device_config = (char *)malloc(device_config_length))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }

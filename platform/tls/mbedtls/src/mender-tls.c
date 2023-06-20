@@ -80,19 +80,19 @@ mender_tls_generate_authentication_keys(unsigned char **private_key, size_t *pri
 #endif /* MBEDTLS_ERROR_C */
 
     /* Initialize mbedtls */
-    if (NULL == (pk_context = malloc(sizeof(mbedtls_pk_context)))) {
+    if (NULL == (pk_context = (mbedtls_pk_context *)malloc(sizeof(mbedtls_pk_context)))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
     }
     mbedtls_pk_init(pk_context);
-    if (NULL == (ctr_drbg = malloc(sizeof(mbedtls_ctr_drbg_context)))) {
+    if (NULL == (ctr_drbg = (mbedtls_ctr_drbg_context *)malloc(sizeof(mbedtls_ctr_drbg_context)))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
     }
     mbedtls_ctr_drbg_init(ctr_drbg);
-    if (NULL == (entropy = malloc(sizeof(mbedtls_entropy_context)))) {
+    if (NULL == (entropy = (mbedtls_entropy_context *)malloc(sizeof(mbedtls_entropy_context)))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
@@ -133,7 +133,7 @@ mender_tls_generate_authentication_keys(unsigned char **private_key, size_t *pri
     }
 
     /* Export private key */
-    if (NULL == (*private_key = malloc(MENDER_TLS_PRIVATE_KEY_LENGTH))) {
+    if (NULL == (*private_key = (unsigned char *)malloc(MENDER_TLS_PRIVATE_KEY_LENGTH))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
@@ -161,7 +161,7 @@ mender_tls_generate_authentication_keys(unsigned char **private_key, size_t *pri
     *private_key = tmp;
 
     /* Export public key */
-    if (NULL == (*public_key = malloc(MENDER_TLS_PUBLIC_KEY_LENGTH))) {
+    if (NULL == (*public_key = (unsigned char *)malloc(MENDER_TLS_PUBLIC_KEY_LENGTH))) {
         mender_log_error("Unable to allocate memory");
         free(*private_key);
         *private_key = NULL;
@@ -243,7 +243,7 @@ mender_tls_pem_write_buffer(const unsigned char *der_data, size_t der_len, char 
     }
 
     /* Allocate memory to store PEM data */
-    if (NULL == (encode_buf = malloc(use_len))) {
+    if (NULL == (encode_buf = (unsigned char *)malloc(use_len))) {
         ret = MENDER_FAIL;
         goto END;
     }
@@ -312,19 +312,19 @@ mender_tls_sign_payload(unsigned char *private_key, size_t private_key_length, c
 #endif /* MBEDTLS_ERROR_C */
 
     /* Initialize mbedtls */
-    if (NULL == (pk_context = malloc(sizeof(mbedtls_pk_context)))) {
+    if (NULL == (pk_context = (mbedtls_pk_context *)malloc(sizeof(mbedtls_pk_context)))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
     }
     mbedtls_pk_init(pk_context);
-    if (NULL == (ctr_drbg = malloc(sizeof(mbedtls_ctr_drbg_context)))) {
+    if (NULL == (ctr_drbg = (mbedtls_ctr_drbg_context *)malloc(sizeof(mbedtls_ctr_drbg_context)))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
     }
     mbedtls_ctr_drbg_init(ctr_drbg);
-    if (NULL == (entropy = malloc(sizeof(mbedtls_entropy_context)))) {
+    if (NULL == (entropy = (mbedtls_entropy_context *)malloc(sizeof(mbedtls_entropy_context)))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
@@ -370,7 +370,7 @@ mender_tls_sign_payload(unsigned char *private_key, size_t private_key_length, c
     }
 
     /* Compute signature */
-    if (NULL == (sig = malloc(MENDER_TLS_SIGNATURE_LENGTH + 1))) {
+    if (NULL == (sig = (unsigned char *)malloc(MENDER_TLS_SIGNATURE_LENGTH + 1))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
@@ -391,7 +391,7 @@ mender_tls_sign_payload(unsigned char *private_key, size_t private_key_length, c
     }
 
     /* Encode signature to base64 */
-    if (NULL == (*signature = malloc(MENDER_TLS_SIGNATURE_LENGTH + 1))) {
+    if (NULL == (*signature = (char *)malloc(MENDER_TLS_SIGNATURE_LENGTH + 1))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
