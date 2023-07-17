@@ -186,7 +186,7 @@ sig_handler(int signo, siginfo_t *info, void *arg) {
  * @brief Main function
  * @param argc Number of arguments
  * @param argv Arguments
- * @return Always returns 0
+ * @return EXIT_SUCCESS if the program succeeds, EXIT_FAILURE otherwise
  */
 int
 main(int argc, char **argv) {
@@ -252,12 +252,14 @@ main(int argc, char **argv) {
     /* Initialize mender-mcu-client events cond and mutex */
     if (0 != pthread_cond_init(&mender_client_events_cond, NULL)) {
         /* Unable to initialize cond */
-        return EXIT_FAILURE;
+        ret = EXIT_FAILURE;
+        goto END;
     }
     if (0 != pthread_mutex_init(&mender_client_events_mutex, NULL)) {
         /* Unable to initialize mutex */
         pthread_cond_destroy(&mender_client_events_cond);
-        return EXIT_FAILURE;
+        ret = EXIT_FAILURE;
+        goto END;
     }
 
     /* Initialize mender-client */
