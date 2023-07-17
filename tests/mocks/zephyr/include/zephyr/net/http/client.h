@@ -73,6 +73,8 @@ struct http_request {
     size_t                           payload_len;
 };
 
+typedef int (*http_header_cb_t)(int sock, struct http_request *req, void *user_data);
+
 int http_client_req(int sock, struct http_request *req, int32_t timeout, void *user_data);
 
 #endif /* __CLIENT_H__ */

@@ -108,6 +108,34 @@ mender_err_t mender_api_publish_configuration_data(mender_keystore_t *configurat
 
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+
+/**
+ * @brief Connect the device and make it available to the server
+ * @param callback Callback function to be invoked to perform the treatment of the data from the websocket
+ * @param handle Connection handle
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_api_troubleshoot_connect(mender_err_t (*callback)(void *, size_t), void **handle);
+
+/**
+ * @brief Send binary data to the server
+ * @param handle Connection handle
+ * @param payload Payload to send
+ * @param length Length of the payload
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_api_troubleshoot_send(void *handle, void *payload, size_t length);
+
+/**
+ * @brief Disconnect the device
+ * @param handle Connection handle
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_api_troubleshoot_disconnect(void *handle);
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
+
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 
 /**

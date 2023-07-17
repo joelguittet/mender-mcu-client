@@ -26,30 +26,14 @@
  */
 
 #include <zephyr/net/http/client.h>
-#include <zephyr/net/socket.h>
-#ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
-#include <zephyr/net/tls_credentials.h>
-#endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
-#include <errno.h>
 #include "mender-http.h"
 #include "mender-log.h"
-#include "mender-rtos.h"
-#include "mender-utils.h"
+#include "mender-net.h"
 
 /**
  * @brief Receive buffer length
  */
 #define MENDER_HTTP_RECV_BUF_LENGTH (512)
-
-/**
- * @brief DNS resolve interval (seconds)
- */
-#define MENDER_HTTP_DNS_RESOLVE_INTERVAL (10)
-
-/**
- * @brief Connect interval (seconds)
- */
-#define MENDER_HTTP_CONNECT_INTERVAL (10)
 
 /**
  * @brief Request timeout (milliseconds)
@@ -71,31 +55,12 @@ typedef struct {
 static mender_http_config_t mender_http_config;
 
 /**
- * @brief Perform HTTP connection with the server
- * @param host Host
- * @param port Port
- * @param sock Client socket
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_http_connect(const char *host, const char *port, int *sock);
-
-/**
  * @brief HTTP response callback, invoked to handle data received
  * @param response HTTP response structure
  * @param final_call Indicate final call
  * @param user_data User data, used to retrieve request context data
  */
 static void mender_http_response_cb(struct http_response *response, enum http_final_call final_call, void *user_data);
-
-/**
- * @brief Returns host name, port and URL from path
- * @param path Path
- * @param host Host name
- * @param port Port as string
- * @param url URL
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_http_get_host_port_url(char *path, char **host, char **port, char **url);
 
 /**
  * @brief Convert mender HTTP method to Zephyr HTTP client method
@@ -148,7 +113,7 @@ mender_http_perform(char *               jwt,
     request_context.ret      = MENDER_OK;
 
     /* Retrieve host, port and url */
-    if (MENDER_OK != (ret = mender_http_get_host_port_url(path, &host, &port, &url))) {
+    if (MENDER_OK != (ret = mender_net_get_host_port_url(path, mender_http_config.host, &host, &port, &url))) {
         mender_log_error("Unable to retrieve host/port/url");
         goto END;
     }
@@ -194,8 +159,8 @@ mender_http_perform(char *               jwt,
     }
     request.header_fields = (0 != header_index) ? ((const char **)header_fields) : NULL;
 
-    /* Open HTTP client connection */
-    if (MENDER_OK != (ret = mender_http_connect(host, port, &sock))) {
+    /* Connect to the server */
+    if (MENDER_OK != (ret = mender_net_connect(host, port, &sock))) {
         mender_log_error("Unable to open HTTP client connection");
         goto END;
     }
@@ -232,8 +197,8 @@ mender_http_perform(char *               jwt,
 
 END:
 
-    /* Close socket */
-    close(sock);
+    /* Close connection */
+    mender_net_disconnect(sock);
 
     /* Release memory */
     if (NULL != host) {
@@ -264,117 +229,6 @@ mender_http_exit(void) {
     return MENDER_OK;
 }
 
-static mender_err_t
-mender_http_connect(const char *host, const char *port, int *sock) {
-
-    assert(NULL != host);
-    assert(NULL != port);
-    assert(NULL != sock);
-    int              result;
-    mender_err_t     ret = MENDER_OK;
-    struct addrinfo  hints;
-    struct addrinfo *addr             = NULL;
-    int              resolve_attempts = 10;
-    int              connect_attempts = 10;
-    unsigned long    last_wake_time   = 0;
-
-    /* Set hints */
-    memset(&hints, 0, sizeof(hints));
-    if (IS_ENABLED(CONFIG_NET_IPV6)) {
-        hints.ai_family = AF_INET6;
-    } else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-        hints.ai_family = AF_INET;
-    }
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-
-    /* Perform DNS resolution of the host */
-    if (MENDER_OK != (ret = mender_rtos_delay_until_init(&last_wake_time))) {
-        mender_log_error("Unable to initialize delay");
-        goto END;
-    }
-    while (resolve_attempts--) {
-        if (0 == (result = getaddrinfo(host, port, &hints, &addr))) {
-            break;
-        }
-        mender_log_debug("Unable to resolve host name '%s:%s', result = %d", host, port, result);
-        /* Wait before trying again */
-        mender_rtos_delay_until_s(&last_wake_time, MENDER_HTTP_DNS_RESOLVE_INTERVAL);
-    }
-    if (0 != result) {
-        mender_log_error("Unable to resolve host name '%s:%s', result = %d", host, port, result);
-        ret = MENDER_FAIL;
-        goto END;
-    }
-
-    /* Create socket */
-#ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
-    if ((result = socket(addr->ai_family, SOCK_STREAM, IPPROTO_TLS_1_2)) < 0) {
-#else
-    if ((result = socket(addr->ai_family, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-#endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
-        mender_log_error("Unable to create socket, result = %d", result);
-        ret = MENDER_FAIL;
-        goto END;
-    }
-    *sock = result;
-
-#ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
-
-    /* Set TLS_SEC_TAG_LIST option */
-    sec_tag_t sec_tag[] = {
-        CONFIG_MENDER_HTTP_CA_CERTIFICATE_TAG,
-    };
-    if ((result = setsockopt(*sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag, sizeof(sec_tag))) < 0) {
-        mender_log_error("Unable to set TLS_SEC_TAG_LIST option, result = %d", result);
-        close(*sock);
-        *sock = -1;
-        ret   = MENDER_FAIL;
-        goto END;
-    }
-
-    /* Set SOL_TLS option */
-    if ((result = setsockopt(*sock, SOL_TLS, TLS_HOSTNAME, host, strlen(host))) < 0) {
-        mender_log_error("Unable to set TLS_HOSTNAME option, result = %d", result);
-        close(*sock);
-        *sock = -1;
-        ret   = MENDER_FAIL;
-        goto END;
-    }
-
-#endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
-
-    /* Connect to the host */
-    if (MENDER_OK != (ret = mender_rtos_delay_until_init(&last_wake_time))) {
-        mender_log_error("Unable to initialize delay");
-        goto END;
-    }
-    while (connect_attempts--) {
-        if (0 == (result = connect(*sock, addr->ai_addr, addr->ai_addrlen))) {
-            break;
-        }
-        mender_log_debug("Unable to connect to the host '%s:%s', result = %d", host, port, result);
-        /* Wait before trying again */
-        mender_rtos_delay_until_s(&last_wake_time, MENDER_HTTP_CONNECT_INTERVAL);
-    }
-    if (0 != result) {
-        mender_log_error("Unable to connect to the host '%s:%s', result = %d", host, port, result);
-        close(*sock);
-        *sock = -1;
-        ret   = MENDER_FAIL;
-        goto END;
-    }
-
-END:
-
-    /* Release memory */
-    if (NULL != addr) {
-        freeaddrinfo(addr);
-    }
-
-    return ret;
-}
-
 static void
 mender_http_response_cb(struct http_response *response, enum http_final_call final_call, void *user_data) {
 
@@ -395,67 +249,6 @@ mender_http_response_cb(struct http_response *response, enum http_final_call fin
             mender_log_error("An error occurred, stop reading data");
         }
     }
-}
-
-static mender_err_t
-mender_http_get_host_port_url(char *path, char **host, char **port, char **url) {
-
-    assert(NULL != path);
-    assert(NULL != host);
-    assert(NULL != port);
-    char *tmp;
-    char *saveptr;
-
-    /* Check if the path start with protocol */
-    if ((false == mender_utils_strbeginwith(path, "http://")) && (false == mender_utils_strbeginwith(path, "https://"))) {
-
-        /* Path contain the URL only, retrieve host and port from configuration */
-        assert(NULL != url);
-        if (NULL == (*url = strdup(path))) {
-            mender_log_error("Unable to allocate memory");
-            return MENDER_FAIL;
-        }
-        return mender_http_get_host_port_url(mender_http_config.host, host, port, NULL);
-    }
-
-    /* Create a working copy of the path */
-    if (NULL == (tmp = strdup(path))) {
-        mender_log_error("Unable to allocate memory");
-        return MENDER_FAIL;
-    }
-
-    /* Retrieve protocol and host */
-    char *protocol = strtok_r(tmp, "/", &saveptr);
-    char *pch1     = strtok_r(NULL, "/", &saveptr);
-
-    /* Check if the host contains port */
-    char *pch2 = strchr(pch1, ':');
-    if (NULL != pch2) {
-        /* Port is specified */
-        if (NULL == (*host = (char *)malloc(pch2 - pch1 + 1))) {
-            mender_log_error("Unable to allocate memory");
-            free(tmp);
-            return MENDER_FAIL;
-        }
-        strncpy(*host, pch1, pch2 - pch1);
-        *port = strdup(pch2 + 1);
-    } else {
-        /* Port is not specified */
-        *host = strdup(pch1);
-        if (true == mender_utils_strbeginwith(path, "http://")) {
-            *port = strdup("80");
-        } else if (true == mender_utils_strbeginwith(path, "https://")) {
-            *port = strdup("443");
-        }
-    }
-    if (NULL != url) {
-        *url = strdup(path + strlen(protocol) + 2 + strlen(pch1));
-    }
-
-    /* Release memory */
-    free(tmp);
-
-    return MENDER_OK;
 }
 
 static enum http_method

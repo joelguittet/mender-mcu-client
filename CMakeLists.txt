@@ -35,8 +35,12 @@ file(GLOB SOURCES_TEMP
     "${CMAKE_CURRENT_LIST_DIR}/add-ons/src/*.c"
 )
 
-# Add include directory
+# Add include directories
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/board/${CONFIG_MENDER_MCU_CLIENT_BOARD_TYPE}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/net/${CONFIG_MENDER_MCU_CLIENT_NET_TYPE}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/rtos/${CONFIG_MENDER_MCU_CLIENT_RTOS_TYPE}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/tls/${CONFIG_MENDER_MCU_CLIENT_TLS_TYPE}/include)
 
 # Creation of the library
 add_library(mender-mcu-client STATIC ${SOURCES_TEMP})

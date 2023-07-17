@@ -6,6 +6,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys_clock.h>
 
+#define CONFIG_HEAP_MEM_POOL_SIZE 1500
+
 struct k_thread {
     void *dummy;
 };
@@ -19,6 +21,9 @@ struct k_timer {
     void *dummy;
 };
 struct k_work {
+    void *dummy;
+};
+struct k_work_delayable {
     void *dummy;
 };
 struct k_work_queue_config {
@@ -58,6 +63,7 @@ k_tid_t k_thread_create(struct k_thread * new_thread,
                         int               prio,
                         uint32_t          options,
                         k_timeout_t       delay);
+int     k_thread_join(struct k_thread *thread, k_timeout_t timeout);
 int     k_thread_name_set(k_tid_t thread, const char *str);
 void    k_thread_abort(k_tid_t thread);
 
@@ -76,10 +82,14 @@ void  k_timer_start(struct k_timer *timer, k_timeout_t duration, k_timeout_t per
 void  k_timer_stop(struct k_timer *timer);
 
 void k_work_init(struct k_work *work, k_work_handler_t handler);
+void k_work_init_delayable(struct k_work_delayable *dwork, k_work_handler_t handler);
 int  k_work_submit_to_queue(struct k_work_q *queue, struct k_work *work);
+int  k_work_reschedule_for_queue(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay);
+int  k_work_cancel_delayable(struct k_work_delayable *dwork);
 
-void k_work_queue_init(struct k_work_q *queue);
-void k_work_queue_start(struct k_work_q *queue, k_thread_stack_t *stack, size_t stack_size, int prio, const struct k_work_queue_config *cfg);
+void    k_work_queue_init(struct k_work_q *queue);
+void    k_work_queue_start(struct k_work_q *queue, k_thread_stack_t *stack, size_t stack_size, int prio, const struct k_work_queue_config *cfg);
+k_tid_t k_work_queue_thread_get(struct k_work_q *queue);
 
 int64_t k_uptime_get(void);
 int32_t k_msleep(int32_t ms);

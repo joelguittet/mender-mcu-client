@@ -25,6 +25,8 @@
  * SOFTWARE.
  */
 
+#include <sys/types.h>
+#include <regex.h>
 #include "mender-log.h"
 
 char *
@@ -139,6 +141,98 @@ mender_utils_strendwith(const char *s1, const char *s2) {
 
     /* Compare the end of the string */
     return (0 == strncmp(s1 + strlen(s1) - strlen(s2), s2, strlen(s2)));
+}
+
+char *
+mender_utils_str_replace(char *input, char *search, char *replace) {
+
+    assert(NULL != input);
+    assert(NULL != search);
+    assert(NULL != replace);
+
+    regex_t    regex;
+    regmatch_t match;
+    char *     str                   = input;
+    char *     output                = NULL;
+    size_t     index                 = 0;
+    int        previous_match_finish = 0;
+
+    /* Compile expression */
+    if (0 != regcomp(&regex, search, REG_EXTENDED)) {
+        /* Unable to compile expression */
+        mender_log_error("Unable to compile expression '%s'", search);
+        return NULL;
+    }
+
+    /* Loop until all search string are replaced */
+    bool loop = true;
+    while (true == loop) {
+
+        /* Search wanted string */
+        if (0 != regexec(&regex, str, 1, &match, 0)) {
+            /* No more string to be replaced */
+            loop = false;
+        } else {
+            if (match.rm_so != -1) {
+
+                /* Beginning and ending offset of the match */
+                int current_match_start  = (int)(match.rm_so + (str - input));
+                int current_match_finish = (int)(match.rm_eo + (str - input));
+
+                /* Reallocate output memory */
+                char *tmp = (char *)realloc(output, index + (current_match_start - previous_match_finish) + 1);
+                if (NULL == tmp) {
+                    mender_log_error("Unable to allocate memory");
+                    regfree(&regex);
+                    free(output);
+                    return NULL;
+                }
+                output = tmp;
+
+                /* Copy string from previous match to the beginning of the current match */
+                memcpy(&output[index], &input[previous_match_finish], current_match_start - previous_match_finish);
+                index += (current_match_start - previous_match_finish);
+                output[index] = 0;
+
+                /* Reallocate output memory */
+                if (NULL == (tmp = (char *)realloc(output, index + strlen(replace) + 1))) {
+                    mender_log_error(NULL, "Unable to allocate memory");
+                    regfree(&regex);
+                    free(output);
+                    return NULL;
+                }
+                output = tmp;
+
+                /* Copy replace string to the output */
+                strcat(output, replace);
+                index += strlen(replace);
+
+                /* Update previous match ending value */
+                previous_match_finish = current_match_finish;
+            }
+            str += match.rm_eo;
+        }
+    }
+
+    /* Reallocate output memory */
+    char *tmp = (char *)realloc(output, index + (strlen(input) - previous_match_finish) + 1);
+    if (NULL == tmp) {
+        mender_log_error(NULL, "Unable to allocate memory");
+        regfree(&regex);
+        free(output);
+        return NULL;
+    }
+    output = tmp;
+
+    /* Copy the end of the string after the latest match */
+    memcpy(&output[index], &input[previous_match_finish], strlen(input) - previous_match_finish);
+    index += (strlen(input) - previous_match_finish);
+    output[index] = 0;
+
+    /* Release regex */
+    regfree(&regex);
+
+    return output;
 }
 
 char *

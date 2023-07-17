@@ -23,7 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-menu "Mender client Configuration"
+menu "Mender General Options"
 
     config MENDER_SERVER_HOST
         string "Mender server host URL"
@@ -49,6 +49,10 @@ menu "Mender client Configuration"
         default 1800
         help
             Interval used to periodically check for new deployments on the Mender server.
+
+endmenu
+
+menu "Mender Addons Options"
 
     config MENDER_CLIENT_ADD_ON_CONFIGURE
         bool "Mender client Configure"
@@ -78,7 +82,7 @@ menu "Mender client Configuration"
         default y
         help
             Inventory add-on permits to send inventory key-value pairs to the Mender server.
-            It is particurlarly used to send artifact name and device type, and it permits to see the last check-in time of the device.
+            It is particularly used to send artifact name and device type, and it permits to see the last check-in time of the device.
 
     if MENDER_CLIENT_ADD_ON_INVENTORY
 
@@ -91,9 +95,63 @@ menu "Mender client Configuration"
 
     endif
 
+    config MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+        bool "Mender client Troubleshoot"
+        default n
+        help
+            Troubleshoot add-on permits to perform debugging on the target from the Mender server.
+            It is particularly used to connect to the remote terminal of the device.
+
+    if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+
+        config MENDER_CLIENT_TROUBLESHOOT_HEALTHCHECK_INTERVAL
+            int "Mender client Troubleshoot healthcheck interval (seconds)"
+            range 0 60
+            default 30
+            help
+                Interval used to periodically perform healthcheck with the Mender server.
+
+    endif
+
 endmenu
 
-menu "Mender advanced Configuration"
+menu "Mender Network Options"
+
+    if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+
+        config MENDER_WEBSOCKET_RECONNECT_TIMEOUT
+            int "Mender WebSocket client reconnect timeout (milliseconds)"
+            range 0 60000
+            default 3000
+            help
+                Mender WebSocket client reconnect timeout. Default value is suitable for most applications.
+
+        config MENDER_WEBSOCKET_NETWORK_TIMEOUT
+            int "Mender WebSocket client network timeout (milliseconds)"
+            range 0 60000
+            default 3000
+            help
+                Mender WebSocket client network timeout. Default value is suitable for most applications.
+
+        config MENDER_WEBSOCKET_REQUEST_TIMEOUT
+            int "Mender WebSocket client request timeout (milliseconds)"
+            range 0 60000
+            default 3000
+            help
+                Mender WebSocket client request timeout. Default value is suitable for most applications.
+
+        config MENDER_WEBSOCKET_PING_INTERVAL
+            int "Mender WebSocket client ping interval (seconds)"
+            range 0 60
+            default 60
+            help
+                Mender WebSocket client ping interval. Default value is suitable for most applications.
+
+    endif
+
+endmenu
+
+menu "Mender Scheduler Options"
 
     config MENDER_RTOS_WORK_QUEUE_STACK_SIZE
         int "Mender RTOS Work Queue Stack Size (kB)"

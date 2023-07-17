@@ -67,7 +67,14 @@ jobs:
       - name: Install libcurl
         run: |
           wget -q -O - https://github.com/curl/curl/archive/refs/tags/curl-8_1_2.tar.gz | tar xz
-          cd curl-curl-8_1_2 && autoreconf -fi && ./configure --with-openssl && make && sudo make install
+          cd curl-curl-8_1_2 && autoreconf -fi && ./configure --with-openssl --enable-websockets && make -j$(nproc) && sudo make install
+      - name: Install msgpack-c
+        run: |
+          wget -q -O - https://github.com/msgpack/msgpack-c/archive/refs/tags/c-6.0.0.tar.gz | tar xz
+          cd msgpack-c-c-6.0.0 && cmake . -DMSGPACK_BUILD_TESTS=OFF -DMSGPACK_BUILD_EXAMPLES=OFF && make -j$(nproc) && sudo make install
+      - name: Refresh the dynamic linker cache
+        run: |
+          sudo ldconfig
       - name: Run build-wrapper
         run: |
           build-wrapper-linux-x86-64 --out-dir bw_output ./.github/workflows/build_tests.sh
