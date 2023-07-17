@@ -143,7 +143,7 @@ restart_cb(void) {
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 static mender_err_t
-config_updated(mender_keystore_t *configuration) {
+config_updated_cb(mender_keystore_t *configuration) {
 
     /* Application can use the new device configuration now */
     if (NULL != configuration) {
@@ -286,7 +286,7 @@ main(int argc, char **argv) {
     mender_configure_config_t    mender_configure_config    = { .refresh_interval = 0 };
     mender_configure_callbacks_t mender_configure_callbacks = {
 #ifndef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
-        .config_updated = NULL,
+        .config_updated = config_updated_cb,
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
     };
     mender_configure_init(&mender_configure_config, &mender_configure_callbacks);
