@@ -34,7 +34,7 @@ if(CONFIG_MENDER_MCU_CLIENT)
         "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-log.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-ota.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-storage.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../platform/http/zephyr/src/mender-http.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/net/zephyr/src/mender-http.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/rtos/zephyr/src/mender-rtos.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/mbedtls/src/mender-tls.c"
     )

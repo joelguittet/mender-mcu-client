@@ -32,7 +32,7 @@ list(APPEND srcs
     "${CMAKE_CURRENT_LIST_DIR}/../platform/board/esp-idf/src/mender-log.c"
     "${CMAKE_CURRENT_LIST_DIR}/../platform/board/esp-idf/src/mender-ota.c"
     "${CMAKE_CURRENT_LIST_DIR}/../platform/board/esp-idf/src/mender-storage.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../platform/http/esp-idf/src/mender-http.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/net/esp-idf/src/mender-http.c"
     "${CMAKE_CURRENT_LIST_DIR}/../platform/rtos/freertos/src/mender-rtos.c"
     "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/mbedtls/src/mender-tls.c"
 )

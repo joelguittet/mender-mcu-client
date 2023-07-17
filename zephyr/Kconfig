@@ -80,7 +80,7 @@ if MENDER_MCU_CLIENT
         help
             Number of sectors of the mender_storage partition, must match the configuration of the partition
 
-    config MENDER_HTTP_CA_CERTIFICATE_TAG
+    config MENDER_NET_CA_CERTIFICATE_TAG
         int "CA certificate tag"
         default 1
         help
