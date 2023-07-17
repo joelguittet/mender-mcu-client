@@ -30,6 +30,9 @@
 #include "mender-http.h"
 #include "mender-log.h"
 #include "mender-tls.h"
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+#include "mender-websocket.h"
+#endif
 
 /**
  * @brief Paths of the mender-server APIs
@@ -39,6 +42,7 @@
 #define MENDER_API_PATH_PUT_DEPLOYMENT_STATUS        "/api/devices/v1/deployments/device/deployments/%s/status"
 #define MENDER_API_PATH_GET_DEVICE_CONFIGURATION     "/api/devices/v1/deviceconfig/configuration"
 #define MENDER_API_PATH_PUT_DEVICE_CONFIGURATION     "/api/devices/v1/deviceconfig/configuration"
+#define MENDER_API_PATH_GET_DEVICE_CONNECT           "/api/devices/v1/deviceconnect/connect"
 #define MENDER_API_PATH_PUT_DEVICE_ATTRIBUTES        "/api/devices/v1/inventory/device/attributes"
 
 /**
@@ -71,6 +75,20 @@ static mender_err_t mender_api_http_text_callback(mender_http_client_event_t eve
  */
 static mender_err_t mender_api_http_artifact_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params);
 
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+
+/**
+ * @brief Websocket callback used to handle websocket data
+ * @param event Websocket client event
+ * @param data Data received
+ * @param data_length Data length
+ * @param params Callback parameters
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t mender_api_websocket_callback(mender_websocket_client_event_t event, void *data, size_t data_length, void *params);
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
+
 /**
  * @brief Print response error
  * @param response HTTP response, NULL if not available
@@ -97,6 +115,13 @@ mender_api_init(mender_api_config_t *config) {
         mender_log_error("Unable to initialize HTTP");
         return ret;
     }
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+    mender_websocket_config_t mender_websocket_config = { .host = mender_api_config.host };
+    if (MENDER_OK != (ret = mender_websocket_init(&mender_websocket_config))) {
+        mender_log_error("Unable to initialize websocket");
+        return ret;
+    }
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
     return ret;
 }
@@ -501,6 +526,58 @@ END:
 
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+
+mender_err_t
+mender_api_troubleshoot_connect(mender_err_t (*callback)(void *, size_t), void **handle) {
+
+    mender_err_t ret;
+
+    /* Open websocket connection */
+    if (MENDER_OK != (ret = mender_websocket_connect(mender_api_jwt, MENDER_API_PATH_GET_DEVICE_CONNECT, &mender_api_websocket_callback, callback, handle))) {
+        mender_log_error("Unable to open websocket connection");
+        goto END;
+    }
+
+END:
+
+    return ret;
+}
+
+mender_err_t
+mender_api_troubleshoot_send(void *handle, void *payload, size_t length) {
+
+    mender_err_t ret;
+
+    /* Send data over websocket connection */
+    if (MENDER_OK != (ret = mender_websocket_send(handle, payload, length))) {
+        mender_log_error("Unable to send data over websocket connection");
+        goto END;
+    }
+
+END:
+
+    return ret;
+}
+
+mender_err_t
+mender_api_troubleshoot_disconnect(void *handle) {
+
+    mender_err_t ret;
+
+    /* Close websocket connection */
+    if (MENDER_OK != (ret = mender_websocket_disconnect(handle))) {
+        mender_log_error("Unable to close websocket connection");
+        goto END;
+    }
+
+END:
+
+    return ret;
+}
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
+
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 
 mender_err_t
@@ -601,6 +678,9 @@ mender_err_t
 mender_api_exit(void) {
 
     /* Release all modules */
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+    mender_websocket_exit();
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
     mender_http_exit();
 
     /* Release memory */
@@ -719,6 +799,54 @@ mender_api_http_artifact_callback(mender_http_client_event_t event, void *data, 
 
     return ret;
 }
+
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+
+static mender_err_t
+mender_api_websocket_callback(mender_websocket_client_event_t event, void *data, size_t data_length, void *params) {
+
+    assert(NULL != params);
+    mender_err_t (*callback)(void *, size_t) = params;
+    mender_err_t ret                         = MENDER_OK;
+
+    /* Treatment depending of the event */
+    switch (event) {
+        case MENDER_WEBSOCKET_EVENT_CONNECTED:
+            /* Nothing to do */
+            mender_log_info("Troubleshoot client connected");
+            break;
+        case MENDER_WEBSOCKET_EVENT_DATA_RECEIVED:
+            /* Check input data */
+            if ((NULL == data) || (0 == data_length)) {
+                mender_log_error("Invalid data received");
+                ret = MENDER_FAIL;
+                break;
+            }
+            /* Process input data */
+            if (MENDER_OK != (ret = callback(data, data_length))) {
+                mender_log_error("Unable to process data");
+                break;
+            }
+            break;
+        case MENDER_WEBSOCKET_EVENT_DISCONNECTED:
+            /* Nothing to do */
+            mender_log_info("Troubleshoot client disconnected");
+            break;
+        case MENDER_WEBSOCKET_EVENT_ERROR:
+            /* Websocket conection fails */
+            mender_log_error("An error occurred");
+            ret = MENDER_FAIL;
+            break;
+        default:
+            /* Should not occur */
+            ret = MENDER_FAIL;
+            break;
+    }
+
+    return ret;
+}
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
 static void
 mender_api_print_response_error(char *response, int status) {

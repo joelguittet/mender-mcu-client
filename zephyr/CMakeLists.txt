@@ -25,6 +25,7 @@
 
 if(CONFIG_MENDER_MCU_CLIENT)
     zephyr_include_directories("${CMAKE_CURRENT_LIST_DIR}/../include")
+    zephyr_include_directories("${CMAKE_CURRENT_LIST_DIR}/../platform/net/zephyr/include")
     zephyr_library()
     zephyr_library_sources(
         "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-api.c"
@@ -35,6 +36,7 @@ if(CONFIG_MENDER_MCU_CLIENT)
         "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-ota.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-storage.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/net/zephyr/src/mender-http.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/net/zephyr/src/mender-net.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/rtos/zephyr/src/mender-rtos.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/mbedtls/src/mender-tls.c"
     )
@@ -43,5 +45,10 @@ if(CONFIG_MENDER_MCU_CLIENT)
     )
     zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-inventory.c"
+    )
+    zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-troubleshoot.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/net/zephyr/src/mender-websocket.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-shell.c"
     )
 endif()

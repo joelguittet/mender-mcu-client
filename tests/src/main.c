@@ -34,6 +34,7 @@
 #include "mender-inventory.h"
 #include "mender-log.h"
 #include "mender-ota.h"
+#include "mender-troubleshoot.h"
 
 /**
  * @brief Mender client options
@@ -72,6 +73,12 @@ authentication_success_cb(void) {
         return ret;
     }
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+    if (MENDER_OK != (ret = mender_troubleshoot_activate())) {
+        mender_log_error("Unable to activate troubleshoot add-on");
+        return ret;
+    }
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
     /* Validate the image if it is still pending */
     /* Note it is possible to do multiple diagnosic tests before validating the image */
@@ -160,6 +167,95 @@ config_updated_cb(mender_keystore_t *configuration) {
 
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
+
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+
+/**
+ * @brief Shell begin callback
+ * @param terminal_width Terminal width
+ * @param terminal_height Terminal height
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t
+shell_begin_cb(uint16_t terminal_width, uint16_t terminal_height) {
+
+    /* Just print terminal size */
+    mender_log_info("Shell connected with width=%d and height=%d", terminal_width, terminal_height);
+
+    return MENDER_OK;
+}
+
+/**
+ * @brief Shell resize callback
+ * @param terminal_width Terminal width
+ * @param terminal_height Terminal height
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t
+shell_resize_cb(uint16_t terminal_width, uint16_t terminal_height) {
+
+    /* Just print terminal size */
+    mender_log_info("Shell resized with width=%d and height=%d", terminal_width, terminal_height);
+
+    return MENDER_OK;
+}
+
+/**
+ * @brief Shell write data callback
+ * @param data Shell data received
+ * @param length Length of the data received
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t
+shell_write_cb(uint8_t *data, size_t length) {
+
+    mender_err_t ret = MENDER_OK;
+    char *       buffer, *tmp;
+
+    /* Ensure new line is "\r\n" to have a proper display of the data in the shell */
+    if (NULL == (buffer = strndup((char *)data, length))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    if (NULL == (tmp = mender_utils_str_replace(buffer, "\r|\n", "\r\n"))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    buffer = tmp;
+
+    /* Send back the data received */
+    if (MENDER_OK != (ret = mender_troubleshoot_shell_print((uint8_t *)buffer, strlen(buffer)))) {
+        mender_log_error("Unable to print data to the sehll");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+
+END:
+
+    /* Release memory */
+    if (NULL != buffer) {
+        free(buffer);
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Shell end callback
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t
+shell_end_cb(void) {
+
+    /* Just print disconnected */
+    mender_log_info("Shell disconnected");
+
+    return MENDER_OK;
+}
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
 /**
  * @brief Signal handler
@@ -280,7 +376,6 @@ main(int argc, char **argv) {
                                                           .ota_end                = mender_ota_end,
                                                           .ota_set_boot_partition = mender_ota_set_boot_partition,
                                                           .restart                = restart_cb };
-
     mender_client_init(&mender_client_config, &mender_client_callbacks);
 
     /* Initialize mender add-ons */
@@ -297,13 +392,27 @@ main(int argc, char **argv) {
     mender_inventory_config_t mender_inventory_config = { .refresh_interval = 0 };
     mender_inventory_init(&mender_inventory_config);
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+    mender_troubleshoot_config_t    mender_troubleshoot_config = { .healthcheck_interval = 0 };
+    mender_troubleshoot_callbacks_t mender_troubleshoot_callbacks
+        = { .shell_begin = shell_begin_cb, .shell_resize = shell_resize_cb, .shell_write = shell_write_cb, .shell_end = shell_end_cb };
+    mender_troubleshoot_init(&mender_troubleshoot_config, &mender_troubleshoot_callbacks);
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
     /* Wait for mender-mcu-client events */
     pthread_mutex_lock(&mender_client_events_mutex);
     pthread_cond_wait(&mender_client_events_cond, &mender_client_events_mutex);
     pthread_mutex_unlock(&mender_client_events_mutex);
 
+    /* Deactivate mender add-ons */
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+    mender_troubleshoot_deactivate();
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
+
     /* Release mender add-ons */
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+    mender_troubleshoot_exit();
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
     mender_inventory_exit();
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */

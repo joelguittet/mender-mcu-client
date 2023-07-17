@@ -15,6 +15,11 @@ k_thread_create(struct k_thread * new_thread,
 }
 
 int
+k_thread_join(struct k_thread *thread, k_timeout_t timeout) {
+    return 0;
+}
+
+int
 k_thread_name_set(k_tid_t thread, const char *str) {
     return 0;
 }
@@ -77,8 +82,22 @@ void
 k_work_init(struct k_work *work, k_work_handler_t handler) {
 }
 
+void
+k_work_init_delayable(struct k_work_delayable *dwork, k_work_handler_t handler) {
+}
+
 int
 k_work_submit_to_queue(struct k_work_q *queue, struct k_work *work) {
+    return 0;
+}
+
+int
+k_work_reschedule_for_queue(struct k_work_q *queue, struct k_work_delayable *dwork, k_timeout_t delay) {
+    return 0;
+}
+
+int
+k_work_cancel_delayable(struct k_work_delayable *dwork) {
     return 0;
 }
 
@@ -88,6 +107,11 @@ k_work_queue_init(struct k_work_q *queue) {
 
 void
 k_work_queue_start(struct k_work_q *queue, k_thread_stack_t *stack, size_t stack_size, int prio, const struct k_work_queue_config *cfg) {
+}
+
+k_tid_t
+k_work_queue_thread_get(struct k_work_q *queue) {
+    return NULL;
 }
 
 int64_t
