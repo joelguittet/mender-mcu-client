@@ -70,7 +70,7 @@ mender_http_perform(char *               jwt,
     assert(NULL != callback);
     assert(NULL != status);
     esp_err_t                err;
-    mender_err_t             ret;
+    mender_err_t             ret    = MENDER_OK;
     esp_http_client_handle_t client = NULL;
     char *                   url    = NULL;
     char *                   bearer = NULL;
