@@ -59,7 +59,7 @@ static char *mender_api_jwt = NULL;
  * @param params Callback parameters
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-static mender_err_t mender_client_http_text_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params);
+static mender_err_t mender_api_http_text_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params);
 
 /**
  * @brief HTTP callback used to handle artifact content
@@ -69,7 +69,7 @@ static mender_err_t mender_client_http_text_callback(mender_http_client_event_t 
  * @param params Callback parameters
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-static mender_err_t mender_client_http_artifact_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params);
+static mender_err_t mender_api_http_artifact_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params);
 
 /**
  * @brief Print response error
@@ -165,7 +165,7 @@ mender_api_perform_authentication(unsigned char *private_key, size_t private_key
                                       MENDER_HTTP_POST,
                                       payload,
                                       signature,
-                                      &mender_client_http_text_callback,
+                                      &mender_api_http_text_callback,
                                       (void *)&response,
                                       &status))) {
         mender_log_error("Unable to perform HTTP request");
@@ -235,7 +235,7 @@ mender_api_check_for_deployment(char **id, char **artifact_name, char **uri) {
 
     /* Perform HTTP request */
     if (MENDER_OK
-        != (ret = mender_http_perform(mender_api_jwt, path, MENDER_HTTP_GET, NULL, NULL, &mender_client_http_text_callback, (void *)&response, &status))) {
+        != (ret = mender_http_perform(mender_api_jwt, path, MENDER_HTTP_GET, NULL, NULL, &mender_api_http_text_callback, (void *)&response, &status))) {
         mender_log_error("Unable to perform HTTP request");
         goto END;
     }
@@ -343,7 +343,7 @@ mender_api_publish_deployment_status(char *id, mender_deployment_status_t deploy
 
     /* Perform HTTP request */
     if (MENDER_OK
-        != (ret = mender_http_perform(mender_api_jwt, path, MENDER_HTTP_PUT, payload, NULL, &mender_client_http_text_callback, (void *)&response, &status))) {
+        != (ret = mender_http_perform(mender_api_jwt, path, MENDER_HTTP_PUT, payload, NULL, &mender_api_http_text_callback, (void *)&response, &status))) {
         mender_log_error("Unable to perform HTTP request");
         goto END;
     }
@@ -382,7 +382,7 @@ mender_api_download_artifact(char *uri, mender_err_t (*callback)(char *, cJSON *
     int          status = 0;
 
     /* Perform HTTP request */
-    if (MENDER_OK != (ret = mender_http_perform(NULL, uri, MENDER_HTTP_GET, NULL, NULL, &mender_client_http_artifact_callback, callback, &status))) {
+    if (MENDER_OK != (ret = mender_http_perform(NULL, uri, MENDER_HTTP_GET, NULL, NULL, &mender_api_http_artifact_callback, callback, &status))) {
         mender_log_error("Unable to perform HTTP request");
         goto END;
     }
@@ -419,7 +419,7 @@ mender_api_download_configuration_data(mender_keystore_t **configuration) {
                                       MENDER_HTTP_GET,
                                       NULL,
                                       NULL,
-                                      &mender_client_http_text_callback,
+                                      &mender_api_http_text_callback,
                                       (void *)&response,
                                       &status))) {
         mender_log_error("Unable to perform HTTP request");
@@ -470,7 +470,7 @@ mender_api_publish_configuration_data(mender_keystore_t *configuration) {
                                       MENDER_HTTP_PUT,
                                       payload,
                                       NULL,
-                                      &mender_client_http_text_callback,
+                                      &mender_api_http_text_callback,
                                       (void *)&response,
                                       &status))) {
         mender_log_error("Unable to perform HTTP request");
@@ -563,7 +563,7 @@ mender_api_publish_inventory_data(mender_keystore_t *inventory) {
                                       MENDER_HTTP_PUT,
                                       payload,
                                       NULL,
-                                      &mender_client_http_text_callback,
+                                      &mender_api_http_text_callback,
                                       (void *)&response,
                                       &status))) {
         mender_log_error("Unable to perform HTTP request");
@@ -613,7 +613,7 @@ mender_api_exit(void) {
 }
 
 static mender_err_t
-mender_client_http_text_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params) {
+mender_api_http_text_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params) {
 
     assert(NULL != params);
     char **      response = (char **)params;
@@ -661,7 +661,7 @@ mender_client_http_text_callback(mender_http_client_event_t event, void *data, s
 }
 
 static mender_err_t
-mender_client_http_artifact_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params) {
+mender_api_http_artifact_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params) {
 
     assert(NULL != params);
     mender_err_t ret = MENDER_OK;
