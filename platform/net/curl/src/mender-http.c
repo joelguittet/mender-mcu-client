@@ -93,7 +93,7 @@ mender_http_perform(char *               jwt,
     assert(NULL != callback);
     assert(NULL != status);
     CURLcode           err;
-    mender_err_t       ret;
+    mender_err_t       ret             = MENDER_OK;
     CURL *             curl            = NULL;
     char *             url             = NULL;
     char *             bearer          = NULL;
