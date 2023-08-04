@@ -1,0 +1,16 @@
+{
+   timer_create with SIGEV_THREAD option, according to several reports found, this should be considered as a false positive
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_2.2.5
+   fun:__start_helper_thread
+   fun:__pthread_once_slow
+   fun:timer_create@@GLIBC_2.3.3
+   fun:mender_rtos_work_create
+   fun:mender_client_init
+   fun:main
+}
