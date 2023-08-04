@@ -332,7 +332,7 @@ mender_rtos_timer_callback(TimerHandle_t handle) {
 
     /* Exit if the work is already pending or executing */
     if (pdPASS != xSemaphoreTake(work_context->sem_handle, 0)) {
-        mender_log_warning("Work '%s' is already pending or executing", work_context->params.name);
+        mender_log_debug("Work '%s' is already pending or executing", work_context->params.name);
         return;
     }
 
