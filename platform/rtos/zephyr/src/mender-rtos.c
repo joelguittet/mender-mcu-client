@@ -297,7 +297,7 @@ mender_rtos_timer_callback(struct k_timer *handle) {
 
     /* Exit if the work is already pending or executing */
     if (0 != k_sem_take(&work_context->sem_handle, K_NO_WAIT)) {
-        mender_log_warning("Work '%s' is already pending or executing", work_context->params.name);
+        mender_log_debug("Work '%s' is already pending or executing", work_context->params.name);
         return;
     }
 

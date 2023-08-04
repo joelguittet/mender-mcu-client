@@ -399,7 +399,7 @@ mender_rtos_timer_callback(union sigval timer_data) {
     struct timespec timeout;
     memset(&timeout, 0, sizeof(struct timespec));
     if (0 != pthread_mutex_timedlock(&work_context->sem_handle, &timeout)) {
-        mender_log_warning("Work '%s' is already pending or executing", work_context->params.name);
+        mender_log_debug("Work '%s' is already pending or executing", work_context->params.name);
         return;
     }
 
