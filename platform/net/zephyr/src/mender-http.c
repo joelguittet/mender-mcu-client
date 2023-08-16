@@ -34,6 +34,7 @@
 #include "mender-http.h"
 #include "mender-log.h"
 #include "mender-rtos.h"
+#include "mender-utils.h"
 
 /**
  * @brief Receive buffer length
@@ -406,7 +407,7 @@ mender_http_get_host_port_url(char *path, char **host, char **port, char **url) 
     char *saveptr;
 
     /* Check if the path start with protocol */
-    if ((strncmp(path, "http://", strlen("http://"))) && (strncmp(path, "https://", strlen("https://")))) {
+    if ((false == mender_utils_strbeginwith(path, "http://")) && (false == mender_utils_strbeginwith(path, "https://"))) {
 
         /* Path contain the URL only, retrieve host and port from configuration */
         assert(NULL != url);
@@ -441,10 +442,10 @@ mender_http_get_host_port_url(char *path, char **host, char **port, char **url) 
     } else {
         /* Port is not specified */
         *host = strdup(pch1);
-        if (!strncmp(protocol, "https", strlen("https"))) {
-            *port = strdup("443");
-        } else {
+        if (true == mender_utils_strbeginwith(path, "http://")) {
             *port = strdup("80");
+        } else if (true == mender_utils_strbeginwith(path, "https://")) {
+            *port = strdup("443");
         }
     }
     if (NULL != url) {

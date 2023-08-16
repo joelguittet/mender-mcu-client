@@ -30,6 +30,7 @@
 #include <esp_crt_bundle.h>
 #include "mender-http.h"
 #include "mender-log.h"
+#include "mender-utils.h"
 
 /**
  * @brief Mender HTTP configuration
@@ -75,7 +76,7 @@ mender_http_perform(char *               jwt,
     char *                   bearer = NULL;
 
     /* Compute URL if required */
-    if (strncmp(path, "http", strlen("http"))) {
+    if ((false == mender_utils_strbeginwith(path, "http://")) && (false == mender_utils_strbeginwith(path, "https://"))) {
         if (NULL == (url = (char *)malloc(strlen(mender_http_config.host) + strlen(path) + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
