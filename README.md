@@ -20,14 +20,14 @@ This repository is not a fork of [mender](https://github.com/mendersoftware/mend
 
 Robustness is ensured with *atomic* image-based deployments using a dual A/B partition layout on the MCU. This makes it always possible to roll back to a working state, even when losing power at any time during the update process.
 
-The project currently support firmware upgrade which is the main interest, Device Inventory and Device Configure add-ons. It will also provide in a near future some other Mender features that could make sense on MCU.
+The project currently support firmware upgrade which is the main interest, Device Inventory, Device Configure and Device Troubleshoot (remote console) add-ons. It will also provide in a near future some other Mender features that could make sense on MCU.
 
 ![Mender logo](https://github.com/mendersoftware/mender/raw/master/mender_logo.png)
 
 
 ## Getting started
 
-To start using Mender, we recommend that you begin with the Getting started section in [the Mender documentation](https://docs.mender.io/).
+To start using Mender, we recommend that you begin with the Getting started section in [the Mender documentation](https://docs.mender.io/) that will help particularly using the Mender interface, which is not specific to the platform.
 
 To start using mender-mcu-client, we recommend that you begin with one of the example provided with the library:
 
@@ -45,6 +45,8 @@ Additionally, a TCP/IP interface is required because communications are done usi
 And finally, 4kB of storage should be reserved to save client private and public keys used for authentication with mender server, plus OTA ID and artifact name to be deployed when an update is done (this is used internally to perform OTA report to the server).
 
 From the source code perspective, the dependencies of the core part of the library are limited to [cJSON](https://github.com/DaveGamble/cJSON). The platform source files may depends of external libraries or Hardware Abstraction Layers: [esp-idf](https://github.com/espressif/esp-idf), [mbedTLS](https://github.com/Mbed-TLS/mbedtls/), ...
+
+Additionally, building the Device Troubleshoot add-on requires [msgpack-c](https://github.com/msgpack/msgpack-c) to perform encoding and decoding of messages. On the ESP-IDF platform, this also constraints to download [esp_websocket_client](https://components.espressif.com/components/espressif/esp_websocket_client), which is compatible with ESP-IDF v5.0 and later only.
 
 
 ## Generating mender-artifact
@@ -66,7 +68,16 @@ Where:
 
 ## API
 
-The API of the mender-mcu-client is defined in `include/mender-client.h` file and the source code is documented to use it properly. The easiest way to start is using an example that is illustrating the usage of the library.
+The API of the mender-mcu-client is defined in `include/mender-client.h` and the API of the add-ons are defined in `include/mender-inventory.h`, `include/mender-configure.h` and `include/mender-troubleshoot.h`. The source code is documented to use it properly.
+
+The easiest way to start is using an example that is illustrating the usage of the library.
+
+
+## Configuration
+
+Some `CONFIG_MENDER_...` configuration keys are available to tweak the features of the mender-mcu-client. Particularly, this is used to enable building the add-ons. Note that default configuration values are suitable for most applications.
+
+Using ESP-IDF and Zephyr platforms, a `Kconfig` file is available. This can be used as a reference of the settings available to configure the client and it is also particularly useful to configure platform specific settings.
 
 
 ## Contributing
@@ -87,7 +98,7 @@ This is why I welcome and ask for your contributions. You can for example:
 
 The organization of the source code permits the mender-mcu-client library to provide support for different kind of platforms and projects.
 
-The source code is separate into three main directories:
+The source code is separated into three main directories:
 * `core` contains the main source files providing the implementation of the mender-mcu-client:
     * `mender-client`: periodically check the availability of updates.
     * `mender-api`: the implementation of the mender [Device APIs](https://docs.mender.io/api/#device-apis).
@@ -96,27 +107,33 @@ The source code is separate into three main directories:
 * `platform` contains source files specific to the platform or project, it is separated in several sub-directories for each feature of the client that rely on external dependency specific to the platforms:
     * `mender-ota`: implementation of functions used to write artifact in the memory.
     * `mender-storage`: provide storage area for the mender-client.
+    * `mender-shell`: provide shell interface to the Device Troubleshoot add-on.
     * `mender-log`: logging API.
     * `mender-http`: implementation of HTTP client.
+    * `mender-websocket`: implementation of websocket client.
     * `mender-rtos`: implementation of RTOS related functions.
     * `mender-tls`: provide TLS support.
 * `add-ons` contains source files of the mender add-ons:
     * `mender-inventory`: provide inventory key/value pairs to display inventory data on the mender server. This add-on is highly recommended and should be included by default. It is proposed as an add-on only to give the possibility to reduce the final code size for user who don't need it.
-    * `mender-configure`: provide configuration key/value pairs to manage devide configuration from the mender server. Build options of this add-on permit to save the configuration in the storage area.
+    * `mender-configure`: provide configuration key/value pairs to manage device configuration from the mender server. Build options of this add-on permit to save the configuration in the storage area.
+    * `mender-troubleshoot`: provide troubleshoot feature to connect remotely to the device from the mender server.
 
 The `include` directory contains the header files that define the prototypes for each module of the library. They are common to all platforms and projects and they define the API to be used or implemented.
 
 The usage of the mender-mcu-client library should be to include all the `core` source files each time, and then to pick up wanted platform implementations, or to write your owns (but it's better to share them and open a Pull Request!). For example you may want to use esp-idf with mbedTLS or with a secure element, or using an other RTOS I have not integrated, or maybe you want to have mender storage located in an external EEPROM. The combinaisons are infinite.
 
-The usage of the add-ons is at your own discretion, they are independant.
+The usage of the add-ons is at your own discretion, they are independent.
 
-The final code size of the mender-mcu-client library depends of your configuration, the following table gives an estimation.
+The final code size of the mender-mcu-client library depends of your configuration, the following table gives an estimation for common Debug and Release optimization levels.
 
-|                      | Code size (-Og) | Code size (-Os) |
-|:---------------------|:----------------|:----------------|
-| mender-client (core) | 24KB            | 21KB            |
-| mender-inventory     | 3KB             | 2KB             |
-| mender-configure     | 4KB             | 4KB             |
+|                      | Debug (-Og) | Optimize for size (-Os) |
+|:---------------------|:------------|:------------------------|
+| mender-client (core) | 24KB        | 21KB                    |
+| mender-inventory     | 3KB         | 3KB                     |
+| mender-configure     | 4KB         | 4KB                     |
+| mender-troubleshoot  | 14KB        | 11KB                    |
+
+Note this is not including dependencies such as mbedTLS or HTTP client, etc. I suppose this kind of libraries is already available and used in your project.
 
 
 ## Roadmap
@@ -124,8 +141,8 @@ The final code size of the mender-mcu-client library depends of your configurati
 The following features are currently in the pipeline. Please note that I haven't set dates in this roadmap because I develop this in my free time, but you can contribute with Pull Requests:
 
 * Support update of [modules](https://docs.mender.io/artifact-creation/create-a-custom-update-module) to perform other kind of updates that could be specific to one project: files, images, etc.
-* Integration of other nice to have Mender APIs as new add-ons: [Device Monitor](https://docs.mender.io/api/#devices-api-device-monitor), remote console...
-* Support new board and prove it is cross-platform and that it is able to work on small MCU too: STM32F7, ATSAMD51...
+* Integration of other nice to have Mender features: Device Troubleshoot sending and receiving files, ...
+* Support new boards and prove it is cross-platform and that it is able to work on small MCU too: STM32F7, ATSAMD51...
 * Integration of ATECC608B secure element to perform TLS authentication.
 * Support other RTOS (particularly Azure RTOS) and bare metal platforms.
 * ...
