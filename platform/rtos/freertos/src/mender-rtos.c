@@ -96,7 +96,7 @@ mender_rtos_init(void) {
     }
     if (pdPASS
         != xTaskCreate(mender_rtos_work_queue_thread,
-                       "mender",
+                       "mender_rtos_work_queue",
                        (configSTACK_DEPTH_TYPE)(CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE * 1024 / sizeof(configSTACK_DEPTH_TYPE)),
                        NULL,
                        CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY,
