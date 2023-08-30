@@ -85,6 +85,7 @@ mender_rtos_init(void) {
                        CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE * 1024,
                        CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY,
                        NULL);
+    k_thread_name_set(k_work_queue_thread_get(&mender_rtos_work_queue_handle), "mender_rtos_work_queue");
 
     return MENDER_OK;
 }
