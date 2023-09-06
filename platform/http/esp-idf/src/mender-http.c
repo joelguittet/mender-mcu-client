@@ -131,30 +131,23 @@ mender_http_perform(char *               jwt,
     }
 
     /* Fetch headers, this returns the content length */
-    int content_length = esp_http_client_fetch_headers(client);
-    if (content_length < 0) {
+    if (esp_http_client_fetch_headers(client) < 0) {
         mender_log_error("Unable to fetch headers");
         ret = MENDER_FAIL;
         goto END;
     }
 
     /* Read data until all have been received */
-    while (content_length > 0) {
-
+    while (false == esp_http_client_is_complete_data_received(client)) {
         char data[512];
-        int  read_length = esp_http_client_read(client, data, sizeof(data));
-        if (read_length < 0) {
-            mender_log_error("An error occured, unable to read data");
-            callback(MENDER_HTTP_EVENT_ERROR, NULL, 0, params);
-            ret = MENDER_FAIL;
-            goto END;
-        } else if (read_length > 0) {
+        int  read_length = esp_http_client_read_response(client, data, sizeof(data));
+
+        if (read_length > 0) {
             /* Transmit data received to the upper layer */
             if (MENDER_OK != (ret = callback(MENDER_HTTP_EVENT_DATA_RECEIVED, data, (size_t)read_length, params))) {
                 mender_log_error("An error occurred, stop reading data");
                 goto END;
             }
-            content_length -= read_length;
         } else {
             if ((ECONNRESET == errno) || (ENOTCONN == errno)) {
                 mender_log_error("An error occurred, connection has been closed, errno = %d", errno);
