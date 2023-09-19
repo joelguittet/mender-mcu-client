@@ -34,7 +34,7 @@ menu "Mender General Options"
     config MENDER_SERVER_TENANT_TOKEN
         string "Mender server Tenant Token"
         help
-            Set the Mender server Tenant Token, to be used with https://hosted.mender.io.
+            Set the Mender server Tenant Token, to be used with https://hosted.mender.io. Retrieve it from the "Organization and billing" settings of your account.
 
     config MENDER_CLIENT_AUTHENTICATION_POLL_INTERVAL
         int "Mender client Authentication poll interval (seconds)"
