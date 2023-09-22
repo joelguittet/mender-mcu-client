@@ -77,6 +77,11 @@ if MENDER_MCU_CLIENT
             help
                 Interval used to periodically check for new deployments on the Mender server.
 
+        module = MENDER
+        module-str = Log Level for mender
+        module-help = Enables logging for mender code.
+        source "subsys/logging/Kconfig.template.log_config"
+
     endmenu
 
     menu "Mender Addons Options"
@@ -294,10 +299,5 @@ if MENDER_MCU_CLIENT
                 Number of sectors of the mender_storage partition, must match the configuration of the partition.
 
     endmenu
-
-    module = MENDER
-    module-str = Log Level for mender
-    module-help = Enables logging for mender code.
-    source "subsys/logging/Kconfig.template.log_config"
 
 endif
