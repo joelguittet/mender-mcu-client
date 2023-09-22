@@ -38,7 +38,7 @@ mender_log_init(void) {
 }
 
 mender_err_t
-mender_log_print(mender_log_level_t level, const char *filename, const char *function, int line, char *format, ...) {
+mender_log_print(uint8_t level, const char *filename, const char *function, int line, char *format, ...) {
 
     (void)function;
     char log[256] = { 0 };
@@ -51,17 +51,19 @@ mender_log_print(mender_log_level_t level, const char *filename, const char *fun
 
     /* Switch depending log level */
     switch (level) {
-        case MENDER_LOG_ERROR:
+        case MENDER_LOG_LEVEL_ERR:
             LOG_ERR("%s (%d): %s", filename, line, log);
             break;
-        case MENDER_LOG_WARNING:
+        case MENDER_LOG_LEVEL_WRN:
             LOG_WRN("%s (%d): %s", filename, line, log);
             break;
-        case MENDER_LOG_INFO:
+        case MENDER_LOG_LEVEL_INF:
             LOG_INF("%s (%d): %s", filename, line, log);
             break;
-        case MENDER_LOG_DEBUG:
+        case MENDER_LOG_LEVEL_DBG:
             LOG_DBG("%s (%d): %s", filename, line, log);
+            break;
+        default:
             break;
     }
 

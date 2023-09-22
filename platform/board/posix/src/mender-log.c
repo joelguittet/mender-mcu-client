@@ -36,7 +36,7 @@ mender_log_init(void) {
 }
 
 mender_err_t
-mender_log_print(mender_log_level_t level, const char *filename, const char *function, int line, char *format, ...) {
+mender_log_print(uint8_t level, const char *filename, const char *function, int line, char *format, ...) {
 
     (void)function;
     struct timespec now;
@@ -53,17 +53,19 @@ mender_log_print(mender_log_level_t level, const char *filename, const char *fun
 
     /* Switch depending log level */
     switch (level) {
-        case MENDER_LOG_ERROR:
+        case MENDER_LOG_LEVEL_ERR:
             printf("[%ld] <err> %s (%d): %s\n", now.tv_sec, filename, line, log);
             break;
-        case MENDER_LOG_WARNING:
+        case MENDER_LOG_LEVEL_WRN:
             printf("[%ld] <war> %s (%d): %s\n", now.tv_sec, filename, line, log);
             break;
-        case MENDER_LOG_INFO:
+        case MENDER_LOG_LEVEL_INF:
             printf("[%ld] <inf> %s (%d): %s\n", now.tv_sec, filename, line, log);
             break;
-        case MENDER_LOG_DEBUG:
+        case MENDER_LOG_LEVEL_DBG:
             printf("[%ld] <dbg> %s (%d): %s\n", now.tv_sec, filename, line, log);
+            break;
+        default:
             break;
     }
 
