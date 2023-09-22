@@ -54,18 +54,15 @@ static mender_configure_callbacks_t mender_configure_callbacks;
  * @brief Mender configure
  */
 static mender_keystore_t *mender_configure_keystore = NULL;
-static void *             mender_configure_mutex    = NULL;
+
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
+static void *mender_configure_mutex = NULL;
 
 /**
  * @brief Mender configure work handle
  */
 static void *mender_configure_work_handle = NULL;
-
-/**
- * @brief Mender configure work function
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_configure_work_function(void);
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
 mender_err_t
 mender_configure_init(mender_configure_config_t *config, mender_configure_callbacks_t *callbacks) {
@@ -83,11 +80,13 @@ mender_configure_init(mender_configure_config_t *config, mender_configure_callba
     /* Save callbacks */
     memcpy(&mender_configure_callbacks, callbacks, sizeof(mender_configure_callbacks_t));
 
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
     /* Create configure mutex */
     if (MENDER_OK != (ret = mender_rtos_mutex_create(&mender_configure_mutex))) {
         mender_log_error("Unable to create configure mutex");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
 #ifdef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
 
@@ -113,18 +112,21 @@ mender_configure_init(mender_configure_config_t *config, mender_configure_callba
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
 
     /* Create mender configure work */
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
     mender_rtos_work_params_t configure_work_params;
-    configure_work_params.function = mender_configure_work_function;
+    configure_work_params.function = mender_configure_routine;
     configure_work_params.period   = mender_configure_config.refresh_interval;
     configure_work_params.name     = "mender_configure";
     if (MENDER_OK != (ret = mender_rtos_work_create(&configure_work_params, &mender_configure_work_handle))) {
         mender_log_error("Unable to create configure work");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
     return ret;
 }
 
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
 mender_err_t
 mender_configure_activate(void) {
 
@@ -138,18 +140,21 @@ mender_configure_activate(void) {
 
     return ret;
 }
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
 mender_err_t
 mender_configure_get(mender_keystore_t **configuration) {
 
     assert(NULL != configuration);
     mender_err_t ret;
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
 
     /* Take mutex used to protect access to the configuration key-store */
     if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_configure_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
     /* Copy the configuration */
     if (MENDER_OK != (ret = mender_utils_keystore_copy(configuration, mender_configure_keystore))) {
@@ -158,9 +163,11 @@ mender_configure_get(mender_keystore_t **configuration) {
     }
 
 END:
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
 
     /* Release mutex used to protect access to the configuration key-store */
     mender_rtos_mutex_give(mender_configure_mutex);
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
     return ret;
 }
@@ -170,11 +177,13 @@ mender_configure_set(mender_keystore_t *configuration) {
 
     mender_err_t ret;
 
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
     /* Take mutex used to protect access to the configuration key-store */
     if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_configure_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
     /* Release previous configuration */
     if (MENDER_OK != (ret = mender_utils_keystore_delete(mender_configure_keystore))) {
@@ -182,11 +191,13 @@ mender_configure_set(mender_keystore_t *configuration) {
         goto END;
     }
 
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
     /* Copy the new configuration */
     if (MENDER_OK != (ret = mender_utils_keystore_copy(&mender_configure_keystore, configuration))) {
         mender_log_error("Unable to copy configuration");
         goto END;
     }
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
 #ifdef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
 
@@ -207,8 +218,10 @@ mender_configure_set(mender_keystore_t *configuration) {
 
 END:
 
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
     /* Release mutex used to protect access to the configuration key-store */
     mender_rtos_mutex_give(mender_configure_mutex);
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
     return ret;
 }
@@ -218,6 +231,7 @@ mender_configure_exit(void) {
 
     mender_err_t ret;
 
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
     /* Deactivate mender configure work */
     mender_rtos_work_deactivate(mender_configure_work_handle);
 
@@ -230,27 +244,31 @@ mender_configure_exit(void) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
     /* Release memory */
     mender_configure_config.refresh_interval = 0;
     mender_utils_keystore_delete(mender_configure_keystore);
     mender_configure_keystore = NULL;
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
     mender_rtos_mutex_give(mender_configure_mutex);
     mender_rtos_mutex_delete(mender_configure_mutex);
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
     return ret;
 }
 
-static mender_err_t
-mender_configure_work_function(void) {
+mender_err_t
+mender_configure_routine(void) {
 
     mender_err_t ret;
-
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
     /* Take mutex used to protect access to the configuration key-store */
     if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_configure_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
 #ifndef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
 
@@ -294,8 +312,10 @@ END:
 
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
 
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
     /* Release mutex used to protect access to the configuration key-store */
     mender_rtos_mutex_give(mender_configure_mutex);
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
     return ret;
 }

@@ -28,7 +28,10 @@
 #include "mender-api.h"
 #include "mender-troubleshoot.h"
 #include "mender-log.h"
+
+#ifndef CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS
 #include "mender-rtos.h"
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS */
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
@@ -126,21 +129,17 @@ static mender_troubleshoot_callbacks_t mender_troubleshoot_callbacks;
  */
 static void *mender_troubleshoot_healthcheck_work_handle = NULL;
 
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS
 /**
  * @brief Mender troubleshoot connection handle
  */
 static void *mender_troubleshoot_handle = NULL;
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS */
 
 /**
  * @brief Mender troubleshoot shell session ID
  */
 static char *mender_troubleshoot_shell_sid = NULL;
-
-/**
- * @brief Mender troubleshoot healthcheck work function
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_troubleshoot_healthcheck_work_function(void);
 
 /**
  * @brief Callback function to be invoked to perform the treatment of the data from the websocket
@@ -287,19 +286,22 @@ mender_troubleshoot_init(mender_troubleshoot_config_t *config, mender_troublesho
     /* Save callbacks */
     memcpy(&mender_troubleshoot_callbacks, callbacks, sizeof(mender_troubleshoot_callbacks_t));
 
+#ifndef CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS
     /* Create troubleshoot healthcheck work */
     mender_rtos_work_params_t healthcheck_work_params;
-    healthcheck_work_params.function = mender_troubleshoot_healthcheck_work_function;
+    healthcheck_work_params.function = mender_troubleshoot_healthcheck_routine;
     healthcheck_work_params.period   = mender_troubleshoot_config.healthcheck_interval;
     healthcheck_work_params.name     = "mender_troubleshoot_healthcheck";
     if (MENDER_OK != (ret = mender_rtos_work_create(&healthcheck_work_params, &mender_troubleshoot_healthcheck_work_handle))) {
         mender_log_error("Unable to create healthcheck work");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS */
 
     return ret;
 }
 
+#ifndef CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS
 mender_err_t
 mender_troubleshoot_activate(void) {
 
@@ -313,14 +315,17 @@ mender_troubleshoot_activate(void) {
 
     return ret;
 }
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS */
 
 mender_err_t
 mender_troubleshoot_deactivate(void) {
 
     mender_err_t ret = MENDER_OK;
 
+#ifndef CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS
     /* Deactivate troubleshoot healthcheck work */
     mender_rtos_work_deactivate(mender_troubleshoot_healthcheck_work_handle);
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS */
 
     /* Check if a session is already opened */
     if (NULL != mender_troubleshoot_shell_sid) {
@@ -444,9 +449,11 @@ FAIL:
 mender_err_t
 mender_troubleshoot_exit(void) {
 
+#ifndef CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS
     /* Delete troubleshoot healthcheck work */
     mender_rtos_work_delete(mender_troubleshoot_healthcheck_work_handle);
     mender_troubleshoot_healthcheck_work_handle = NULL;
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS */
 
     /* Release memory */
     if (NULL != mender_troubleshoot_shell_sid) {
@@ -458,8 +465,8 @@ mender_troubleshoot_exit(void) {
     return MENDER_OK;
 }
 
-static mender_err_t
-mender_troubleshoot_healthcheck_work_function(void) {
+mender_err_t
+mender_troubleshoot_healthcheck_routine(void) {
 
     mender_err_t ret = MENDER_OK;
 

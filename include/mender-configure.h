@@ -60,11 +60,13 @@ typedef struct {
  */
 mender_err_t mender_configure_init(mender_configure_config_t *config, mender_configure_callbacks_t *callbacks);
 
+#ifdef CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
 /**
  * @brief Activate mender configure add-on
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_configure_activate(void);
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS */
 
 /**
  * @brief Get mender configuration
@@ -85,6 +87,13 @@ mender_err_t mender_configure_set(mender_keystore_t *configuration);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_configure_exit(void);
+
+/**
+ * @brief Mender configure work function
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_configure_routine(void);
+
 
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 

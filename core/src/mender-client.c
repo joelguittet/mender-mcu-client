@@ -28,7 +28,10 @@
 #include "mender-api.h"
 #include "mender-client.h"
 #include "mender-log.h"
+
+#if !(CONFIG_MENDER_CLIENT_DISABLE_RTOS && CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS && CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS && CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS)
 #include "mender-rtos.h"
+#endif /* CONFIG_MENDER_CLIENT_DISABLE_RTOS */
 #include "mender-storage.h"
 #include "mender-tls.h"
 
@@ -84,35 +87,20 @@ static size_t         mender_client_public_key_length  = 0;
 static char *mender_client_ota_id            = NULL;
 static char *mender_client_ota_artifact_name = NULL;
 
+
+#ifndef CONFIG_MENDER_CLIENT_DISABLE_RTOS
 /**
  * @brief Mender client work handles
  */
 static void *mender_client_initialization_work_handle = NULL;
 static void *mender_client_authentication_work_handle = NULL;
 static void *mender_client_update_work_handle         = NULL;
+#endif /* CONFIG_MENDER_CLIENT_DISABLE_RTOS */
 
 /**
  * @brief OTA handle used to store temporary reference to write OTA data
  */
 static void *mender_client_ota_handle = NULL;
-
-/**
- * @brief Mender client initialization work function
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_client_initialization_work_function(void);
-
-/**
- * @brief Mender client authentication work function
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_client_authentication_work_function(void);
-
-/**
- * @brief Mender client update work function
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_client_update_work_function(void);
 
 /**
  * @brief Callback function to be invoked to perform the treatment of the data from the artifact
@@ -182,10 +170,13 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     memcpy(&mender_client_callbacks, callbacks, sizeof(mender_client_callbacks_t));
 
     /* Initializations */
+#if !(CONFIG_MENDER_CLIENT_DISABLE_RTOS && CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS && CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS && CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS)
+		printf("mender_client_init: mender_rtos_init\n");
     if (MENDER_OK != (ret = mender_rtos_init())) {
         mender_log_error("Unable to initialize rtos");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_DISABLE_RTOS */
     if (MENDER_OK != (ret = mender_log_init())) {
         mender_log_error("Unable to initialize log");
         return ret;
@@ -211,8 +202,10 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     }
 
     /* Create mender client works */
+#ifndef CONFIG_MENDER_CLIENT_DISABLE_RTOS
+
     mender_rtos_work_params_t initialization_work_params;
-    initialization_work_params.function = mender_client_initialization_work_function;
+    initialization_work_params.function = mender_client_initialization_routine;
     initialization_work_params.period   = mender_client_config.authentication_poll_interval;
     initialization_work_params.name     = "mender_client_initialization";
     if (MENDER_OK != (ret = mender_rtos_work_create(&initialization_work_params, &mender_client_initialization_work_handle))) {
@@ -220,7 +213,7 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
         return ret;
     }
     mender_rtos_work_params_t authentication_work_params;
-    authentication_work_params.function = mender_client_authentication_work_function;
+    authentication_work_params.function = mender_client_authentication_routine;
     authentication_work_params.period   = mender_client_config.authentication_poll_interval;
     authentication_work_params.name     = "mender_client_authentication";
     if (MENDER_OK != (ret = mender_rtos_work_create(&authentication_work_params, &mender_client_authentication_work_handle))) {
@@ -228,7 +221,7 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
         return ret;
     }
     mender_rtos_work_params_t update_work_params;
-    update_work_params.function = mender_client_update_work_function;
+    update_work_params.function = mender_client_update_routine;
     update_work_params.period   = mender_client_config.update_poll_interval;
     update_work_params.name     = "mender_client_update";
     if (MENDER_OK != (ret = mender_rtos_work_create(&update_work_params, &mender_client_update_work_handle))) {
@@ -241,6 +234,7 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
         mender_log_error("Unable to activate initialization work");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_DISABLE_RTOS */
 
     return ret;
 }
@@ -249,6 +243,7 @@ mender_err_t
 mender_client_exit(void) {
 
     /* Deactivate mender client works */
+#ifndef CONFIG_MENDER_CLIENT_DISABLE_RTOS
     mender_rtos_work_deactivate(mender_client_initialization_work_handle);
     mender_rtos_work_deactivate(mender_client_authentication_work_handle);
     mender_rtos_work_deactivate(mender_client_update_work_handle);
@@ -260,13 +255,16 @@ mender_client_exit(void) {
     mender_client_authentication_work_handle = NULL;
     mender_rtos_work_delete(mender_client_update_work_handle);
     mender_client_update_work_handle = NULL;
+#endif /* CONFIG_MENDER_CLIENT_DISABLE_RTOS */
 
     /* Release all modules */
     mender_api_exit();
     mender_tls_exit();
     mender_storage_exit();
     mender_log_exit();
+#ifndef CONFIG_MENDER_CLIENT_DISABLE_RTOS && CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS && CONFIG_MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS && CONFIG_MENDER_CLIENT_CONFIGURE_DISABLE_RTOS)
     mender_rtos_exit();
+#endif /* CONFIG_MENDER_CLIENT_DISABLE_RTOS */
 
     /* Release memory */
     mender_client_config.mac_address                  = NULL;
@@ -298,8 +296,8 @@ mender_client_exit(void) {
     return MENDER_OK;
 }
 
-static mender_err_t
-mender_client_initialization_work_function(void) {
+mender_err_t
+mender_client_initialization_routine(void) {
 
     mender_err_t ret;
 
@@ -344,17 +342,19 @@ mender_client_initialization_work_function(void) {
         }
     }
 
+#ifndef CONFIG_MENDER_CLIENT_DISABLE_RTOS
     /* Activate authentication work */
     if (MENDER_OK != (ret = mender_rtos_work_activate(mender_client_authentication_work_handle))) {
         mender_log_error("Unable to activate authentication work");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_DISABLE_RTOS */
 
     return MENDER_DONE;
 }
 
-static mender_err_t
-mender_client_authentication_work_function(void) {
+mender_err_t
+mender_client_authentication_routine(void) {
 
     mender_err_t ret;
 
@@ -414,10 +414,12 @@ mender_client_authentication_work_function(void) {
     }
 
     /* Activate update work */
+#ifndef CONFIG_MENDER_CLIENT_DISABLE_RTOS
     if (MENDER_OK != (ret = mender_rtos_work_activate(mender_client_update_work_handle))) {
         mender_log_error("Unable to activate update work");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_DISABLE_RTOS */
 
     return MENDER_DONE;
 
@@ -431,8 +433,8 @@ REBOOT:
     return MENDER_DONE;
 }
 
-static mender_err_t
-mender_client_update_work_function(void) {
+mender_err_t
+mender_client_update_routine(void) {
 
     mender_err_t ret;
 

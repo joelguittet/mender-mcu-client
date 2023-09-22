@@ -39,6 +39,7 @@ To start using mender-mcu-client, we recommend that you begin with one of the ex
 ## Dependencies
 
 The mender-mcu-client library tries to be very light in order to be used on most projects wanted to have over-the-air updates. The library mainly rely on the presence of an RTOS to have thread, semaphore and memory allocation support.
+However if user wishes there are Kconfig flags to control which parts are handled by RTOS and which the user handles themselves.
 
 Additionally, a TCP/IP interface is required because communications are done using HTTPS protocol, however it is possible to have an abstraction for example using a WiFi module connected to the MCU with a serial interface and using AT commands.
 

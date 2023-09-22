@@ -77,6 +77,28 @@ mender_err_t mender_client_init(mender_client_config_t *config, mender_client_ca
  */
 mender_err_t mender_client_exit(void);
 
+/**
+ * @brief Mender client initialization work function
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_client_initialization_routine(void);
+
+
+
+/**
+ * @brief Mender client authentication work function
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_client_authentication_routine(void);
+
+/**
+ * @brief Mender client update work function
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_client_update_routine(void);
+
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

@@ -50,11 +50,13 @@ typedef struct {
  */
 mender_err_t mender_inventory_init(mender_inventory_config_t *config);
 
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
 /**
  * @brief Activate mender inventory add-on
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_inventory_activate(void);
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
 /**
  * @brief Set mender inventory
@@ -68,6 +70,13 @@ mender_err_t mender_inventory_set(mender_keystore_t *inventory);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_inventory_exit(void);
+
+/**
+ * @brief Mender inventory work function
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_inventory_routine(void);
+
 
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 

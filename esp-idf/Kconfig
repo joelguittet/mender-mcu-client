@@ -36,10 +36,17 @@ menu "Mender General Options"
         help
             Set the Mender server Tenant Token, to be used with https://hosted.mender.io. Retrieve it from the "Organization and billing" settings of your account.
 
+    config MENDER_CLIENT_DISABLE_RTOS
+        bool "Mender client Disable RTOS polling"
+			  default n
+        help
+          Disable RTOS polling in the Mender client. This option is useful if you want to use the Mender client in a non-RTOS application.
+
     config MENDER_CLIENT_AUTHENTICATION_POLL_INTERVAL
         int "Mender client Authentication poll interval (seconds)"
         range 0 3600
         default 600
+				depends on !MENDER_CLIENT_DISABLE_RTOS
         help
             Interval used to periodically try to authenticate to the Mender server until it succeeds.
 
@@ -47,6 +54,7 @@ menu "Mender General Options"
         int "Mender client Update poll interval (seconds)"
         range 0 86400
         default 1800
+				depends on !MENDER_CLIENT_DISABLE_RTOS
         help
             Interval used to periodically check for new deployments on the Mender server.
 
@@ -88,6 +96,12 @@ menu "Mender Addons Options"
 
     if MENDER_CLIENT_ADD_ON_CONFIGURE
 
+        config MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
+            bool "Mender client Disable RTOS polling for Configure addon"
+            default n
+            help
+               Disable RTOS polling in the Mender Configure addon. This option is useful if you want to use the Mender client in a non-RTOS application.
+
         config MENDER_CLIENT_CONFIGURE_STORAGE
             bool "Mender client Configure storage"
             default y
@@ -98,6 +112,7 @@ menu "Mender Addons Options"
             int "Mender client Configure refresh interval (seconds)"
             range 0 86400
             default 28800
+						depends on !MENDER_CLIENT_CONFIGURE_DISABLE_RTOS
             help
                 Interval used to periodically refresh configuration to/from the Mender server.
 
@@ -112,12 +127,20 @@ menu "Mender Addons Options"
 
     if MENDER_CLIENT_ADD_ON_INVENTORY
 
+        config MENDER_CLIENT_INVENTORY_DISABLE_RTOS
+            bool "Mender client Disable RTOS polling for Inventory addon"
+            default n
+            help
+              Disable RTOS polling in the Mender Inventory addon. This option is useful if you want to use the Mender client in a non-RTOS application.
+
         config MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL
             int "Mender client Inventory refresh interval (seconds)"
             range 0 86400
+						depends on !MENDER_CLIENT_INVENTORY_DISABLE_RTOS
             default 28800
             help
                 Interval used to periodically send inventory to the Mender server.
+
 
     endif
 
@@ -130,9 +153,16 @@ menu "Mender Addons Options"
 
     if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
+        config MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS
+            bool "Mender client Disable RTOS polling for Troubleshoot addon"
+            default n
+            help
+                Disable RTOS polling in the Mender Troubleshoot addon. This option is useful if you want to use the Mender client in a non-RTOS application.
+
         config MENDER_CLIENT_TROUBLESHOOT_HEALTHCHECK_INTERVAL
             int "Mender client Troubleshoot healthcheck interval (seconds)"
             range 0 60
+						depends on !MENDER_CLIENT_TROUBLESHOOT_DISABLE_RTOS
             default 30
             help
                 Interval used to periodically perform healthcheck with the Mender server.

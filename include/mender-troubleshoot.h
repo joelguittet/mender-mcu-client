@@ -89,6 +89,12 @@ mender_err_t mender_troubleshoot_shell_print(uint8_t *data, size_t length);
  */
 mender_err_t mender_troubleshoot_exit(void);
 
+/**
+ * @brief Mender troubleshoot healthcheck work function
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_troubleshoot_healthcheck_routine(void);
+
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
 #ifdef __cplusplus

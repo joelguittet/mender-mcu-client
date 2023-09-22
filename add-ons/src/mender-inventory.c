@@ -28,7 +28,10 @@
 #include "mender-api.h"
 #include "mender-inventory.h"
 #include "mender-log.h"
+
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
 #include "mender-rtos.h"
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
 
@@ -48,18 +51,16 @@ static mender_inventory_config_t mender_inventory_config;
  * @brief Mender inventory
  */
 static mender_keystore_t *mender_inventory_keystore = NULL;
+
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
+
 static void *             mender_inventory_mutex    = NULL;
 
 /**
  * @brief Mender inventory work handle
  */
 static void *mender_inventory_work_handle = NULL;
-
-/**
- * @brief Mender inventory work function
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_inventory_work_function(void);
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
 mender_err_t
 mender_inventory_init(mender_inventory_config_t *config) {
@@ -74,6 +75,7 @@ mender_inventory_init(mender_inventory_config_t *config) {
         mender_inventory_config.refresh_interval = CONFIG_MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL;
     }
 
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
     /* Create inventory mutex */
     if (MENDER_OK != (ret = mender_rtos_mutex_create(&mender_inventory_mutex))) {
         mender_log_error("Unable to create inventory mutex");
@@ -82,17 +84,19 @@ mender_inventory_init(mender_inventory_config_t *config) {
 
     /* Create mender inventory work */
     mender_rtos_work_params_t inventory_work_params;
-    inventory_work_params.function = mender_inventory_work_function;
+    inventory_work_params.function = mender_inventory_routine;
     inventory_work_params.period   = mender_inventory_config.refresh_interval;
     inventory_work_params.name     = "mender_inventory";
     if (MENDER_OK != (ret = mender_rtos_work_create(&inventory_work_params, &mender_inventory_work_handle))) {
         mender_log_error("Unable to create inventory work");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
     return ret;
 }
 
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
 mender_err_t
 mender_inventory_activate(void) {
 
@@ -106,17 +110,20 @@ mender_inventory_activate(void) {
 
     return ret;
 }
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
 mender_err_t
 mender_inventory_set(mender_keystore_t *inventory) {
 
     mender_err_t ret;
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
 
     /* Take mutex used to protect access to the inventory key-store */
     if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_inventory_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
     /* Release previous inventory */
     if (MENDER_OK != (ret = mender_utils_keystore_delete(mender_inventory_keystore))) {
@@ -131,9 +138,11 @@ mender_inventory_set(mender_keystore_t *inventory) {
     }
 
 END:
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
 
     /* Release mutex used to protect access to the inventory key-store */
     mender_rtos_mutex_give(mender_inventory_mutex);
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
     return ret;
 }
@@ -143,6 +152,7 @@ mender_inventory_exit(void) {
 
     mender_err_t ret;
 
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
     /* Deactivate mender inventory work */
     mender_rtos_work_deactivate(mender_inventory_work_handle);
 
@@ -155,35 +165,43 @@ mender_inventory_exit(void) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
     /* Release memory */
     mender_inventory_config.refresh_interval = 0;
     mender_utils_keystore_delete(mender_inventory_keystore);
     mender_inventory_keystore = NULL;
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
     mender_rtos_mutex_give(mender_inventory_mutex);
     mender_rtos_mutex_delete(mender_inventory_mutex);
+		mender_inventory_mutex = NULL;
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
     return ret;
 }
 
-static mender_err_t
-mender_inventory_work_function(void) {
+mender_err_t
+mender_inventory_routine(void) {
 
     mender_err_t ret;
 
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
     /* Take mutex used to protect access to the inventory key-store */
     if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_inventory_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
     /* Publish inventory */
     if (MENDER_OK != (ret = mender_api_publish_inventory_data(mender_inventory_keystore))) {
         mender_log_error("Unable to publish inventory data");
     }
 
+#ifndef CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS
     /* Release mutex used to protect access to the inventory key-store */
     mender_rtos_mutex_give(mender_inventory_mutex);
+#endif /* CONFIG_MENDER_CLIENT_INVENTORY_DISABLE_RTOS */
 
     return ret;
 }
