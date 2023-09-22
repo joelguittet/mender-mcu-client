@@ -50,6 +50,32 @@ menu "Mender General Options"
         help
             Interval used to periodically check for new deployments on the Mender server.
 
+    choice MENDER_LOG_LEVEL
+        bool "Mender client log verbosity"
+        default MENDER_LOG_LEVEL_INF
+        help
+            Specify how much output to see in Mender client logs.
+
+        config MENDER_LOG_LEVEL_OFF
+            bool "No output"
+        config MENDER_LOG_LEVEL_ERR
+            bool "Error"
+        config MENDER_LOG_LEVEL_WRN
+            bool "Warning"
+        config MENDER_LOG_LEVEL_INF
+            bool "Info"
+        config MENDER_LOG_LEVEL_DBG
+            bool "Debug"
+    endchoice
+
+    config MENDER_LOG_LEVEL
+        int
+        default 0 if MENDER_LOG_LEVEL_OFF
+        default 1 if MENDER_LOG_LEVEL_ERR
+        default 2 if MENDER_LOG_LEVEL_WAR
+        default 3 if MENDER_LOG_LEVEL_INF
+        default 4 if MENDER_LOG_LEVEL_DBG
+
 endmenu
 
 menu "Mender Addons Options"
