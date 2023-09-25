@@ -60,7 +60,7 @@ typedef struct {
     mender_err_t (*ota_abort)(void *);                                     /**< Invoked to abort current OTA */
     mender_err_t (*ota_end)(void *);                                       /**< Invoked to indicate the end of the artifact */
     mender_err_t (*ota_set_boot_partition)(void *);                        /**< Invoked to set the new boot parition to be used on the next restart */
-    mender_err_t (*restart)(void);                                         /**< Invoked to restart the devide */
+    mender_err_t (*restart)(void);                                         /**< Invoked to restart the device */
 } mender_client_callbacks_t;
 
 /**
