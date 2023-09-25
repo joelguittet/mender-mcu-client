@@ -227,6 +227,28 @@ mender_rtos_work_activate(void *handle) {
 }
 
 mender_err_t
+mender_rtos_work_set_period(void *handle, uint32_t period) {
+
+    assert(NULL != handle);
+
+    /* Get work context */
+    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+
+    /* Set timer period */
+    work_context->params.period = period;
+    struct itimerspec its;
+    memset(&its, 0, sizeof(struct itimerspec));
+    its.it_value.tv_sec    = work_context->params.period;
+    its.it_interval.tv_sec = work_context->params.period;
+    if (0 != timer_settime(work_context->timer_handle, 0, &its, NULL)) {
+        mender_log_error("Unable to set timer period");
+        return MENDER_FAIL;
+    }
+
+    return MENDER_OK;
+}
+
+mender_err_t
 mender_rtos_work_deactivate(void *handle) {
 
     assert(NULL != handle);
