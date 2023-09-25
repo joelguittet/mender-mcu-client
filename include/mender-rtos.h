@@ -65,6 +65,14 @@ mender_err_t mender_rtos_work_create(mender_rtos_work_params_t *work_params, voi
 mender_err_t mender_rtos_work_activate(void *handle);
 
 /**
+ * @brief Function used to set work period
+ * @param handle Work handle
+ * @param period Work period (seconds)
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_rtos_work_set_period(void *handle, uint32_t period);
+
+/**
  * @brief Function used to deactivate a work
  * @param handle Work handle
  * @return MENDER_OK if the function succeeds, error code otherwise

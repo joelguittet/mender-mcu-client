@@ -163,6 +163,21 @@ mender_rtos_work_activate(void *handle) {
 }
 
 mender_err_t
+mender_rtos_work_set_period(void *handle, uint32_t period) {
+
+    assert(NULL != handle);
+
+    /* Get work context */
+    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+
+    /* Set timer period */
+    work_context->params.period = period;
+    k_timer_start(&work_context->timer_handle, K_NO_WAIT, K_MSEC(1000 * work_context->params.period));
+
+    return MENDER_OK;
+}
+
+mender_err_t
 mender_rtos_work_deactivate(void *handle) {
 
     assert(NULL != handle);
