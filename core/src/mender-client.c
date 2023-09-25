@@ -71,6 +71,20 @@ static mender_client_config_t mender_client_config;
 static mender_client_callbacks_t mender_client_callbacks;
 
 /**
+ * @brief Mender client states
+ */
+typedef enum {
+    MENDER_CLIENT_STATE_INITIALIZATION, /**< Perform initialization */
+    MENDER_CLIENT_STATE_AUTHENTICATION, /**< Perform authentication with the server */
+    MENDER_CLIENT_STATE_AUTHENTICATED,  /**< Perform updates */
+} mender_client_state_t;
+
+/**
+ * @brief Mender client state
+ */
+static mender_client_state_t mender_client_state = MENDER_CLIENT_STATE_INITIALIZATION;
+
+/**
  * @brief Authentication keys
  */
 static unsigned char *mender_client_private_key        = NULL;
@@ -85,16 +99,20 @@ static char *mender_client_ota_id            = NULL;
 static char *mender_client_ota_artifact_name = NULL;
 
 /**
- * @brief Mender client work handles
+ * @brief Mender client work handle
  */
-static void *mender_client_initialization_work_handle = NULL;
-static void *mender_client_authentication_work_handle = NULL;
-static void *mender_client_update_work_handle         = NULL;
+static void *mender_client_work_handle = NULL;
 
 /**
  * @brief OTA handle used to store temporary reference to write OTA data
  */
 static void *mender_client_ota_handle = NULL;
+
+/**
+ * @brief Mender client work function
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t mender_client_work_function(void);
 
 /**
  * @brief Mender client initialization work function
@@ -210,35 +228,19 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
         return ret;
     }
 
-    /* Create mender client works */
-    mender_rtos_work_params_t initialization_work_params;
-    initialization_work_params.function = mender_client_initialization_work_function;
-    initialization_work_params.period   = mender_client_config.authentication_poll_interval;
-    initialization_work_params.name     = "mender_client_initialization";
-    if (MENDER_OK != (ret = mender_rtos_work_create(&initialization_work_params, &mender_client_initialization_work_handle))) {
-        mender_log_error("Unable to create initialization work");
-        return ret;
-    }
-    mender_rtos_work_params_t authentication_work_params;
-    authentication_work_params.function = mender_client_authentication_work_function;
-    authentication_work_params.period   = mender_client_config.authentication_poll_interval;
-    authentication_work_params.name     = "mender_client_authentication";
-    if (MENDER_OK != (ret = mender_rtos_work_create(&authentication_work_params, &mender_client_authentication_work_handle))) {
-        mender_log_error("Unable to create authentication work");
-        return ret;
-    }
+    /* Create mender client work */
     mender_rtos_work_params_t update_work_params;
-    update_work_params.function = mender_client_update_work_function;
-    update_work_params.period   = mender_client_config.update_poll_interval;
+    update_work_params.function = mender_client_work_function;
+    update_work_params.period   = mender_client_config.authentication_poll_interval;
     update_work_params.name     = "mender_client_update";
-    if (MENDER_OK != (ret = mender_rtos_work_create(&update_work_params, &mender_client_update_work_handle))) {
+    if (MENDER_OK != (ret = mender_rtos_work_create(&update_work_params, &mender_client_work_handle))) {
         mender_log_error("Unable to create update work");
         return ret;
     }
 
-    /* Activate initialization work */
-    if (MENDER_OK != (ret = mender_rtos_work_activate(mender_client_initialization_work_handle))) {
-        mender_log_error("Unable to activate initialization work");
+    /* Activate update work */
+    if (MENDER_OK != (ret = mender_rtos_work_activate(mender_client_work_handle))) {
+        mender_log_error("Unable to activate update work");
         return ret;
     }
 
@@ -248,18 +250,12 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
 mender_err_t
 mender_client_exit(void) {
 
-    /* Deactivate mender client works */
-    mender_rtos_work_deactivate(mender_client_initialization_work_handle);
-    mender_rtos_work_deactivate(mender_client_authentication_work_handle);
-    mender_rtos_work_deactivate(mender_client_update_work_handle);
+    /* Deactivate mender client work */
+    mender_rtos_work_deactivate(mender_client_work_handle);
 
-    /* Delete mender client works */
-    mender_rtos_work_delete(mender_client_initialization_work_handle);
-    mender_client_initialization_work_handle = NULL;
-    mender_rtos_work_delete(mender_client_authentication_work_handle);
-    mender_client_authentication_work_handle = NULL;
-    mender_rtos_work_delete(mender_client_update_work_handle);
-    mender_client_update_work_handle = NULL;
+    /* Delete mender client work */
+    mender_rtos_work_delete(mender_client_work_handle);
+    mender_client_work_handle = NULL;
 
     /* Release all modules */
     mender_api_exit();
@@ -296,6 +292,45 @@ mender_client_exit(void) {
     }
 
     return MENDER_OK;
+}
+
+static mender_err_t
+mender_client_work_function(void) {
+
+    mender_err_t ret = MENDER_OK;
+
+    /* Work depending of the client state */
+    if (MENDER_CLIENT_STATE_INITIALIZATION == mender_client_state) {
+        /* Perform initialization of the client */
+        if (MENDER_DONE != (ret = mender_client_initialization_work_function())) {
+            goto END;
+        }
+        /* Update client state */
+        mender_client_state = MENDER_CLIENT_STATE_AUTHENTICATION;
+    }
+    /* Intentional pass-through */
+    if (MENDER_CLIENT_STATE_AUTHENTICATION == mender_client_state) {
+        /* Perform authentication with the server */
+        if (MENDER_DONE != (ret = mender_client_authentication_work_function())) {
+            goto END;
+        }
+        /* Update work period */
+        if (MENDER_OK != (ret = mender_rtos_work_set_period(mender_client_work_handle, mender_client_config.update_poll_interval))) {
+            mender_log_error("Unable to set work period");
+            goto END;
+        }
+        /* Update client state */
+        mender_client_state = MENDER_CLIENT_STATE_AUTHENTICATED;
+    }
+    /* Intentional pass-through */
+    if (MENDER_CLIENT_STATE_AUTHENTICATED == mender_client_state) {
+        /* Perform updates */
+        ret = mender_client_update_work_function();
+    }
+
+END:
+
+    return ret;
 }
 
 static mender_err_t
@@ -342,12 +377,6 @@ mender_client_initialization_work_function(void) {
             mender_log_error("Unable to get OTA ID");
             return ret;
         }
-    }
-
-    /* Activate authentication work */
-    if (MENDER_OK != (ret = mender_rtos_work_activate(mender_client_authentication_work_handle))) {
-        mender_log_error("Unable to activate authentication work");
-        return ret;
     }
 
     return MENDER_DONE;
@@ -411,12 +440,6 @@ mender_client_authentication_work_function(void) {
 
         /* Delete pending OTA */
         mender_storage_delete_ota_deployment();
-    }
-
-    /* Activate update work */
-    if (MENDER_OK != (ret = mender_rtos_work_activate(mender_client_update_work_handle))) {
-        mender_log_error("Unable to activate update work");
-        return ret;
     }
 
     return MENDER_DONE;
