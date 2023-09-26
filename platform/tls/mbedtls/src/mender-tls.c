@@ -39,21 +39,15 @@
 #include "mender-tls.h"
 
 /**
- * @brief Default keys length
+ * @brief Keys buffer length
  */
-#ifndef MENDER_TLS_PRIVATE_KEY_LENGTH
 #define MENDER_TLS_PRIVATE_KEY_LENGTH (2048)
-#endif /* MENDER_TLS_PRIVATE_KEY_LENGTH */
-#ifndef MENDER_TLS_PUBLIC_KEY_LENGTH
-#define MENDER_TLS_PUBLIC_KEY_LENGTH (768)
-#endif /* MENDER_TLS_PUBLIC_KEY_LENGTH */
+#define MENDER_TLS_PUBLIC_KEY_LENGTH  (768)
 
 /**
- * @brief Default signature length (base64 encoded)
+ * @brief Signature buffer length (base64 encoded)
  */
-#ifndef MENDER_TLS_SIGNATURE_LENGTH
 #define MENDER_TLS_SIGNATURE_LENGTH (512)
-#endif /* MENDER_TLS_SIGNATURE_LENGTH */
 
 mender_err_t
 mender_tls_init(void) {
