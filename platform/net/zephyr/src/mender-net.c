@@ -33,6 +33,13 @@
 #include "mender-net.h"
 #include "mender-utils.h"
 
+/**
+ * @brief Default TLS_PEER_VERIFY option
+ */
+#ifndef CONFIG_MENDER_NET_TLS_PEER_VERIFY
+#define CONFIG_MENDER_NET_TLS_PEER_VERIFY (2)
+#endif /* CONFIG_MENDER_NET_TLS_PEER_VERIFY */
+
 mender_err_t
 mender_net_get_host_port_url(char *path, char *config_host, char **host, char **port, char **url) {
 
@@ -148,9 +155,19 @@ mender_net_connect(const char *host, const char *port, int *sock) {
         goto END;
     }
 
-    /* Set SOL_TLS option */
+    /* Set TLS_HOSTNAME option */
     if ((result = setsockopt(*sock, SOL_TLS, TLS_HOSTNAME, host, strlen(host))) < 0) {
         mender_log_error("Unable to set TLS_HOSTNAME option, result = %d", result);
+        close(*sock);
+        *sock = -1;
+        ret   = MENDER_FAIL;
+        goto END;
+    }
+
+    /* Set TLS_PEER_VERIFY option */
+    int verify = CONFIG_MENDER_NET_TLS_PEER_VERIFY;
+    if ((result = setsockopt(*sock, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(int))) < 0) {
+        mender_log_error("Unable to set TLS_PEER_VERIFY option, result = %d", result);
         close(*sock);
         *sock = -1;
         ret   = MENDER_FAIL;
