@@ -62,3 +62,7 @@ idf_component_register(
 if (CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
     idf_component_optional_requires(PRIVATE espressif__esp_websocket_client esp_event msgpack-c)
 endif()
+
+# Retrieve mender-mcu-client version
+file (STRINGS "${CMAKE_CURRENT_LIST_DIR}/../VERSION" MENDER_CLIENT_VERSION)
+add_definitions("-DMENDER_CLIENT_VERSION=\"${MENDER_CLIENT_VERSION}\"")

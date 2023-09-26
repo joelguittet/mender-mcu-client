@@ -51,4 +51,6 @@ if(CONFIG_MENDER_MCU_CLIENT)
         "${CMAKE_CURRENT_LIST_DIR}/../platform/net/zephyr/src/mender-websocket.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-shell.c"
     )
+    file (STRINGS "${CMAKE_CURRENT_LIST_DIR}/../VERSION" MENDER_CLIENT_VERSION)
+    add_definitions("-DMENDER_CLIENT_VERSION=\"${MENDER_CLIENT_VERSION}\"")
 endif()
