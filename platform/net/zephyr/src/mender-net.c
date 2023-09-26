@@ -31,18 +31,7 @@
 #endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 #include "mender-log.h"
 #include "mender-net.h"
-#include "mender-rtos.h"
 #include "mender-utils.h"
-
-/**
- * @brief DNS resolve interval (seconds)
- */
-#define MENDER_NET_DNS_RESOLVE_INTERVAL (10)
-
-/**
- * @brief Connect interval (seconds)
- */
-#define MENDER_NET_CONNECT_INTERVAL (10)
 
 mender_err_t
 mender_net_get_host_port_url(char *path, char *config_host, char **host, char **port, char **url) {
@@ -114,10 +103,7 @@ mender_net_connect(const char *host, const char *port, int *sock) {
     int              result;
     mender_err_t     ret = MENDER_OK;
     struct addrinfo  hints;
-    struct addrinfo *addr             = NULL;
-    int              resolve_attempts = 10;
-    int              connect_attempts = 10;
-    unsigned long    last_wake_time   = 0;
+    struct addrinfo *addr = NULL;
 
     /* Set hints */
     memset(&hints, 0, sizeof(hints));
@@ -130,19 +116,7 @@ mender_net_connect(const char *host, const char *port, int *sock) {
     hints.ai_protocol = IPPROTO_TCP;
 
     /* Perform DNS resolution of the host */
-    if (MENDER_OK != (ret = mender_rtos_delay_until_init(&last_wake_time))) {
-        mender_log_error("Unable to initialize delay");
-        goto END;
-    }
-    while (resolve_attempts--) {
-        if (0 == (result = getaddrinfo(host, port, &hints, &addr))) {
-            break;
-        }
-        mender_log_debug("Unable to resolve host name '%s:%s', result = %d", host, port, result);
-        /* Wait before trying again */
-        mender_rtos_delay_until_s(&last_wake_time, MENDER_NET_DNS_RESOLVE_INTERVAL);
-    }
-    if (0 != result) {
+    if (0 != (result = getaddrinfo(host, port, &hints, &addr))) {
         mender_log_error("Unable to resolve host name '%s:%s', result = %d", host, port, result);
         ret = MENDER_FAIL;
         goto END;
@@ -186,19 +160,7 @@ mender_net_connect(const char *host, const char *port, int *sock) {
 #endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 
     /* Connect to the host */
-    if (MENDER_OK != (ret = mender_rtos_delay_until_init(&last_wake_time))) {
-        mender_log_error("Unable to initialize delay");
-        goto END;
-    }
-    while (connect_attempts--) {
-        if (0 == (result = connect(*sock, addr->ai_addr, addr->ai_addrlen))) {
-            break;
-        }
-        mender_log_debug("Unable to connect to the host '%s:%s', result = %d", host, port, result);
-        /* Wait before trying again */
-        mender_rtos_delay_until_s(&last_wake_time, MENDER_NET_CONNECT_INTERVAL);
-    }
-    if (0 != result) {
+    if (0 != (result = connect(*sock, addr->ai_addr, addr->ai_addrlen))) {
         mender_log_error("Unable to connect to the host '%s:%s', result = %d", host, port, result);
         close(*sock);
         *sock = -1;
