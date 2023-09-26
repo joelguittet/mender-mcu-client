@@ -459,6 +459,14 @@ mender_client_update_work_function(void) {
         goto END;
     }
 
+    /* Execute hook (if available) letting the integrating app know a new deployment is available */
+    if (NULL != mender_client_callbacks.deployment_available) {
+        if (MENDER_OK != (ret = mender_client_callbacks.deployment_available(id, artifact_name, uri))) {
+            mender_log_info("Deployment is available but app is ignoring it for now.");
+            goto END;
+        }
+    }
+
     /* Download deployment artifact */
     mender_log_info("Downloading deployment artifact with id '%s', artifact name '%s' and uri '%s'", id, artifact_name, uri);
     mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_DOWNLOADING);

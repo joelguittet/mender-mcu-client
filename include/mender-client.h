@@ -54,6 +54,7 @@ typedef struct {
 typedef struct {
     mender_err_t (*authentication_success)(void);                          /**< Invoked when authentication with the mender server succeeded */
     mender_err_t (*authentication_failure)(void);                          /**< Invoked when authentication with the mender server failed */
+    mender_err_t (*deployment_available)(char *, char *, char *);          /**< Invoked when a new deployment is available */
     mender_err_t (*deployment_status)(mender_deployment_status_t, char *); /**< Invoked on transition changes to inform of the new deployment status */
     mender_err_t (*ota_begin)(char *, size_t, void **);                    /**< Invoked when the OTA starts */
     mender_err_t (*ota_write)(void *, void *, size_t, size_t);             /**< Invoked to write data received from the mender server */
