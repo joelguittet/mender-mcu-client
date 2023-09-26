@@ -31,6 +31,15 @@
 #include "mender-utils.h"
 
 /**
+ * @brief HTTP User-Agent
+ */
+#ifdef MENDER_CLIENT_VERSION
+#define MENDER_HTTP_USER_AGENT "mender-mcu-client/" MENDER_CLIENT_VERSION " (mender-http) curl/" LIBCURL_VERSION
+#else
+#define MENDER_HTTP_USER_AGENT "mender-mcu-client (mender-http) curl/" LIBCURL_VERSION
+#endif /* MENDER_CLIENT_VERSION */
+
+/**
  * @brief User data
  */
 typedef struct {
@@ -120,6 +129,11 @@ mender_http_perform(char *               jwt,
     /* Configuration of the client */
     if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_URL, (NULL != url) ? url : path))) {
         mender_log_error("Unable to set HTTP URL: %s", curl_easy_strerror(err));
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_USERAGENT, MENDER_HTTP_USER_AGENT))) {
+        mender_log_error("Unable to set HTTP User-Agent: %s", curl_easy_strerror(err));
         ret = MENDER_FAIL;
         goto END;
     }

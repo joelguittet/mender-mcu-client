@@ -33,6 +33,11 @@
 #include "mender-utils.h"
 
 /**
+ * @brief HTTP User-Agent
+ */
+#define MENDER_HTTP_USER_AGENT "mender-mcu-client/" MENDER_CLIENT_VERSION " (mender-http) esp-idf/" IDF_VER
+
+/**
  * @brief Mender HTTP configuration
  */
 static mender_http_config_t mender_http_config;
@@ -86,7 +91,8 @@ mender_http_perform(char *               jwt,
     }
 
     /* Configuration of the client */
-    esp_http_client_config_t config = { .url = (NULL != url) ? url : path, .crt_bundle_attach = esp_crt_bundle_attach, .buffer_size_tx = 2048 };
+    esp_http_client_config_t config
+        = { .url = (NULL != url) ? url : path, .user_agent = MENDER_HTTP_USER_AGENT, .crt_bundle_attach = esp_crt_bundle_attach, .buffer_size_tx = 2048 };
 
     /* Initialization of the client */
     if (NULL == (client = esp_http_client_init(&config))) {

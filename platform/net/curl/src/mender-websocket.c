@@ -46,6 +46,15 @@
 #endif /* CONFIG_MENDER_WEBSOCKET_THREAD_PRIORITY */
 
 /**
+ * @brief WebSocket User-Agent
+ */
+#ifdef MENDER_CLIENT_VERSION
+#define MENDER_WEBSOCKET_USER_AGENT "mender-mcu-client/" MENDER_CLIENT_VERSION " (mender-websocket) curl/" LIBCURL_VERSION
+#else
+#define MENDER_WEBSOCKET_USER_AGENT "mender-mcu-client (mender-websocket) curl/" LIBCURL_VERSION
+#endif /* MENDER_CLIENT_VERSION */
+
+/**
  * @brief Websocket handle
  */
 typedef struct {
@@ -164,6 +173,11 @@ mender_websocket_connect(
         mender_log_error("Unable to set websocket URL: %s", curl_easy_strerror(err_curl));
         ret = MENDER_FAIL;
         goto FAIL;
+    }
+    if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_USERAGENT, MENDER_WEBSOCKET_USER_AGENT))) {
+        mender_log_error("Unable to set HTTP User-Agent: %s", curl_easy_strerror(err_curl));
+        ret = MENDER_FAIL;
+        goto END;
     }
     if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2))) {
         mender_log_error("Unable to set TLSv1.2: %s", curl_easy_strerror(err_curl));

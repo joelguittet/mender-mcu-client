@@ -25,9 +25,10 @@
  * SOFTWARE.
  */
 
+#include <errno.h>
+#include <version.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/websocket.h>
-#include <errno.h>
 #include "mender-log.h"
 #include "mender-net.h"
 #include "mender-websocket.h"
@@ -66,6 +67,11 @@
 #ifndef CONFIG_MENDER_WEBSOCKET_REQUEST_TIMEOUT
 #define CONFIG_MENDER_WEBSOCKET_REQUEST_TIMEOUT (3000)
 #endif /* CONFIG_MENDER_WEBSOCKET_REQUEST_TIMEOUT */
+
+/**
+ * @brief WebSocket User-Agent
+ */
+#define MENDER_WEBSOCKET_USER_AGENT "mender-mcu-client/" MENDER_CLIENT_VERSION " (mender-websocket) zephyr/" KERNEL_VERSION_STRING
 
 /**
  * @brief Websocket receive buffer length
@@ -125,7 +131,7 @@ mender_websocket_connect(
     assert(NULL != handle);
     mender_err_t             ret;
     struct websocket_request request;
-    char *                   header_fields[2] = { NULL, NULL };
+    char *                   header_fields[3] = { NULL, NULL, NULL };
     size_t                   header_index     = 0;
     char *                   host             = NULL;
     char *                   port             = NULL;
@@ -162,6 +168,13 @@ mender_websocket_connect(
         goto FAIL;
     }
     request.tmp_buf_len = MENDER_WEBSOCKET_RECV_BUF_LENGTH;
+    if (NULL == (header_fields[header_index] = malloc(strlen("User-Agent: ") + strlen(MENDER_WEBSOCKET_USER_AGENT) + strlen("\r\n") + 1))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto FAIL;
+    }
+    sprintf(header_fields[header_index], "User-Agent: %s\r\n", MENDER_WEBSOCKET_USER_AGENT);
+    header_index++;
     if (NULL != jwt) {
         if (NULL == (header_fields[header_index] = malloc(strlen("Authorization: Bearer ") + strlen(jwt) + strlen("\r\n") + 1))) {
             mender_log_error("Unable to allocate memory");
