@@ -167,6 +167,13 @@ if MENDER_MCU_CLIENT
             help
                 A security tag that ROOT CA server credential will be referenced with, see tls_credential_add.
 
+        config MENDER_NET_TLS_PEER_VERIFY
+            int "TLS_PEER_VERIFY option"
+            range 0 2
+            default 2
+            help
+                Peer verification level for TLS connection.
+
         if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
             config MENDER_WEBSOCKET_THREAD_STACK_SIZE
