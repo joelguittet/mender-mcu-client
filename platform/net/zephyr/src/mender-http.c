@@ -25,10 +25,16 @@
  * SOFTWARE.
  */
 
+#include <version.h>
 #include <zephyr/net/http/client.h>
 #include "mender-http.h"
 #include "mender-log.h"
 #include "mender-net.h"
+
+/**
+ * @brief HTTP User-Agent
+ */
+#define MENDER_HTTP_USER_AGENT "mender-mcu-client/" MENDER_CLIENT_VERSION " (mender-http) zephyr/" KERNEL_VERSION_STRING
 
 /**
  * @brief Receive buffer length
@@ -97,7 +103,7 @@ mender_http_perform(char *               jwt,
     mender_err_t                ret;
     struct http_request         request;
     mender_http_request_context request_context;
-    char *                      header_fields[4] = { NULL, NULL, NULL, NULL };
+    char *                      header_fields[5] = { NULL, NULL, NULL, NULL, NULL };
     size_t                      header_index     = 0;
     char *                      host             = NULL;
     char *                      port             = NULL;
@@ -132,6 +138,13 @@ mender_http_perform(char *               jwt,
         goto END;
     }
     request.recv_buf_len = MENDER_HTTP_RECV_BUF_LENGTH;
+    if (NULL == (header_fields[header_index] = malloc(strlen("User-Agent: ") + strlen(MENDER_HTTP_USER_AGENT) + strlen("\r\n") + 1))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    sprintf(header_fields[header_index], "User-Agent: %s\r\n", MENDER_HTTP_USER_AGENT);
+    header_index++;
     if (NULL != jwt) {
         if (NULL == (header_fields[header_index] = (char *)malloc(strlen("Authorization: Bearer ") + strlen(jwt) + strlen("\r\n") + 1))) {
             mender_log_error("Unable to allocate memory");

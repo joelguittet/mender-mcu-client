@@ -61,6 +61,11 @@
 #endif /* CONFIG_MENDER_WEBSOCKET_PING_INTERVAL */
 
 /**
+ * @brief WebSocket User-Agent
+ */
+#define MENDER_WEBSOCKET_USER_AGENT "mender-mcu-client/" MENDER_CLIENT_VERSION " (mender-websocket) esp-idf/" IDF_VER
+
+/**
  * @brief Websocket handle
  */
 typedef struct {
@@ -143,6 +148,7 @@ mender_websocket_connect(
 
     /* Configuration of the client */
     esp_websocket_client_config_t config = { .uri                  = (NULL != url) ? url : path,
+                                             .user_agent           = MENDER_WEBSOCKET_USER_AGENT,
                                              .crt_bundle_attach    = esp_crt_bundle_attach,
                                              .reconnect_timeout_ms = CONFIG_MENDER_WEBSOCKET_RECONNECT_TIMEOUT,
                                              .network_timeout_ms   = CONFIG_MENDER_WEBSOCKET_NETWORK_TIMEOUT,
