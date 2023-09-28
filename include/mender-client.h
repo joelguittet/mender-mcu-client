@@ -38,14 +38,14 @@ extern "C" {
  * @brief Mender client configuration
  */
 typedef struct {
-    char *   mac_address;                  /**< MAC address of the device */
-    char *   artifact_name;                /**< Artifact name */
-    char *   device_type;                  /**< Device type */
-    char *   host;                         /**< URL of the mender server */
-    char *   tenant_token;                 /**< Tenant token used to authenticate on the mender server (optional) */
-    uint32_t authentication_poll_interval; /**< Authentication poll interval, default is 60 seconds */
-    uint32_t update_poll_interval;         /**< Update poll interval, default is 1800 seconds */
-    bool     recommissioning;              /**< Used to force creation of new authentication keys */
+    char *  mac_address;                  /**< MAC address of the device */
+    char *  artifact_name;                /**< Artifact name */
+    char *  device_type;                  /**< Device type */
+    char *  host;                         /**< URL of the mender server */
+    char *  tenant_token;                 /**< Tenant token used to authenticate on the mender server (optional) */
+    int32_t authentication_poll_interval; /**< Authentication poll interval, default is 60 seconds, -1 permits to disable periodic execution */
+    int32_t update_poll_interval;         /**< Update poll interval, default is 1800 seconds, -1 permits to disable periodic execution */
+    bool    recommissioning;              /**< Used to force creation of new authentication keys */
 } mender_client_config_t;
 
 /**
@@ -70,6 +70,14 @@ typedef struct {
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *callbacks);
+
+/**
+ * @brief Function used to trigger execution of the authentication and update work
+ * @note Calling this function is optional when the periodic execution of the work is configured
+ * @note It only permits to execute the work as soon as possible to synchronize updates
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_client_execute(void);
 
 /**
  * @brief Release mender client

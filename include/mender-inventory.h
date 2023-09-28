@@ -40,7 +40,7 @@ extern "C" {
  * @brief Mender inventory configuration
  */
 typedef struct {
-    uint32_t refresh_interval; /**< Inventory refresh interval, default is 28800 seconds */
+    int32_t refresh_interval; /**< Inventory refresh interval, default is 28800 seconds, -1 permits to disable periodic execution */
 } mender_inventory_config_t;
 
 /**
@@ -62,6 +62,14 @@ mender_err_t mender_inventory_activate(void);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_inventory_set(mender_keystore_t *inventory);
+
+/**
+ * @brief Function used to trigger execution of the inventory work
+ * @note Calling this function is optional when the periodic execution of the work is configured
+ * @note It only permits to execute the work as soon as possible to synchronize inventory
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_inventory_execute(void);
 
 /**
  * @brief Release mender inventory add-on

@@ -248,6 +248,20 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
 }
 
 mender_err_t
+mender_client_execute(void) {
+
+    mender_err_t ret;
+
+    /* Trigger execution of the work */
+    if (MENDER_OK != (ret = mender_rtos_work_execute(mender_client_work_handle))) {
+        mender_log_error("Unable to trigger update work");
+        return ret;
+    }
+
+    return MENDER_OK;
+}
+
+mender_err_t
 mender_client_exit(void) {
 
     /* Deactivate mender client work */
