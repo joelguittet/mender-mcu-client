@@ -140,8 +140,12 @@ mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle) {
 
     /* Create timer to handle the work periodically */
     if (NULL
-        == (work_context->timer_handle = xTimerCreate(
-                work_context->params.name, (1000 * work_context->params.period) / portTICK_PERIOD_MS, pdTRUE, work_context, mender_rtos_timer_callback))) {
+        == (work_context->timer_handle
+            = xTimerCreate(work_context->params.name,
+                           (work_context->params.period > 0) ? ((1000 * work_context->params.period) / portTICK_PERIOD_MS) : portMAX_DELAY,
+                           pdTRUE,
+                           work_context,
+                           mender_rtos_timer_callback))) {
         mender_log_error("Unable to create timer");
         goto FAIL;
     }
@@ -184,14 +188,18 @@ mender_rtos_work_activate(void *handle) {
         return MENDER_FAIL;
     }
 
-    /* Start the timer to handle the work */
-    if (pdPASS != xTimerStart(work_context->timer_handle, portMAX_DELAY)) {
-        mender_log_error("Unable to start timer");
-        return MENDER_FAIL;
-    }
+    /* Check the timer period */
+    if (work_context->params.period > 0) {
 
-    /* Execute the work now */
-    mender_rtos_timer_callback(work_context->timer_handle);
+        /* Start the timer to handle the work */
+        if (pdPASS != xTimerStart(work_context->timer_handle, portMAX_DELAY)) {
+            mender_log_error("Unable to start timer");
+            return MENDER_FAIL;
+        }
+
+        /* Execute the work now */
+        mender_rtos_timer_callback(work_context->timer_handle);
+    }
 
     return MENDER_OK;
 }
@@ -206,9 +214,16 @@ mender_rtos_work_set_period(void *handle, uint32_t period) {
 
     /* Set timer period */
     work_context->params.period = period;
-    if (pdPASS != xTimerChangePeriod(work_context->timer_handle, (1000 * work_context->params.period) / portTICK_PERIOD_MS, portMAX_DELAY)) {
-        mender_log_error("Unable to change timer period");
-        return MENDER_FAIL;
+    if (work_context->params.period > 0) {
+        if (pdPASS != xTimerChangePeriod(work_context->timer_handle, (1000 * work_context->params.period) / portTICK_PERIOD_MS, portMAX_DELAY)) {
+            mender_log_error("Unable to change timer period");
+            return MENDER_FAIL;
+        }
+    } else {
+        if (pdPASS != xTimerStop(work_context->timer_handle, portMAX_DELAY)) {
+            mender_log_error("Unable to stop timer");
+            return MENDER_FAIL;
+        }
     }
 
     return MENDER_OK;
@@ -350,7 +365,7 @@ mender_rtos_timer_callback(TimerHandle_t handle) {
 
     /* Exit if the work is already pending or executing */
     if (pdPASS != xSemaphoreTake(work_context->sem_handle, 0)) {
-        mender_log_debug("Work '%s' is already pending or executing", work_context->params.name);
+        mender_log_debug("Work '%s' is not activated, already pending or executing", work_context->params.name);
         return;
     }
 

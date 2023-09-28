@@ -208,20 +208,24 @@ mender_rtos_work_activate(void *handle) {
         return MENDER_FAIL;
     }
 
-    /* Start the timer to handle the work */
-    struct itimerspec its;
-    memset(&its, 0, sizeof(struct itimerspec));
-    its.it_value.tv_sec    = work_context->params.period;
-    its.it_interval.tv_sec = work_context->params.period;
-    if (0 != timer_settime(work_context->timer_handle, 0, &its, NULL)) {
-        mender_log_error("Unable to start timer");
-        return MENDER_FAIL;
-    }
+    /* Check the timer period */
+    if (work_context->params.period > 0) {
 
-    /* Execute the work now */
-    union sigval timer_data;
-    timer_data.sival_ptr = (void *)work_context;
-    mender_rtos_timer_callback(timer_data);
+        /* Start the timer to handle the work */
+        struct itimerspec its;
+        memset(&its, 0, sizeof(struct itimerspec));
+        its.it_value.tv_sec    = work_context->params.period;
+        its.it_interval.tv_sec = work_context->params.period;
+        if (0 != timer_settime(work_context->timer_handle, 0, &its, NULL)) {
+            mender_log_error("Unable to start timer");
+            return MENDER_FAIL;
+        }
+
+        /* Execute the work now */
+        union sigval timer_data;
+        timer_data.sival_ptr = (void *)work_context;
+        mender_rtos_timer_callback(timer_data);
+    }
 
     return MENDER_OK;
 }
@@ -238,8 +242,10 @@ mender_rtos_work_set_period(void *handle, uint32_t period) {
     work_context->params.period = period;
     struct itimerspec its;
     memset(&its, 0, sizeof(struct itimerspec));
-    its.it_value.tv_sec    = work_context->params.period;
-    its.it_interval.tv_sec = work_context->params.period;
+    if (work_context->params.period > 0) {
+        its.it_value.tv_sec    = work_context->params.period;
+        its.it_interval.tv_sec = work_context->params.period;
+    }
     if (0 != timer_settime(work_context->timer_handle, 0, &its, NULL)) {
         mender_log_error("Unable to set timer period");
         return MENDER_FAIL;
@@ -421,7 +427,7 @@ mender_rtos_timer_callback(union sigval timer_data) {
     struct timespec timeout;
     memset(&timeout, 0, sizeof(struct timespec));
     if (0 != pthread_mutex_timedlock(&work_context->sem_handle, &timeout)) {
-        mender_log_debug("Work '%s' is already pending or executing", work_context->params.name);
+        mender_log_debug("Work '%s' is not activated, already pending or executing", work_context->params.name);
         return;
     }
 

@@ -42,6 +42,7 @@ menu "Mender General Options"
         default 600
         help
             Interval used to periodically try to authenticate to the Mender server until it succeeds.
+            Setting this value to 0 permits to disable the periodic execution and relies on the application to do it.
 
     config MENDER_CLIENT_UPDATE_POLL_INTERVAL
         int "Mender client Update poll interval (seconds)"
@@ -49,6 +50,7 @@ menu "Mender General Options"
         default 1800
         help
             Interval used to periodically check for new deployments on the Mender server.
+            Setting this value to 0 permits to disable the periodic execution and relies on the application to do it.
 
     choice MENDER_LOG_LEVEL
         bool "Mender client log verbosity"
@@ -100,6 +102,7 @@ menu "Mender Addons Options"
             default 28800
             help
                 Interval used to periodically refresh configuration to/from the Mender server.
+                Setting this value to 0 permits to disable the periodic execution and relies on the application to do it.
 
     endif
 
@@ -118,6 +121,7 @@ menu "Mender Addons Options"
             default 28800
             help
                 Interval used to periodically send inventory to the Mender server.
+                Setting this value to 0 permits to disable the periodic execution and relies on the application to do it.
 
     endif
 
@@ -132,7 +136,7 @@ menu "Mender Addons Options"
 
         config MENDER_CLIENT_TROUBLESHOOT_HEALTHCHECK_INTERVAL
             int "Mender client Troubleshoot healthcheck interval (seconds)"
-            range 0 60
+            range 10 60
             default 30
             help
                 Interval used to periodically perform healthcheck with the Mender server.
