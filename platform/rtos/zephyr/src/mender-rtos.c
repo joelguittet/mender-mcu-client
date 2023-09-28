@@ -156,8 +156,12 @@ mender_rtos_work_activate(void *handle) {
     /* Give semaphore used to protect the work function */
     k_sem_give(&work_context->sem_handle);
 
-    /* Start the timer to handle the work */
-    k_timer_start(&work_context->timer_handle, K_NO_WAIT, K_MSEC(1000 * work_context->params.period));
+    /* Check the timer period */
+    if (work_context->params.period > 0) {
+
+        /* Start the timer to handle the work */
+        k_timer_start(&work_context->timer_handle, K_NO_WAIT, K_MSEC(1000 * work_context->params.period));
+    }
 
     return MENDER_OK;
 }
@@ -172,7 +176,11 @@ mender_rtos_work_set_period(void *handle, uint32_t period) {
 
     /* Set timer period */
     work_context->params.period = period;
-    k_timer_start(&work_context->timer_handle, K_NO_WAIT, K_MSEC(1000 * work_context->params.period));
+    if (work_context->params.period > 0) {
+        k_timer_start(&work_context->timer_handle, K_FOREVER, K_MSEC(1000 * work_context->params.period));
+    } else {
+        k_timer_stop(&work_context->timer_handle);
+    }
 
     return MENDER_OK;
 }
@@ -313,7 +321,7 @@ mender_rtos_timer_callback(struct k_timer *handle) {
 
     /* Exit if the work is already pending or executing */
     if (0 != k_sem_take(&work_context->sem_handle, K_NO_WAIT)) {
-        mender_log_debug("Work '%s' is already pending or executing", work_context->params.name);
+        mender_log_debug("Work '%s' is not activated, already pending or executing", work_context->params.name);
         return;
     }
 
