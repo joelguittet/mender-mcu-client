@@ -40,7 +40,7 @@ extern "C" {
  * @brief Mender configure configuration
  */
 typedef struct {
-    uint32_t refresh_interval; /**< Configure refresh interval, default is 28800 seconds */
+    int32_t refresh_interval; /**< Configure refresh interval, default is 28800 seconds, -1 permits to disable periodic execution */
 } mender_configure_config_t;
 
 /**
@@ -79,6 +79,14 @@ mender_err_t mender_configure_get(mender_keystore_t **configuration);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_configure_set(mender_keystore_t *configuration);
+
+/**
+ * @brief Function used to trigger execution of the configure work
+ * @note Calling this function is optional when the periodic execution of the work is configured
+ * @note It only permits to execute the work as soon as possible to synchronize configuration
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_configure_execute(void);
 
 /**
  * @brief Release mender configure add-on

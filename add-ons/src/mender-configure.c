@@ -214,6 +214,20 @@ END:
 }
 
 mender_err_t
+mender_configure_execute(void) {
+
+    mender_err_t ret;
+
+    /* Trigger execution of the work */
+    if (MENDER_OK != (ret = mender_rtos_work_execute(mender_configure_work_handle))) {
+        mender_log_error("Unable to trigger configure work");
+        return ret;
+    }
+
+    return MENDER_OK;
+}
+
+mender_err_t
 mender_configure_exit(void) {
 
     mender_err_t ret;

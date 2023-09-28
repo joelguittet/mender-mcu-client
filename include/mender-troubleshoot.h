@@ -40,7 +40,7 @@ extern "C" {
  * @brief Mender troubleshoot configuration
  */
 typedef struct {
-    uint32_t healthcheck_interval; /**< Troubleshoot healthcheck interval, default is 30 seconds */
+    int32_t healthcheck_interval; /**< Troubleshoot healthcheck interval, default is 30 seconds, -1 permits to disable periodic execution */
 } mender_troubleshoot_config_t;
 
 /**
