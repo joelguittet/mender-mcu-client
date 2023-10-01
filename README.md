@@ -150,6 +150,13 @@ The following features are currently in the pipeline. Please note that I haven't
 * ...
 
 
+## They speak of this project
+
+* Josef Holzmayr, Mender.io, at Zephyr Project Developer Summit (2023): [Schedule](https://eoss2023.sched.com/event/1LcNZ/community-fueled-ota-for-zephyr-and-other-ucs-josef-holzmayr-menderio), [Slides](https://static.sched.com/hosted_files/eoss2023/0f/EOSS%202023%20-%20Community%20fueled%20OTA%20for%20Zephyr.pdf?_gl=1*3kk8x2*_ga*NDU0ODEwMTg3LjE2ODY3NTM1NzQ.*_ga_XH5XM35VHB*MTY5NjE2OTIwOS40LjAuMTY5NjE2OTIwOS42MC4wLjA.) and [Replay](https://www.youtube.com/watch?v=HaBpRn_It0Q).
+* Josef Holzmayr, Mender.io, on Mender Blog: OTA on the ESP32 [Part 1](https://mender.io/blog/mender-ota-on-the-esp32-part-1) and [Part 2](https://mender.io/blog/mender-ota-on-the-esp32-part-2).
+* Patryk Belka, WizzDev, on WizzDev Blog: [OTA firmware updates using Mender on ESP32](https://wizzdev.com/blog/ota-firmware-updates-using-mender-on-esp32/).
+
+
 ## License
 
 MIT
