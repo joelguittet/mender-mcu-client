@@ -89,8 +89,8 @@ This is why I welcome and ask for your contributions. You can for example:
 * provide new examples based on existing ones.
 * provide new platforms support (please read following Architecture section).
 * enhance the current implementation of platform support submitting a Pull Request (please pay attention to the results of the analysis done by the CI, code quality is important).
-* open an issue if you encountered a problem with the existing implementation, and optionally provide a pull request to fix it, this will be reviewed with care.
-* open an issue to discuss a new feature you want (please read following Roadmap section to avoid claiming features that are already in the list, but of course you are free to open an issue to discuss of future features to ask for the progress or just inform about your interest).
+* open an [issue](https://github.com/joelguittet/mender-mcu-client/issues) if you encountered a problem with the existing implementation, and optionally provide a [pull request](https://github.com/joelguittet/mender-mcu-client/pulls) to fix it, this will be reviewed with care.
+* open an [discussion](https://github.com/joelguittet/mender-mcu-client/discussions) to discuss topics involving the mender-mcu-client, indicate your interest for some features, or just show what you have successfully achieved on your projects!.
 * ...
 
 
