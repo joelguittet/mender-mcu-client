@@ -54,13 +54,9 @@ mender_err_t mender_api_init(mender_api_config_t *config);
 
 /**
  * @brief Perform authentication of the device, retrieve token from mender-server used for the next requests
- * @param private_key Client private key used for authentication
- * @param private_key_length Private key length
- * @param public_key Client public key used for authentication
- * @param public_key_length Public key length
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_perform_authentication(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length);
+mender_err_t mender_api_perform_authentication(void);
 
 /**
  * @brief Check for deployments for the device from the mender-server

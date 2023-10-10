@@ -41,40 +41,27 @@ extern "C" {
 mender_err_t mender_tls_init(void);
 
 /**
- * @brief Generate authentication keys
- * @param private_key Private key generated
- * @param private_key_length Private key lenght
- * @param public_key Public key generated
- * @param public_key_length Public key lenght
+ * @brief Initialize mender TLS authentication keys
+ * @param recommissioning perform recommisioning (if supported by the platform)
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_tls_generate_authentication_keys(unsigned char **private_key,
-                                                     size_t *        private_key_length,
-                                                     unsigned char **public_key,
-                                                     size_t *        public_key_length);
+mender_err_t mender_tls_init_authentication_keys(bool recommissioning);
 
 /**
- * @brief Write a buffer of PEM information from a DER encoded buffer
- * @note This function is derived from mbedtls_pem_write_buffer with const header and footer, and line feed is "\\n"
- * @param der_data The DER data to encode
- * @param der_len The length of the DER data
- * @param buf The buffer to write to
- * @param buf_len The length of the output buffer
- * @param olen The address at which to store the total length written or required output buffer length is not enough
+ * @brief Get public key (PEM format suitable to be integrated in mender authentication request)
+ * @param public_key Public key, NULL if an error occured
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_tls_pem_write_buffer(const unsigned char *der_data, size_t der_len, char *buf, size_t buf_len, size_t *olen);
+mender_err_t mender_tls_get_public_key_pem(char **public_key);
 
 /**
  * @brief Sign payload
- * @param private_key Private key
- * @param private_key_length Private key length
  * @param payload Payload to sign
  * @param signature Signature of the payload
  * @param signature_length Length of the signature buffer, updated to the length of the signature
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_tls_sign_payload(unsigned char *private_key, size_t private_key_length, char *payload, char **signature, size_t *signature_length);
+mender_err_t mender_tls_sign_payload(char *payload, char **signature, size_t *signature_length);
 
 /**
  * @brief Release mender TLS

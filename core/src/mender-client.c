@@ -85,14 +85,6 @@ typedef enum {
 static mender_client_state_t mender_client_state = MENDER_CLIENT_STATE_INITIALIZATION;
 
 /**
- * @brief Authentication keys
- */
-static unsigned char *mender_client_private_key        = NULL;
-static size_t         mender_client_private_key_length = 0;
-static unsigned char *mender_client_public_key         = NULL;
-static size_t         mender_client_public_key_length  = 0;
-
-/**
  * @brief OTA ID and artifact name, used to report OTA status after rebooting
  */
 static char *mender_client_ota_id            = NULL;
@@ -286,16 +278,6 @@ mender_client_exit(void) {
     mender_client_config.tenant_token                 = NULL;
     mender_client_config.authentication_poll_interval = 0;
     mender_client_config.update_poll_interval         = 0;
-    if (NULL != mender_client_private_key) {
-        free(mender_client_private_key);
-        mender_client_private_key = NULL;
-    }
-    mender_client_private_key_length = 0;
-    if (NULL != mender_client_public_key) {
-        free(mender_client_public_key);
-        mender_client_public_key = NULL;
-    }
-    mender_client_public_key_length = 0;
     if (NULL != mender_client_ota_id) {
         free(mender_client_ota_id);
         mender_client_ota_id = NULL;
@@ -352,37 +334,10 @@ mender_client_initialization_work_function(void) {
 
     mender_err_t ret;
 
-    /* Check if recommissioning is forced */
-    if (true == mender_client_config.recommissioning) {
-
-        /* Erase authentication keys */
-        mender_log_info("Delete authentication keys...");
-        if (MENDER_OK != mender_storage_delete_authentication_keys()) {
-            mender_log_warning("Unable to delete authentication keys");
-        }
-    }
-
-    /* Retrieve or generate authentication keys if not allready done */
-    if (MENDER_OK
-        != mender_storage_get_authentication_keys(
-            &mender_client_private_key, &mender_client_private_key_length, &mender_client_public_key, &mender_client_public_key_length)) {
-
-        /* Generate authentication keys */
-        mender_log_info("Generating authentication keys...");
-        if (MENDER_OK
-            != (ret = mender_tls_generate_authentication_keys(
-                    &mender_client_private_key, &mender_client_private_key_length, &mender_client_public_key, &mender_client_public_key_length))) {
-            mender_log_error("Unable to generate authentication keys");
-            return ret;
-        }
-
-        /* Record keys */
-        if (MENDER_OK
-            != (ret = mender_storage_set_authentication_keys(
-                    mender_client_private_key, mender_client_private_key_length, mender_client_public_key, mender_client_public_key_length))) {
-            mender_log_error("Unable to record authentication keys");
-            return ret;
-        }
+    /* Retrieve or generate authentication keys */
+    if (MENDER_OK != (ret = mender_tls_init_authentication_keys(mender_client_config.recommissioning))) {
+        mender_log_error("Unable to retrieve or generate authentication keys");
+        return ret;
     }
 
     /* Retrieve OTA ID if it is found (following an update) */
@@ -402,9 +357,7 @@ mender_client_authentication_work_function(void) {
     mender_err_t ret;
 
     /* Perform authentication with the mender server */
-    if (MENDER_OK
-        != (ret = mender_api_perform_authentication(
-                mender_client_private_key, mender_client_private_key_length, mender_client_public_key, mender_client_public_key_length))) {
+    if (MENDER_OK != (ret = mender_api_perform_authentication())) {
 
         /* Invoke authentication error callback */
         if (NULL != mender_client_callbacks.authentication_failure) {

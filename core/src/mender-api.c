@@ -127,10 +127,8 @@ mender_api_init(mender_api_config_t *config) {
 }
 
 mender_err_t
-mender_api_perform_authentication(unsigned char *private_key, size_t private_key_length, unsigned char *public_key, size_t public_key_length) {
+mender_api_perform_authentication(void) {
 
-    assert(NULL != private_key);
-    assert(NULL != public_key);
     mender_err_t ret;
     char *       public_key_pem   = NULL;
     char *       payload          = NULL;
@@ -139,16 +137,9 @@ mender_api_perform_authentication(unsigned char *private_key, size_t private_key
     size_t       signature_length = 0;
     int          status           = 0;
 
-    /* Convert public key to PEM format */
-    size_t olen = 0;
-    mender_tls_pem_write_buffer(public_key, public_key_length, NULL, 0, &olen);
-    if (NULL == (public_key_pem = (char *)malloc(olen))) {
-        mender_log_error("Unable to allocate memory");
-        ret = MENDER_FAIL;
-        goto END;
-    }
-    if (MENDER_OK != (ret = mender_tls_pem_write_buffer(public_key, public_key_length, public_key_pem, olen, &olen))) {
-        mender_log_error("Unable to convert public key");
+    /* Get public key in PEM format */
+    if (MENDER_OK != (ret = mender_tls_get_public_key_pem(&public_key_pem))) {
+        mender_log_error("Unable to get public key");
         goto END;
     }
 
@@ -178,7 +169,7 @@ mender_api_perform_authentication(unsigned char *private_key, size_t private_key
     }
 
     /* Sign payload */
-    if (MENDER_OK != (ret = mender_tls_sign_payload(private_key, private_key_length, payload, &signature, &signature_length))) {
+    if (MENDER_OK != (ret = mender_tls_sign_payload(payload, &signature, &signature_length))) {
         mender_log_error("Unable to sign payload");
         goto END;
     }
