@@ -41,6 +41,7 @@ tests/mocks/zephyr/include/zephyr/sys/time_units.h
 tests/mocks/zephyr/include/zephyr/sys/util.h
 tests/mocks/zephyr/include/zephyr/sys/util_macro.h
 tests/mocks/zephyr/include/zephyr/sys_clock.h
+tests/mocks/zephyr/include/version.h
 tests/mocks/zephyr/src/device.c
 tests/mocks/zephyr/src/flash.c
 tests/mocks/zephyr/src/flash_img.c
