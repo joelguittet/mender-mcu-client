@@ -42,5 +42,9 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/net/${CONFIG_MENDER_MCU_C
 include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/rtos/${CONFIG_MENDER_MCU_CLIENT_RTOS_TYPE}/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/tls/${CONFIG_MENDER_MCU_CLIENT_TLS_TYPE}/include)
 
+# Define version
+file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/VERSION" MENDER_CLIENT_VERSION)
+add_definitions("-DMENDER_CLIENT_VERSION=\"${MENDER_CLIENT_VERSION}\"")
+
 # Creation of the library
 add_library(mender-mcu-client STATIC ${SOURCES_TEMP})
