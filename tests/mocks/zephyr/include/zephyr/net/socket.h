@@ -7,6 +7,7 @@
 #define SOL_TLS          282
 #define TLS_SEC_TAG_LIST 1
 #define TLS_HOSTNAME     2
+#define TLS_PEER_VERIFY  5
 
 struct addrinfo {
     int              ai_family;
