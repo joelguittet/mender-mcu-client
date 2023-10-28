@@ -29,3 +29,6 @@ target_sources(${APP_EXECUTABLE_NAME} PRIVATE ${SOURCES_TEMP})
 
 # Add include directories
 include_directories("${CMAKE_CURRENT_LIST_DIR}/include")
+
+# Define esp-idf version
+add_definitions("-DIDF_VER=\"x.y.z\"")
