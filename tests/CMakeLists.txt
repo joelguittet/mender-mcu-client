@@ -143,6 +143,9 @@ endif()
 if(CONFIG_MENDER_PLATFORM_RTOS_TYPE MATCHES "posix")
     target_link_libraries(${APP_EXECUTABLE_NAME} rt)
 endif()
+if(CONFIG_MENDER_PLATFORM_TLS_TYPE MATCHES "generic/cryptoauthlib")
+    target_link_libraries(${APP_EXECUTABLE_NAME} cryptoauth)
+endif()
 
 # Define project LANGUAGES
 project(${PROJECT_BASE_NAME} LANGUAGES C ASM)

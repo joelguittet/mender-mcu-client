@@ -1,5 +1,6 @@
 build
 tests/build
 tests/mocks/cjson/cjson
+tests/mocks/cryptoauthlib/cryptoauthlib
 tests/mocks/freertos/freertos
 tests/mocks/mbedtls/mbedtls

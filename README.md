@@ -44,7 +44,7 @@ Additionally, a TCP/IP interface is required because communications are done usi
 
 And finally, 4kB of storage should be reserved to save client private and public keys used for authentication with mender server, plus OTA ID and artifact name to be deployed when an update is done (this is used internally to perform OTA report to the server).
 
-From the source code perspective, the dependencies of the core part of the library are limited to [cJSON](https://github.com/DaveGamble/cJSON). The platform source files may depends of external libraries or Hardware Abstraction Layers: [esp-idf](https://github.com/espressif/esp-idf), [mbedTLS](https://github.com/Mbed-TLS/mbedtls/), ...
+From the source code perspective, the dependencies of the core part of the library are limited to [cJSON](https://github.com/DaveGamble/cJSON). The platform source files may depends of external libraries or Hardware Abstraction Layers: [esp-idf](https://github.com/espressif/esp-idf), [mbedTLS](https://github.com/Mbed-TLS/mbedtls), [cryptoauthlib](https://github.com/MicrochipTech/cryptoauthlib), ...
 
 Additionally, building the Device Troubleshoot add-on requires [msgpack-c](https://github.com/msgpack/msgpack-c) to perform encoding and decoding of messages. On the ESP-IDF platform, this also constraints to download [esp_websocket_client](https://components.espressif.com/components/espressif/esp_websocket_client), which is compatible with ESP-IDF v5.0 and later only.
 
@@ -145,7 +145,6 @@ The following features are currently in the pipeline. Please note that I haven't
 * Support update of [modules](https://docs.mender.io/artifact-creation/create-a-custom-update-module) to perform other kind of updates that could be specific to one project: files, images, etc.
 * Integration of other nice to have Mender features: Device Troubleshoot sending and receiving files, ...
 * Support new boards and prove it is cross-platform and that it is able to work on small MCU too: STM32F7, ATSAMD51...
-* Integration of ATECC608B secure element to perform TLS authentication.
 * Support other RTOS (particularly Azure RTOS) and bare metal platforms.
 * ...
 
