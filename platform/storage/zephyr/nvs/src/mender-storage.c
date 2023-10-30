@@ -70,7 +70,7 @@ mender_storage_init(void) {
         return MENDER_FAIL;
     }
     mender_storage_nvs_handle.sector_size  = (uint16_t)info.size;
-    mender_storage_nvs_handle.sector_count = CONFIG_MENDER_STORAGE_SECTOR_COUNT;
+    mender_storage_nvs_handle.sector_count = CONFIG_MENDER_STORAGE_NVS_SECTOR_COUNT;
 
     /* Mount NVS */
     if (0 != (result = nvs_mount(&mender_storage_nvs_handle))) {

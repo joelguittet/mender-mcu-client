@@ -23,187 +23,320 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-menu "Mender General Options"
+menu "Mender Firmware Over-the-Air support"
 
-    config MENDER_SERVER_HOST
-        string "Mender server host URL"
-        default "https://hosted.mender.io"
-        help
-            Set the Mender server host URL to be used on the device.
+    menu "General configuration"
 
-    config MENDER_SERVER_TENANT_TOKEN
-        string "Mender server Tenant Token"
-        help
-            Set the Mender server Tenant Token, to be used with https://hosted.mender.io. Retrieve it from the "Organization and billing" settings of your account.
-
-    config MENDER_CLIENT_AUTHENTICATION_POLL_INTERVAL
-        int "Mender client Authentication poll interval (seconds)"
-        range 0 3600
-        default 600
-        help
-            Interval used to periodically try to authenticate to the Mender server until it succeeds.
-            Setting this value to 0 permits to disable the periodic execution and relies on the application to do it.
-
-    config MENDER_CLIENT_UPDATE_POLL_INTERVAL
-        int "Mender client Update poll interval (seconds)"
-        range 0 86400
-        default 1800
-        help
-            Interval used to periodically check for new deployments on the Mender server.
-            Setting this value to 0 permits to disable the periodic execution and relies on the application to do it.
-
-    choice MENDER_LOG_LEVEL
-        bool "Mender client log verbosity"
-        default MENDER_LOG_LEVEL_INF
-        help
-            Specify how much output to see in Mender client logs.
-
-        config MENDER_LOG_LEVEL_OFF
-            bool "No output"
-        config MENDER_LOG_LEVEL_ERR
-            bool "Error"
-        config MENDER_LOG_LEVEL_WRN
-            bool "Warning"
-        config MENDER_LOG_LEVEL_INF
-            bool "Info"
-        config MENDER_LOG_LEVEL_DBG
-            bool "Debug"
-    endchoice
-
-    config MENDER_LOG_LEVEL
-        int
-        default 0 if MENDER_LOG_LEVEL_OFF
-        default 1 if MENDER_LOG_LEVEL_ERR
-        default 2 if MENDER_LOG_LEVEL_WAR
-        default 3 if MENDER_LOG_LEVEL_INF
-        default 4 if MENDER_LOG_LEVEL_DBG
-
-endmenu
-
-menu "Mender Addons Options"
-
-    config MENDER_CLIENT_ADD_ON_CONFIGURE
-        bool "Mender client Configure"
-        default n
-        help
-            Configure add-on permits to get/set configuration key-value pairs to/from the Mender server.
-
-    if MENDER_CLIENT_ADD_ON_CONFIGURE
-
-        config MENDER_CLIENT_CONFIGURE_STORAGE
-            bool "Mender client Configure storage"
-            default y
+        config MENDER_SERVER_HOST
+            string "Mender server host URL"
+            default "https://hosted.mender.io"
             help
-                Activate this option to save the configuration from the Mender server in the storage area of the device.
+                Set the Mender server host URL to be used on the device.
 
-        config MENDER_CLIENT_CONFIGURE_REFRESH_INTERVAL
-            int "Mender client Configure refresh interval (seconds)"
-            range 0 86400
-            default 28800
+        config MENDER_SERVER_TENANT_TOKEN
+            string "Mender server Tenant Token"
             help
-                Interval used to periodically refresh configuration to/from the Mender server.
+                Set the Mender server Tenant Token, to be used with https://hosted.mender.io. Retrieve it from the "Organization and billing" settings of your account.
+
+        config MENDER_CLIENT_AUTHENTICATION_POLL_INTERVAL
+            int "Mender client Authentication poll interval (seconds)"
+            range 0 3600
+            default 600
+            help
+                Interval used to periodically try to authenticate to the Mender server until it succeeds.
                 Setting this value to 0 permits to disable the periodic execution and relies on the application to do it.
 
-    endif
-
-    config MENDER_CLIENT_ADD_ON_INVENTORY
-        bool "Mender client Inventory"
-        default y
-        help
-            Inventory add-on permits to send inventory key-value pairs to the Mender server.
-            It is particularly used to send artifact name and device type, and it permits to see the last check-in time of the device.
-
-    if MENDER_CLIENT_ADD_ON_INVENTORY
-
-        config MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL
-            int "Mender client Inventory refresh interval (seconds)"
+        config MENDER_CLIENT_UPDATE_POLL_INTERVAL
+            int "Mender client Update poll interval (seconds)"
             range 0 86400
-            default 28800
+            default 1800
             help
-                Interval used to periodically send inventory to the Mender server.
+                Interval used to periodically check for new deployments on the Mender server.
                 Setting this value to 0 permits to disable the periodic execution and relies on the application to do it.
 
+        choice MENDER_LOG_LEVEL
+            prompt "Mender client log verbosity"
+            default MENDER_LOG_LEVEL_INF
+            help
+                Specify how much output to see in Mender client logs.
+
+            config MENDER_LOG_LEVEL_OFF
+                bool "No output"
+            config MENDER_LOG_LEVEL_ERR
+                bool "Error"
+            config MENDER_LOG_LEVEL_WRN
+                bool "Warning"
+            config MENDER_LOG_LEVEL_INF
+                bool "Info"
+            config MENDER_LOG_LEVEL_DBG
+                bool "Debug"
+        endchoice
+
+        config MENDER_LOG_LEVEL
+            int
+            default 0 if MENDER_LOG_LEVEL_OFF
+            default 1 if MENDER_LOG_LEVEL_ERR
+            default 2 if MENDER_LOG_LEVEL_WAR
+            default 3 if MENDER_LOG_LEVEL_INF
+            default 4 if MENDER_LOG_LEVEL_DBG
+
+    endmenu
+
+    menu "Addons integration"
+
+        menu "Configure Addon configuration"
+
+            config MENDER_CLIENT_ADD_ON_CONFIGURE
+                bool "Mender client Configure"
+                default n
+                help
+                    Configure add-on permits to get/set configuration key-value pairs to/from the Mender server.
+
+            if MENDER_CLIENT_ADD_ON_CONFIGURE
+
+                config MENDER_CLIENT_CONFIGURE_STORAGE
+                    bool "Mender client Configure storage"
+                    default y
+                    help
+                        Activate this option to save the configuration from the Mender server in the storage area of the device.
+
+                config MENDER_CLIENT_CONFIGURE_REFRESH_INTERVAL
+                    int "Mender client Configure refresh interval (seconds)"
+                    range 0 86400
+                    default 28800
+                    help
+                        Interval used to periodically refresh configuration to/from the Mender server.
+                        Setting this value to 0 permits to disable the periodic execution and relies on the application to do it.
+
+            endif
+
+        endmenu
+
+        menu "Inventory Addon configuration"
+
+            config MENDER_CLIENT_ADD_ON_INVENTORY
+                bool "Mender client Inventory"
+                default y
+                help
+                    Inventory add-on permits to send inventory key-value pairs to the Mender server.
+                    It is particularly used to send artifact name and device type, and it permits to see the last check-in time of the device.
+
+            if MENDER_CLIENT_ADD_ON_INVENTORY
+
+                config MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL
+                    int "Mender client Inventory refresh interval (seconds)"
+                    range 0 86400
+                    default 28800
+                    help
+                        Interval used to periodically send inventory to the Mender server.
+                        Setting this value to 0 permits to disable the periodic execution and relies on the application to do it.
+
+            endif
+
+        endmenu
+
+        menu "Troubleshoot Addon configuration"
+
+            config MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+                bool "Mender client Troubleshoot (EXPERIMENTAL)"
+                default n
+                help
+                    Troubleshoot add-on permits to perform debugging on the target from the Mender server.
+                    It is particularly used to connect to the remote terminal of the device.
+
+            if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+
+                config MENDER_CLIENT_TROUBLESHOOT_HEALTHCHECK_INTERVAL
+                    int "Mender client Troubleshoot healthcheck interval (seconds)"
+                    range 10 60
+                    default 30
+                    help
+                        Interval used to periodically perform healthcheck with the Mender server.
+
+            endif
+
+        endmenu
+
+    endmenu
+
+    menu "Platform configuration (ADVANCED)"
+
+        choice MENDER_PLATFORM_LOG_TYPE
+            prompt "Mender platform log implementation type"
+            default MENDER_PLATFORM_LOG_TYPE_DEFAULT
+            help
+                Specify platform log implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_LOG_TYPE_DEFAULT
+                bool "default"
+            config MENDER_PLATFORM_LOG_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_LOG_TYPE
+            string
+            default "esp-idf" if MENDER_PLATFORM_LOG_TYPE_DEFAULT
+            default "generic/weak" if MENDER_PLATFORM_LOG_TYPE_WEAK
+
+        choice MENDER_PLATFORM_NET_TYPE
+            prompt "Mender platform network implementation type"
+            default MENDER_PLATFORM_NET_TYPE_DEFAULT
+            help
+                Specify platform network implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_NET_TYPE_DEFAULT
+                bool "default"
+            config MENDER_PLATFORM_NET_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_NET_TYPE
+            string
+            default "esp-idf" if MENDER_PLATFORM_NET_TYPE_DEFAULT
+            default "generic/weak" if MENDER_PLATFORM_NET_TYPE_WEAK
+
+        choice MENDER_PLATFORM_OTA_TYPE
+            prompt "Mender platform OTA implementation type"
+            default MENDER_PLATFORM_OTA_TYPE_DEFAULT
+            help
+                Specify platform OTA implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_OTA_TYPE_DEFAULT
+                bool "default"
+            config MENDER_PLATFORM_OTA_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_OTA_TYPE
+            string
+            default "esp-idf" if MENDER_PLATFORM_OTA_TYPE_DEFAULT
+            default "generic/weak" if MENDER_PLATFORM_OTA_TYPE_WEAK
+
+        choice MENDER_PLATFORM_RTOS_TYPE
+            prompt "Mender platform RTOS implementation type"
+            default MENDER_PLATFORM_RTOS_TYPE_DEFAULT
+            help
+                Specify platform RTOS implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_RTOS_TYPE_DEFAULT
+                bool "default"
+            config MENDER_PLATFORM_RTOS_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_RTOS_TYPE
+            string
+            default "freertos" if MENDER_PLATFORM_RTOS_TYPE_DEFAULT
+            default "generic/weak" if MENDER_PLATFORM_RTOS_TYPE_WEAK
+
+        choice MENDER_PLATFORM_STORAGE_TYPE
+            prompt "Mender platform storage implementation type"
+            default MENDER_PLATFORM_STORAGE_TYPE_NVS
+            help
+                Specify platform storage implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_STORAGE_TYPE_NVS
+                bool "nvs"
+            config MENDER_PLATFORM_STORAGE_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_STORAGE_TYPE
+            string
+            default "esp-idf/nvs" if MENDER_PLATFORM_STORAGE_TYPE_NVS
+            default "generic/weak" if MENDER_PLATFORM_STORAGE_TYPE_WEAK
+
+        choice MENDER_PLATFORM_TLS_TYPE
+            prompt "Mender platform TLS implementation type"
+            default MENDER_PLATFORM_TLS_TYPE_MBEDTLS
+            help
+                Specify platform TLS implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_TLS_TYPE_MBEDTLS
+                bool "mbedtls"
+            config MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
+                bool "cryptoauthlib"
+            config MENDER_PLATFORM_TLS_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_TLS_TYPE
+            string
+            default "generic/mbedtls" if MENDER_PLATFORM_TLS_TYPE_MBEDTLS
+            default "generic/cryptoauthlib" if MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
+            default "generic/weak" if MENDER_PLATFORM_TLS_TYPE_WEAK
+
+    endmenu
+
+    if MENDER_PLATFORM_NET_TYPE_DEFAULT
+
+        menu "Network options (ADVANCED)"
+
+            if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+
+                config MENDER_WEBSOCKET_RECONNECT_TIMEOUT
+                    int "Mender WebSocket client reconnect timeout (milliseconds)"
+                    range 0 60000
+                    default 3000
+                    help
+                        Mender WebSocket client reconnect timeout. Default value is suitable for most applications.
+
+                config MENDER_WEBSOCKET_NETWORK_TIMEOUT
+                    int "Mender WebSocket client network timeout (milliseconds)"
+                    range 0 60000
+                    default 3000
+                    help
+                        Mender WebSocket client network timeout. Default value is suitable for most applications.
+
+                config MENDER_WEBSOCKET_REQUEST_TIMEOUT
+                    int "Mender WebSocket client request timeout (milliseconds)"
+                    range 0 60000
+                    default 3000
+                    help
+                        Mender WebSocket client request timeout. Default value is suitable for most applications.
+
+                config MENDER_WEBSOCKET_PING_INTERVAL
+                    int "Mender WebSocket client ping interval (seconds)"
+                    range 0 60
+                    default 60
+                    help
+                        Mender WebSocket client ping interval. Default value is suitable for most applications.
+
+            endif
+
+        endmenu
+
     endif
 
-    config MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-        bool "Mender client Troubleshoot"
-        default n
-        help
-            Troubleshoot add-on permits to perform debugging on the target from the Mender server.
-            It is particularly used to connect to the remote terminal of the device.
+    if MENDER_PLATFORM_RTOS_TYPE_DEFAULT
 
-    if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+        menu "RTOS options (ADVANCED)"
 
-        config MENDER_CLIENT_TROUBLESHOOT_HEALTHCHECK_INTERVAL
-            int "Mender client Troubleshoot healthcheck interval (seconds)"
-            range 10 60
-            default 30
-            help
-                Interval used to periodically perform healthcheck with the Mender server.
+            config MENDER_RTOS_WORK_QUEUE_STACK_SIZE
+                int "Mender RTOS Work Queue Stack Size (kB)"
+                range 0 64
+                default 20
+                help
+                    Mender RTOS work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+                    The default TLS configuration of ESP-IDF v4.4.x allows to decrease the stack size down to 12kB.
+                    The default stack size is 20kB because the default TLS configuration of ESP-IDF V5.x consumes more memory.
 
-    endif
+            config MENDER_RTOS_WORK_QUEUE_PRIORITY
+                int "Mender RTOS Work Queue Priority"
+                range 0 24
+                default 5
+                help
+                    Mender RTOS work queue priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
-endmenu
+            config MENDER_RTOS_WORK_QUEUE_LENGTH
+                int "Mender RTOS Work Queue Length"
+                range 0 64
+                default 10
+                help
+                    Mender RTOS work queue length, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
-menu "Mender Network Options"
-
-    if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-
-        config MENDER_WEBSOCKET_RECONNECT_TIMEOUT
-            int "Mender WebSocket client reconnect timeout (milliseconds)"
-            range 0 60000
-            default 3000
-            help
-                Mender WebSocket client reconnect timeout. Default value is suitable for most applications.
-
-        config MENDER_WEBSOCKET_NETWORK_TIMEOUT
-            int "Mender WebSocket client network timeout (milliseconds)"
-            range 0 60000
-            default 3000
-            help
-                Mender WebSocket client network timeout. Default value is suitable for most applications.
-
-        config MENDER_WEBSOCKET_REQUEST_TIMEOUT
-            int "Mender WebSocket client request timeout (milliseconds)"
-            range 0 60000
-            default 3000
-            help
-                Mender WebSocket client request timeout. Default value is suitable for most applications.
-
-        config MENDER_WEBSOCKET_PING_INTERVAL
-            int "Mender WebSocket client ping interval (seconds)"
-            range 0 60
-            default 60
-            help
-                Mender WebSocket client ping interval. Default value is suitable for most applications.
+        endmenu
 
     endif
-
-endmenu
-
-menu "Mender Scheduler Options"
-
-    config MENDER_RTOS_WORK_QUEUE_STACK_SIZE
-        int "Mender RTOS Work Queue Stack Size (kB)"
-        range 0 64
-        default 20
-        help
-            Mender RTOS work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
-            The default TLS configuration of ESP-IDF v4.4.x allows to decrease the stack size down to 12kB.
-            The default stack size is 20kB because the default TLS configuration of ESP-IDF V5.x consumes more memory.
-
-    config MENDER_RTOS_WORK_QUEUE_PRIORITY
-        int "Mender RTOS Work Queue Priority"
-        range 0 24
-        default 5
-        help
-            Mender RTOS work queue priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
-
-    config MENDER_RTOS_WORK_QUEUE_LENGTH
-        int "Mender RTOS Work Queue Length"
-        range 0 64
-        default 10
-        help
-            Mender RTOS work queue length, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
 endmenu

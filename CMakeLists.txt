@@ -28,19 +28,23 @@ cmake_minimum_required(VERSION 3.16.3)
 # List of sources
 file(GLOB SOURCES_TEMP
     "${CMAKE_CURRENT_LIST_DIR}/core/src/*.c"
-    "${CMAKE_CURRENT_LIST_DIR}/platform/board/${CONFIG_MENDER_MCU_CLIENT_BOARD_TYPE}/src/*.c"
-    "${CMAKE_CURRENT_LIST_DIR}/platform/net/${CONFIG_MENDER_MCU_CLIENT_NET_TYPE}/src/*.c"
-    "${CMAKE_CURRENT_LIST_DIR}/platform/rtos/${CONFIG_MENDER_MCU_CLIENT_RTOS_TYPE}/src/*.c"
-    "${CMAKE_CURRENT_LIST_DIR}/platform/tls/${CONFIG_MENDER_MCU_CLIENT_TLS_TYPE}/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/platform/log/${CONFIG_MENDER_PLATFORM_LOG_TYPE}/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/platform/ota/${CONFIG_MENDER_PLATFORM_OTA_TYPE}/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/platform/rtos/${CONFIG_MENDER_PLATFORM_RTOS_TYPE}/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/platform/storage/${CONFIG_MENDER_PLATFORM_STORAGE_TYPE}/src/*.c"
+    "${CMAKE_CURRENT_LIST_DIR}/platform/tls/${CONFIG_MENDER_PLATFORM_TLS_TYPE}/src/*.c"
     "${CMAKE_CURRENT_LIST_DIR}/add-ons/src/*.c"
 )
 
 # Add include directories
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
-include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/board/${CONFIG_MENDER_MCU_CLIENT_BOARD_TYPE}/include)
-include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/net/${CONFIG_MENDER_MCU_CLIENT_NET_TYPE}/include)
-include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/rtos/${CONFIG_MENDER_MCU_CLIENT_RTOS_TYPE}/include)
-include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/tls/${CONFIG_MENDER_MCU_CLIENT_TLS_TYPE}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/log/${CONFIG_MENDER_PLATFORM_LOG_TYPE}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/ota/${CONFIG_MENDER_PLATFORM_OTA_TYPE}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/rtos/${CONFIG_MENDER_PLATFORM_RTOS_TYPE}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/storage/${CONFIG_MENDER_PLATFORM_STORAGE_TYPE}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/platform/tls/${CONFIG_MENDER_PLATFORM_TLS_TYPE}/include)
 
 # Define version
 file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/VERSION" MENDER_CLIENT_VERSION)

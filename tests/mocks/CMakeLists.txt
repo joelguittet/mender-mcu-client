@@ -25,15 +25,16 @@
 
 # Include all mocks
 include("${CMAKE_CURRENT_LIST_DIR}/cjson/CMakeLists.txt")
-if(CONFIG_MENDER_MCU_CLIENT_BOARD_TYPE MATCHES "esp-idf")
+if(CONFIG_MENDER_PLATFORM_LOG_TYPE MATCHES "esp-idf" OR CONFIG_MENDER_PLATFORM_NET_TYPE MATCHES "esp-idf" OR
+   CONFIG_MENDER_PLATFORM_OTA_TYPE MATCHES "esp-idf" OR CONFIG_MENDER_PLATFORM_STORAGE_TYPE MATCHES "esp-idf/nvs")
     include("${CMAKE_CURRENT_LIST_DIR}/esp-idf/CMakeLists.txt")
 endif()
-if(CONFIG_MENDER_MCU_CLIENT_RTOS_TYPE MATCHES "freertos")
+if(CONFIG_MENDER_PLATFORM_RTOS_TYPE MATCHES "freertos")
     include("${CMAKE_CURRENT_LIST_DIR}/freertos/CMakeLists.txt")
 endif()
-if(CONFIG_MENDER_MCU_CLIENT_RTOS_TYPE MATCHES "zephyr")
+if(CONFIG_MENDER_PLATFORM_RTOS_TYPE MATCHES "zephyr")
     include("${CMAKE_CURRENT_LIST_DIR}/zephyr/CMakeLists.txt")
 endif()
-if(CONFIG_MENDER_MCU_CLIENT_TLS_TYPE MATCHES "mbedtls")
+if(CONFIG_MENDER_PLATFORM_TLS_TYPE MATCHES "generic/mbedtls")
     include("${CMAKE_CURRENT_LIST_DIR}/mbedtls/CMakeLists.txt")
 endif()

@@ -51,7 +51,7 @@
 #define MENDER_TLS_SIGNATURE_LENGTH (512)
 
 /**
- * @brief Authentication keys
+ * @brief Private and public keys of the device
  */
 static unsigned char *mender_tls_private_key        = NULL;
 static size_t         mender_tls_private_key_length = 0;
@@ -117,7 +117,7 @@ mender_tls_init_authentication_keys(bool recommissioning) {
         }
     }
 
-    /* Retrieve or generate authentication keys if not allready done */
+    /* Retrieve or generate private and public keys if not allready done */
     if (MENDER_OK
         != (ret = mender_storage_get_authentication_keys(
                 &mender_tls_private_key, &mender_tls_private_key_length, &mender_tls_public_key, &mender_tls_public_key_length))) {
