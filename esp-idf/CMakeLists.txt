@@ -29,12 +29,12 @@ list(APPEND srcs
     "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-artifact.c"
     "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-client.c"
     "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-utils.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../platform/board/esp-idf/src/mender-log.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../platform/board/esp-idf/src/mender-ota.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../platform/board/esp-idf/src/mender-storage.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../platform/net/esp-idf/src/mender-http.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../platform/rtos/freertos/src/mender-rtos.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/mbedtls/src/mender-tls.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/log/${CONFIG_MENDER_PLATFORM_LOG_TYPE}/src/mender-log.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/src/mender-http.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/ota/${CONFIG_MENDER_PLATFORM_OTA_TYPE}/src/mender-ota.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/rtos/${CONFIG_MENDER_PLATFORM_RTOS_TYPE}/src/mender-rtos.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/storage/${CONFIG_MENDER_PLATFORM_STORAGE_TYPE}/src/mender-storage.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/${CONFIG_MENDER_PLATFORM_TLS_TYPE}/src/mender-tls.c"
 )
 if(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE)
     list(APPEND srcs
@@ -49,7 +49,7 @@ endif()
 if(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
     list(APPEND srcs
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-troubleshoot.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../platform/net/esp-idf/src/mender-websocket.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/src/mender-websocket.c"
     )
 endif()
 

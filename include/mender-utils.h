@@ -45,10 +45,11 @@ extern "C" {
  * @brief Mender error codes
  */
 typedef enum {
-    MENDER_DONE      = 1,  /**< Done */
-    MENDER_OK        = 0,  /**< OK */
-    MENDER_FAIL      = -1, /**< Failure */
-    MENDER_NOT_FOUND = -2, /**< Not found */
+    MENDER_DONE            = 1,  /**< Done */
+    MENDER_OK              = 0,  /**< OK */
+    MENDER_FAIL            = -1, /**< Failure */
+    MENDER_NOT_FOUND       = -2, /**< Not found */
+    MENDER_NOT_IMPLEMENTED = -3, /**< Not implemented */
 } mender_err_t;
 
 /**

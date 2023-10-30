@@ -32,13 +32,13 @@ if(CONFIG_MENDER_MCU_CLIENT)
         "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-artifact.c"
         "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-client.c"
         "${CMAKE_CURRENT_LIST_DIR}/../core/src/mender-utils.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-log.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-ota.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-storage.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../platform/net/zephyr/src/mender-http.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/log/${CONFIG_MENDER_PLATFORM_LOG_TYPE}/src/mender-log.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/src/mender-http.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/net/zephyr/src/mender-net.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../platform/rtos/zephyr/src/mender-rtos.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/mbedtls/src/mender-tls.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/ota/${CONFIG_MENDER_PLATFORM_OTA_TYPE}/src/mender-ota.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/rtos/${CONFIG_MENDER_PLATFORM_RTOS_TYPE}/src/mender-rtos.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/storage/${CONFIG_MENDER_PLATFORM_STORAGE_TYPE}/src/mender-storage.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/${CONFIG_MENDER_PLATFORM_TLS_TYPE}/src/mender-tls.c"
     )
     zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-configure.c"
@@ -48,8 +48,8 @@ if(CONFIG_MENDER_MCU_CLIENT)
     )
     zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-troubleshoot.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../platform/net/zephyr/src/mender-websocket.c"
-        "${CMAKE_CURRENT_LIST_DIR}/../platform/board/zephyr/src/mender-shell.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/src/mender-websocket.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../platform/shell/zephyr/src/mender-shell.c"
     )
     file (STRINGS "${CMAKE_CURRENT_LIST_DIR}/../VERSION" MENDER_CLIENT_VERSION)
     add_definitions("-DMENDER_CLIENT_VERSION=\"${MENDER_CLIENT_VERSION}\"")

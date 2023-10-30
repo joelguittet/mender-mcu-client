@@ -34,14 +34,12 @@ menuconfig MENDER_MCU_CLIENT
     select IMG_ENABLE_IMAGE_CHECK
     select IMG_ERASE_PROGRESSIVELY
     select IMG_MANAGER
-    select MBEDTLS
     select MPU_ALLOW_FLASH_WRITE
     select MSGPACK_C if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
     select NETWORKING
     select NET_TCP
     select NET_SOCKETS
     select NET_SOCKETS_POSIX_NAMES
-    select NVS
     select REBOOT
     select STREAM_FLASH
     select WEBSOCKET_CLIENT if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
@@ -50,7 +48,7 @@ menuconfig MENDER_MCU_CLIENT
 
 if MENDER_MCU_CLIENT
 
-    menu "Mender General Options"
+    menu "General configuration"
 
         config MENDER_SERVER_HOST
             string "Mender server host URL"
@@ -86,9 +84,9 @@ if MENDER_MCU_CLIENT
 
     endmenu
 
-    menu "Mender Addons Options"
+    menu "Addons integration"
 
-        menu "Mender Configure Addon Options"
+        menu "Configure Addon configuration"
 
             config MENDER_CLIENT_ADD_ON_CONFIGURE
                 bool "Mender client Configure"
@@ -116,7 +114,7 @@ if MENDER_MCU_CLIENT
 
         endmenu
 
-        menu "Mender Inventory Addon Options"
+        menu "Inventory Addon configuration"
 
             config MENDER_CLIENT_ADD_ON_INVENTORY
                 bool "Mender client Inventory"
@@ -139,10 +137,10 @@ if MENDER_MCU_CLIENT
 
         endmenu
 
-        menu "Mender Troubleshoot Addon Options"
+        menu "Troubleshoot Addon configuration"
 
             config MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-                bool "Mender client Troubleshoot"
+                bool "Mender client Troubleshoot (EXPERIMENTAL)"
                 default n
                 help
                     Troubleshoot add-on permits to perform debugging on the target from the Mender server.
@@ -163,76 +161,196 @@ if MENDER_MCU_CLIENT
 
     endmenu
 
-    menu "Mender Network Options"
+    menu "Platform configuration (ADVANCED)"
 
-        config MENDER_NET_CA_CERTIFICATE_TAG
-            int "CA certificate tag"
-            default 1
+        choice MENDER_PLATFORM_LOG_TYPE
+            prompt "Mender platform log implementation type"
+            default MENDER_PLATFORM_LOG_TYPE_DEFAULT
             help
-                A security tag that ROOT CA server credential will be referenced with, see tls_credential_add.
+                Specify platform log implementation type, select 'weak' to use you own implementation.
 
-        config MENDER_NET_TLS_PEER_VERIFY
-            int "TLS_PEER_VERIFY option"
-            range 0 2
-            default 2
+            config MENDER_PLATFORM_LOG_TYPE_DEFAULT
+                bool "default"
+            config MENDER_PLATFORM_LOG_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_LOG_TYPE
+            string
+            default "zephyr" if MENDER_PLATFORM_LOG_TYPE_DEFAULT
+            default "generic/weak" if MENDER_PLATFORM_LOG_TYPE_WEAK
+
+        choice MENDER_PLATFORM_NET_TYPE
+            prompt "Mender platform network implementation type"
+            default MENDER_PLATFORM_NET_TYPE_DEFAULT
             help
-                Peer verification level for TLS connection.
+                Specify platform network implementation type, select 'weak' to use you own implementation.
 
-        if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+            config MENDER_PLATFORM_NET_TYPE_DEFAULT
+                bool "default"
+            config MENDER_PLATFORM_NET_TYPE_WEAK
+                bool "weak"
+        endchoice
 
-            config MENDER_WEBSOCKET_THREAD_STACK_SIZE
-                int "Mender WebSocket client Thread Stack Size (kB)"
-                range 0 64
-                default 4
+        config MENDER_PLATFORM_NET_TYPE
+            string
+            default "zephyr" if MENDER_PLATFORM_NET_TYPE_DEFAULT
+            default "generic/weak" if MENDER_PLATFORM_NET_TYPE_WEAK
+
+        choice MENDER_PLATFORM_OTA_TYPE
+            prompt "Mender platform OTA implementation type"
+            default MENDER_PLATFORM_OTA_TYPE_DEFAULT
+            help
+                Specify platform OTA implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_OTA_TYPE_DEFAULT
+                bool "default"
+            config MENDER_PLATFORM_OTA_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_OTA_TYPE
+            string
+            default "zephyr" if MENDER_PLATFORM_OTA_TYPE_DEFAULT
+            default "generic/weak" if MENDER_PLATFORM_OTA_TYPE_WEAK
+
+        choice MENDER_PLATFORM_RTOS_TYPE
+            prompt "Mender platform RTOS implementation type"
+            default MENDER_PLATFORM_RTOS_TYPE_DEFAULT
+            help
+                Specify platform RTOS implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_RTOS_TYPE_DEFAULT
+                bool "default"
+            config MENDER_PLATFORM_RTOS_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_RTOS_TYPE
+            string
+            default "zephyr" if MENDER_PLATFORM_RTOS_TYPE_DEFAULT
+            default "generic/weak" if MENDER_PLATFORM_RTOS_TYPE_WEAK
+
+        choice MENDER_PLATFORM_STORAGE_TYPE
+            prompt "Mender platform storage implementation type"
+            default MENDER_PLATFORM_STORAGE_TYPE_NVS
+            help
+                Specify platform storage implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_STORAGE_TYPE_NVS
+                bool "nvs"
+                select NVS
+            config MENDER_PLATFORM_STORAGE_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_STORAGE_TYPE
+            string
+            default "zephyr/nvs" if MENDER_PLATFORM_STORAGE_TYPE_NVS
+            default "generic/weak" if MENDER_PLATFORM_STORAGE_TYPE_WEAK
+
+        choice MENDER_PLATFORM_TLS_TYPE
+            prompt "Mender platform TLS implementation type"
+            default MENDER_PLATFORM_TLS_TYPE_MBEDTLS
+            help
+                Specify platform TLS implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_TLS_TYPE_MBEDTLS
+                bool "mbedtls"
+                select MBEDTLS
+            config MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
+                bool "cryptoauthlib"
+                select CRYPTOAUTHLIB
+            config MENDER_PLATFORM_TLS_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_TLS_TYPE
+            string
+            default "generic/mbedtls" if MENDER_PLATFORM_TLS_TYPE_MBEDTLS
+            default "generic/cryptoauthlib" if MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
+            default "generic/weak" if MENDER_PLATFORM_TLS_TYPE_WEAK
+
+    endmenu
+
+    if MENDER_PLATFORM_NET_TYPE_DEFAULT
+
+        menu "Network options (ADVANCED)"
+
+            config MENDER_NET_CA_CERTIFICATE_TAG
+                int "CA certificate tag"
+                default 1
                 help
-                    Mender WebSocket client thread stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+                    A security tag that ROOT CA server credential will be referenced with, see tls_credential_add.
 
-            config MENDER_WEBSOCKET_THREAD_PRIORITY
-                int "Mender WebSocket client Thread Priority"
+            config MENDER_NET_TLS_PEER_VERIFY
+                int "TLS_PEER_VERIFY option"
+                range 0 2
+                default 2
+                help
+                    Peer verification level for TLS connection.
+
+            if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+
+                config MENDER_WEBSOCKET_THREAD_STACK_SIZE
+                    int "Mender WebSocket client Thread Stack Size (kB)"
+                    range 0 64
+                    default 4
+                    help
+                        Mender WebSocket client thread stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+
+                config MENDER_WEBSOCKET_THREAD_PRIORITY
+                    int "Mender WebSocket client Thread Priority"
+                    range 0 128
+                    default 5
+                    help
+                        Mender WebSocket client thread priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+
+                config MENDER_WEBSOCKET_CONNECT_TIMEOUT
+                    int "Mender WebSocket client connect timeout (milliseconds)"
+                    range 0 60000
+                    default 3000
+                    help
+                        Mender WebSocket client connect timeout. Default value is suitable for most applications.
+
+                config MENDER_WEBSOCKET_REQUEST_TIMEOUT
+                    int "Mender WebSocket client request timeout (milliseconds)"
+                    range 0 60000
+                    default 3000
+                    help
+                        Mender WebSocket client request timeout. Default value is suitable for most applications.
+
+            endif
+
+        endmenu
+
+    endif
+
+    if MENDER_PLATFORM_RTOS_TYPE_DEFAULT
+
+        menu "RTOS options (ADVANCED)"
+
+            config MENDER_RTOS_WORK_QUEUE_STACK_SIZE
+                int "Mender RTOS Work Queue Stack Size (kB)"
+                range 0 64
+                default 12
+                help
+                    Mender RTOS work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+
+            config MENDER_RTOS_WORK_QUEUE_PRIORITY
+                int "Mender RTOS Work Queue Priority"
                 range 0 128
                 default 5
                 help
-                    Mender WebSocket client thread priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+                    Mender RTOS work queue priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
-            config MENDER_WEBSOCKET_CONNECT_TIMEOUT
-                int "Mender WebSocket client connect timeout (milliseconds)"
-                range 0 60000
-                default 3000
-                help
-                    Mender WebSocket client connect timeout. Default value is suitable for most applications.
+        endmenu
 
-            config MENDER_WEBSOCKET_REQUEST_TIMEOUT
-                int "Mender WebSocket client request timeout (milliseconds)"
-                range 0 60000
-                default 3000
-                help
-                    Mender WebSocket client request timeout. Default value is suitable for most applications.
-
-        endif
-
-    endmenu
-
-    menu "Mender Scheduler Options"
-
-        config MENDER_RTOS_WORK_QUEUE_STACK_SIZE
-            int "Mender RTOS Work Queue Stack Size (kB)"
-            range 0 64
-            default 12
-            help
-                Mender RTOS work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
-
-        config MENDER_RTOS_WORK_QUEUE_PRIORITY
-            int "Mender RTOS Work Queue Priority"
-            range 0 128
-            default 5
-            help
-                Mender RTOS work queue priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
-
-    endmenu
+    endif
 
     if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
-        menu "Mender Shell Options"
+        menu "Shell options (ADVANCED)"
 
             config MENDER_SHELL_PROMPT
                 string "Mender Shell prompt"
@@ -300,15 +418,19 @@ if MENDER_MCU_CLIENT
 
     endif
 
-    menu "Mender Storage Options"
+    if MENDER_PLATFORM_STORAGE_TYPE_NVS
 
-        config MENDER_STORAGE_SECTOR_COUNT
-            int "Number of sectors of the mender_storage partition"
-            default 2
-            range 2 8
-            help
-                Number of sectors of the mender_storage partition, must match the configuration of the partition.
+        menu "Storage options"
 
-    endmenu
+            config MENDER_STORAGE_NVS_SECTOR_COUNT
+                int "Number of sectors of the mender_storage partition"
+                default 2
+                range 2 8
+                help
+                    Number of sectors of the mender_storage partition, must match the configuration of the partition.
+
+        endmenu
+
+    endif
 
 endif
