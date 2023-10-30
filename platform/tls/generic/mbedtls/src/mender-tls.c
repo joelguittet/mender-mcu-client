@@ -502,6 +502,7 @@ mender_tls_pem_write_buffer(const unsigned char *der_data, size_t der_len, char 
     size_t use_len = 0;
     mbedtls_base64_encode(NULL, 0, &use_len, der_data, der_len);
     if (0 == use_len) {
+        mender_log_error("Unable to compute length");
         ret = MENDER_FAIL;
         goto END;
     }
@@ -524,12 +525,14 @@ mender_tls_pem_write_buffer(const unsigned char *der_data, size_t der_len, char 
 
     /* Allocate memory to store PEM data */
     if (NULL == (encode_buf = (unsigned char *)malloc(use_len))) {
+        mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
     }
 
     /* Convert DER data */
     if (0 != mbedtls_base64_encode(encode_buf, use_len, &use_len, der_data, der_len)) {
+        mender_log_error("Unable to convert data to base64 format");
         ret = MENDER_FAIL;
         goto END;
     }
