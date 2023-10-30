@@ -33,6 +33,7 @@ To start using mender-mcu-client, we recommend that you begin with one of the ex
 
 * [mender-esp32-example](https://github.com/joelguittet/mender-esp32-example) demonstrates the usage of mender-mcu-client on ESP32 MCU to perform upgrade with dual OTA partitions and rollback capability using ESP-IDF framework.
 * [mender-stm32l4a6-zephyr-example](https://github.com/joelguittet/mender-stm32l4a6-zephyr-example) demonstrates the usage of mender-mcu-client on STM32L4A6 MCU to perform upgrade with dual OTA partitions and rollback capability using Zephyr RTOS.
+* [mender-stm32h745-zephyr-example](https://github.com/joelguittet/mender-stm32h745-zephyr-example) demonstrates the usage of mender-mcu-client on STM32H745 MCU to perform upgrade with dual OTA partitions and rollback capability using Zephyr RTOS. Additionally demonstrates usage of ATECC608 secure element to perform authentication of the device and custom platform integration using the weak functions of mender-mcu-client library.
 * More examples will come, and particularly new platforms support will be added soon.
 
 
