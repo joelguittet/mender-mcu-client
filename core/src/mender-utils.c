@@ -104,10 +104,14 @@ mender_utils_http_status_to_string(int status) {
 char *
 mender_utils_strrstr(const char *haystack, const char *needle) {
 
+    assert(NULL != haystack);
+    assert(NULL != needle);
+
     char *r = NULL;
 
-    if (!needle[0])
+    if (!needle[0]) {
         return (char *)haystack + strlen(haystack);
+    }
 
     while (1) {
         char *p = strstr(haystack, needle);
