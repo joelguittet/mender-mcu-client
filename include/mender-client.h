@@ -64,6 +64,12 @@ typedef struct {
 } mender_client_callbacks_t;
 
 /**
+ * @brief Return mender client version
+ * @return Mender client version as string
+ */
+char *mender_client_version(void);
+
+/**
  * @brief Initialize mender client
  * @param config Mender client configuration
  * @param callbacks Mender client callbacks

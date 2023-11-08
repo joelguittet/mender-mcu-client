@@ -146,6 +146,13 @@ static mender_err_t mender_client_download_artifact_callback(
  */
 static mender_err_t mender_client_publish_deployment_status(char *id, mender_deployment_status_t deployment_status);
 
+char *
+mender_client_version(void) {
+
+    /* Return version as string */
+    return MENDER_CLIENT_VERSION;
+}
+
 mender_err_t
 mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *callbacks) {
 
