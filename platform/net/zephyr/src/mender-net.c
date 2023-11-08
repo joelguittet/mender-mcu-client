@@ -25,6 +25,7 @@
  * SOFTWARE.
  */
 
+#include <errno.h>
 #include <zephyr/net/socket.h>
 #ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
 #include <zephyr/net/tls_credentials.h>
@@ -124,7 +125,7 @@ mender_net_connect(const char *host, const char *port, int *sock) {
 
     /* Perform DNS resolution of the host */
     if (0 != (result = getaddrinfo(host, port, &hints, &addr))) {
-        mender_log_error("Unable to resolve host name '%s:%s', result = %d", host, port, result);
+        mender_log_error("Unable to resolve host name '%s:%s', result = %d, errno = %d", host, port, result, errno);
         ret = MENDER_FAIL;
         goto END;
     }
@@ -135,7 +136,7 @@ mender_net_connect(const char *host, const char *port, int *sock) {
 #else
     if ((result = socket(addr->ai_family, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 #endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
-        mender_log_error("Unable to create socket, result = %d", result);
+        mender_log_error("Unable to create socket, result = %d, errno= %d", result, errno);
         ret = MENDER_FAIL;
         goto END;
     }
@@ -148,7 +149,7 @@ mender_net_connect(const char *host, const char *port, int *sock) {
         CONFIG_MENDER_NET_CA_CERTIFICATE_TAG,
     };
     if ((result = setsockopt(*sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag, sizeof(sec_tag))) < 0) {
-        mender_log_error("Unable to set TLS_SEC_TAG_LIST option, result = %d", result);
+        mender_log_error("Unable to set TLS_SEC_TAG_LIST option, result = %d, errno = %d", result, errno);
         close(*sock);
         *sock = -1;
         ret   = MENDER_FAIL;
@@ -157,7 +158,7 @@ mender_net_connect(const char *host, const char *port, int *sock) {
 
     /* Set TLS_HOSTNAME option */
     if ((result = setsockopt(*sock, SOL_TLS, TLS_HOSTNAME, host, strlen(host))) < 0) {
-        mender_log_error("Unable to set TLS_HOSTNAME option, result = %d", result);
+        mender_log_error("Unable to set TLS_HOSTNAME option, result = %d, errno = %d", result, errno);
         close(*sock);
         *sock = -1;
         ret   = MENDER_FAIL;
@@ -167,7 +168,7 @@ mender_net_connect(const char *host, const char *port, int *sock) {
     /* Set TLS_PEER_VERIFY option */
     int verify = CONFIG_MENDER_NET_TLS_PEER_VERIFY;
     if ((result = setsockopt(*sock, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(int))) < 0) {
-        mender_log_error("Unable to set TLS_PEER_VERIFY option, result = %d", result);
+        mender_log_error("Unable to set TLS_PEER_VERIFY option, result = %d, errno = %d", result, errno);
         close(*sock);
         *sock = -1;
         ret   = MENDER_FAIL;
@@ -178,7 +179,7 @@ mender_net_connect(const char *host, const char *port, int *sock) {
 
     /* Connect to the host */
     if (0 != (result = connect(*sock, addr->ai_addr, addr->ai_addrlen))) {
-        mender_log_error("Unable to connect to the host '%s:%s', result = %d", host, port, result);
+        mender_log_error("Unable to connect to the host '%s:%s', result = %d, errno = %d", host, port, result, errno);
         close(*sock);
         *sock = -1;
         ret   = MENDER_FAIL;
