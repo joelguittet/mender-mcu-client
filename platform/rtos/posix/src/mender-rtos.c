@@ -341,7 +341,14 @@ mender_rtos_delay_until_s(unsigned long *handle, uint32_t delay) {
     unsigned long delay_us      = delay * 1000000;
     unsigned long real_delay_us = (unsigned long)ceil((double)(delay_us - elapsed));
     if ((0 < real_delay_us) && (real_delay_us <= delay_us)) {
-        usleep((useconds_t)real_delay_us);
+        struct timespec request;
+        struct timespec remaining;
+        remaining.tv_sec  = real_delay_us / 1000000;
+        remaining.tv_nsec = (real_delay_us % 1000000) * 1000;
+        do {
+            request.tv_sec  = remaining.tv_sec;
+            request.tv_nsec = remaining.tv_nsec;
+        } while (nanosleep(&request, &remaining) < 0);
     }
 
     /* Read clock */
