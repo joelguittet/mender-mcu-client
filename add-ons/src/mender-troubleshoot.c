@@ -26,6 +26,8 @@
  */
 
 #include "mender-api.h"
+#include "mender-client.h"
+#include "mender-inventory.h"
 #include "mender-troubleshoot.h"
 #include "mender-log.h"
 #include "mender-rtos.h"
@@ -66,12 +68,14 @@ typedef enum {
 /**
  * Message type
  */
-#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_PING   "ping"
-#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_PONG   "pong"
-#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_RESIZE "resize"
-#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_SHELL  "shell"
-#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_SPAWN  "new"
-#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_STOP   "stop"
+#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_PING                   "ping"
+#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_PONG                   "pong"
+#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_RESIZE                 "resize"
+#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_SHELL                  "shell"
+#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_SPAWN                  "new"
+#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_STOP                   "stop"
+#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_MENDER_CLIENT_CHECK_UPDATE   "check-update"
+#define MENDER_TROUBLESHOOT_MESSAGE_TYPE_MENDER_CLIENT_SEND_INVENTORY "send-inventory"
 
 /**
  * Status type
@@ -157,6 +161,27 @@ static mender_err_t mender_troubleshoot_data_received_callback(void *data, size_
  * @return MENDER_OK if the function succeeds, error code if an error occured
  */
 static mender_err_t mender_troubleshoot_shell_message_handler(mender_troubleshoot_protomsg_t *protomsg, mender_troubleshoot_protomsg_t **response);
+
+/**
+ * @brief Function called to perform the treatment of the mender-client messages
+ * @param protomsg Received proto message
+ * @param response Response to be sent back to the server, NULL if no response to send
+ * @return MENDER_OK if the function succeeds, error code if an error occured
+ */
+static mender_err_t mender_troubleshoot_mender_client_message_handler(mender_troubleshoot_protomsg_t *protomsg, mender_troubleshoot_protomsg_t **response);
+
+/**
+ * @brief Function used to format acknowledgment messages
+ * @param protomsg Received proto message
+ * @param sid Session ID
+ * @param status Status
+ * @param response Response to be sent back to the server, NULL if no response to send
+ * @return MENDER_OK if the function succeeds, error code if an error occured
+ */
+static mender_err_t mender_troubleshoot_format_acknowledgment(mender_troubleshoot_protomsg_t *        protomsg,
+                                                              char *                                  sid,
+                                                              mender_troubleshoot_properties_status_t status,
+                                                              mender_troubleshoot_protomsg_t **       response);
 
 /**
  * @brief Function called to send shell ping protomsg
@@ -553,9 +578,11 @@ mender_troubleshoot_data_received_callback(void *data, size_t length) {
         case MENDER_TROUBLESHOOT_PROTO_TYPE_SHELL:
             ret = mender_troubleshoot_shell_message_handler(protomsg, &response);
             break;
+        case MENDER_TROUBLESHOOT_PROTO_TYPE_MENDER_CLIENT:
+            ret = mender_troubleshoot_mender_client_message_handler(protomsg, &response);
+            break;
         case MENDER_TROUBLESHOOT_PROTO_TYPE_FILE_TRANSFER:
         case MENDER_TROUBLESHOOT_PROTO_TYPE_PORT_FORWARD:
-        case MENDER_TROUBLESHOOT_PROTO_TYPE_MENDER_CLIENT:
         case MENDER_TROUBLESHOOT_PROTO_TYPE_CONTROL:
         default:
             mender_log_error("Unsupported message received with proto type 0x%04x", protomsg->protohdr->proto);
@@ -669,45 +696,16 @@ mender_troubleshoot_shell_message_handler(mender_troubleshoot_protomsg_t *protom
             goto FAIL;
         }
 
-        /* Acknowledge the message */
-        if (NULL == (*response = (mender_troubleshoot_protomsg_t *)malloc(sizeof(mender_troubleshoot_protomsg_t)))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
+        /* Format acknowledgment */
+        if (MENDER_OK
+            != (ret
+                = mender_troubleshoot_format_acknowledgment(protomsg,
+                                                            mender_troubleshoot_shell_sid,
+                                                            (MENDER_OK == ret) ? MENDER_TROUBLESHOOT_STATUS_TYPE_NORMAL : MENDER_TROUBLESHOOT_STATUS_TYPE_ERROR,
+                                                            response))) {
+            mender_log_error("Unable to format response");
             goto FAIL;
         }
-        memset(*response, 0, sizeof(mender_troubleshoot_protomsg_t));
-        if (NULL == ((*response)->protohdr = (mender_troubleshoot_protohdr_t *)malloc(sizeof(mender_troubleshoot_protohdr_t)))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
-        }
-        memset((*response)->protohdr, 0, sizeof(mender_troubleshoot_protohdr_t));
-        (*response)->protohdr->proto = MENDER_TROUBLESHOOT_PROTO_TYPE_SHELL;
-        if (NULL == ((*response)->protohdr->typ = strdup(MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_SPAWN))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
-        }
-        if (NULL == ((*response)->protohdr->sid = strdup(mender_troubleshoot_shell_sid))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
-        }
-        if (NULL
-            == ((*response)->protohdr->properties = (mender_troubleshoot_protohdr_properties_t *)malloc(sizeof(mender_troubleshoot_protohdr_properties_t)))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
-        }
-        memset((*response)->protohdr->properties, 0, sizeof(mender_troubleshoot_protohdr_properties_t));
-        if (NULL
-            == ((*response)->protohdr->properties->status
-                = (mender_troubleshoot_properties_status_t *)malloc(sizeof(mender_troubleshoot_properties_status_t)))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
-        }
-        *((*response)->protohdr->properties->status) = MENDER_TROUBLESHOOT_STATUS_TYPE_NORMAL;
 
         /* Invoke shell begin callback */
         if (NULL != mender_troubleshoot_callbacks.shell_begin) {
@@ -742,51 +740,22 @@ mender_troubleshoot_shell_message_handler(mender_troubleshoot_protomsg_t *protom
             }
         }
 
-        /* Acknowledge the message */
-        if (NULL == (*response = (mender_troubleshoot_protomsg_t *)malloc(sizeof(mender_troubleshoot_protomsg_t)))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
+        /* Format acknowledgment */
+        if (MENDER_OK
+            != (ret
+                = mender_troubleshoot_format_acknowledgment(protomsg,
+                                                            mender_troubleshoot_shell_sid,
+                                                            (MENDER_OK == ret) ? MENDER_TROUBLESHOOT_STATUS_TYPE_NORMAL : MENDER_TROUBLESHOOT_STATUS_TYPE_ERROR,
+                                                            response))) {
+            mender_log_error("Unable to format response");
         }
-        memset(*response, 0, sizeof(mender_troubleshoot_protomsg_t));
-        if (NULL == ((*response)->protohdr = (mender_troubleshoot_protohdr_t *)malloc(sizeof(mender_troubleshoot_protohdr_t)))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
-        }
-        memset((*response)->protohdr, 0, sizeof(mender_troubleshoot_protohdr_t));
-        (*response)->protohdr->proto = MENDER_TROUBLESHOOT_PROTO_TYPE_SHELL;
-        if (NULL == ((*response)->protohdr->typ = strdup(MENDER_TROUBLESHOOT_MESSAGE_TYPE_SHELL_STOP))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
-        }
-        if (NULL == ((*response)->protohdr->sid = strdup(mender_troubleshoot_shell_sid))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
-        }
-        if (NULL
-            == ((*response)->protohdr->properties = (mender_troubleshoot_protohdr_properties_t *)malloc(sizeof(mender_troubleshoot_protohdr_properties_t)))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
-        }
-        memset((*response)->protohdr->properties, 0, sizeof(mender_troubleshoot_protohdr_properties_t));
-        if (NULL
-            == ((*response)->protohdr->properties->status
-                = (mender_troubleshoot_properties_status_t *)malloc(sizeof(mender_troubleshoot_properties_status_t)))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto FAIL;
-        }
-        *((*response)->protohdr->properties->status) = MENDER_TROUBLESHOOT_STATUS_TYPE_NORMAL;
 
         /* Release session ID */
         if (NULL != mender_troubleshoot_shell_sid) {
             free(mender_troubleshoot_shell_sid);
             mender_troubleshoot_shell_sid = NULL;
         }
+
     } else {
 
         mender_log_error("Unsupported message received with message type '%s'", protomsg->protohdr->typ);
@@ -795,6 +764,124 @@ mender_troubleshoot_shell_message_handler(mender_troubleshoot_protomsg_t *protom
     }
 
 END:
+
+    return ret;
+
+FAIL:
+
+    return ret;
+}
+
+static mender_err_t
+mender_troubleshoot_mender_client_message_handler(mender_troubleshoot_protomsg_t *protomsg, mender_troubleshoot_protomsg_t **response) {
+
+    assert(NULL != protomsg);
+    assert(NULL != protomsg->protohdr);
+    mender_err_t ret = MENDER_OK;
+
+    /* Verify integrity of the message */
+    if (NULL == protomsg->protohdr->typ) {
+        mender_log_error("Invalid message received");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+
+    /* Treatment of the message depending of the message type */
+    if (!strcmp(protomsg->protohdr->typ, MENDER_TROUBLESHOOT_MESSAGE_TYPE_MENDER_CLIENT_CHECK_UPDATE)) {
+
+        /* Trigger execution of the mender-client update work */
+        ret = mender_client_execute();
+
+        /* Format acknowledgment */
+        if (MENDER_OK
+            != (ret = mender_troubleshoot_format_acknowledgment(
+                    protomsg, NULL, (MENDER_OK == ret) ? MENDER_TROUBLESHOOT_STATUS_TYPE_NORMAL : MENDER_TROUBLESHOOT_STATUS_TYPE_ERROR, response))) {
+            mender_log_error("Unable to format response");
+            goto FAIL;
+        }
+
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
+
+    } else if (!strcmp(protomsg->protohdr->typ, MENDER_TROUBLESHOOT_MESSAGE_TYPE_MENDER_CLIENT_SEND_INVENTORY)) {
+
+        /* Trigger execution of the mender-inventory work */
+        ret = mender_inventory_execute();
+
+        /* Format acknowledgment */
+        if (MENDER_OK
+            != (ret = mender_troubleshoot_format_acknowledgment(
+                    protomsg, NULL, (MENDER_OK == ret) ? MENDER_TROUBLESHOOT_STATUS_TYPE_NORMAL : MENDER_TROUBLESHOOT_STATUS_TYPE_ERROR, response))) {
+            mender_log_error("Unable to format response");
+            goto FAIL;
+        }
+
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
+
+    } else {
+
+        mender_log_error("Unsupported message received with message type '%s'", protomsg->protohdr->typ);
+        ret = MENDER_FAIL;
+        goto FAIL;
+    }
+
+END:
+
+    return ret;
+
+FAIL:
+
+    return ret;
+}
+
+static mender_err_t
+mender_troubleshoot_format_acknowledgment(mender_troubleshoot_protomsg_t *        protomsg,
+                                          char *                                  sid,
+                                          mender_troubleshoot_properties_status_t status,
+                                          mender_troubleshoot_protomsg_t **       response) {
+
+    assert(NULL != protomsg);
+    assert(NULL != protomsg->protohdr);
+    mender_err_t ret = MENDER_OK;
+
+    /* Format acknowledgment message */
+    if (NULL == (*response = (mender_troubleshoot_protomsg_t *)malloc(sizeof(mender_troubleshoot_protomsg_t)))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto FAIL;
+    }
+    memset(*response, 0, sizeof(mender_troubleshoot_protomsg_t));
+    if (NULL == ((*response)->protohdr = (mender_troubleshoot_protohdr_t *)malloc(sizeof(mender_troubleshoot_protohdr_t)))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto FAIL;
+    }
+    memset((*response)->protohdr, 0, sizeof(mender_troubleshoot_protohdr_t));
+    (*response)->protohdr->proto = protomsg->protohdr->proto;
+    if (NULL == ((*response)->protohdr->typ = strdup(protomsg->protohdr->typ))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto FAIL;
+    }
+    if (NULL != sid) {
+        if (NULL == ((*response)->protohdr->sid = strdup(sid))) {
+            mender_log_error("Unable to allocate memory");
+            ret = MENDER_FAIL;
+            goto FAIL;
+        }
+    }
+    if (NULL == ((*response)->protohdr->properties = (mender_troubleshoot_protohdr_properties_t *)malloc(sizeof(mender_troubleshoot_protohdr_properties_t)))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto FAIL;
+    }
+    memset((*response)->protohdr->properties, 0, sizeof(mender_troubleshoot_protohdr_properties_t));
+    if (NULL
+        == ((*response)->protohdr->properties->status = (mender_troubleshoot_properties_status_t *)malloc(sizeof(mender_troubleshoot_properties_status_t)))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto FAIL;
+    }
+    *((*response)->protohdr->properties->status) = status;
 
     return ret;
 
