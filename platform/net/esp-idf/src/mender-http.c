@@ -38,6 +38,11 @@
 #define MENDER_HTTP_USER_AGENT "mender-mcu-client/" MENDER_CLIENT_VERSION " (mender-http) esp-idf/" IDF_VER
 
 /**
+ * @brief Receive buffer length
+ */
+#define MENDER_HTTP_RECV_BUF_LENGTH (512)
+
+/**
  * @brief Mender HTTP configuration
  */
 static mender_http_config_t mender_http_config;
@@ -138,17 +143,16 @@ mender_http_perform(char *               jwt,
     }
 
     /* Fetch headers, this returns the content length */
-    int content_length = esp_http_client_fetch_headers(client);
-    if (content_length < 0) {
+    if (esp_http_client_fetch_headers(client) < 0) {
         mender_log_error("Unable to fetch headers");
         ret = MENDER_FAIL;
         goto END;
     }
 
     /* Read data until all have been received */
-    while (content_length > 0) {
+    do {
 
-        char data[512];
+        char data[MENDER_HTTP_RECV_BUF_LENGTH];
         int  read_length = esp_http_client_read(client, data, sizeof(data));
         if (read_length < 0) {
             mender_log_error("An error occured, unable to read data");
@@ -161,7 +165,6 @@ mender_http_perform(char *               jwt,
                 mender_log_error("An error occurred, stop reading data");
                 goto END;
             }
-            content_length -= read_length;
         } else {
             if ((ECONNRESET == errno) || (ENOTCONN == errno)) {
                 mender_log_error("An error occurred, connection has been closed, errno = %d", errno);
@@ -170,7 +173,7 @@ mender_http_perform(char *               jwt,
                 goto END;
             }
         }
-    }
+    } while (false == esp_http_client_is_complete_data_received(client));
 
     /* Read HTTP status code */
     *status = esp_http_client_get_status_code(client);
