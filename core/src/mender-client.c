@@ -85,10 +85,10 @@ typedef enum {
 static mender_client_state_t mender_client_state = MENDER_CLIENT_STATE_INITIALIZATION;
 
 /**
- * @brief OTA ID and artifact name, used to report OTA status after rebooting
+ * @brief Deployment ID and artifact name, used to report deployment status after rebooting
  */
-static char *mender_client_ota_id            = NULL;
-static char *mender_client_ota_artifact_name = NULL;
+static char *mender_client_deployment_id            = NULL;
+static char *mender_client_deployment_artifact_name = NULL;
 
 /**
  * @brief Mender client work handle
@@ -285,13 +285,13 @@ mender_client_exit(void) {
     mender_client_config.tenant_token                 = NULL;
     mender_client_config.authentication_poll_interval = 0;
     mender_client_config.update_poll_interval         = 0;
-    if (NULL != mender_client_ota_id) {
-        free(mender_client_ota_id);
-        mender_client_ota_id = NULL;
+    if (NULL != mender_client_deployment_id) {
+        free(mender_client_deployment_id);
+        mender_client_deployment_id = NULL;
     }
-    if (NULL != mender_client_ota_artifact_name) {
-        free(mender_client_ota_artifact_name);
-        mender_client_ota_artifact_name = NULL;
+    if (NULL != mender_client_deployment_artifact_name) {
+        free(mender_client_deployment_artifact_name);
+        mender_client_deployment_artifact_name = NULL;
     }
 
     return MENDER_OK;
@@ -347,10 +347,10 @@ mender_client_initialization_work_function(void) {
         return ret;
     }
 
-    /* Retrieve OTA ID if it is found (following an update) */
-    if (MENDER_OK != (ret = mender_storage_get_ota_deployment(&mender_client_ota_id, &mender_client_ota_artifact_name))) {
+    /* Retrieve deployment ID or artifact name if it is found (following an update) */
+    if (MENDER_OK != (ret = mender_storage_get_deployment(&mender_client_deployment_id, &mender_client_deployment_artifact_name))) {
         if (MENDER_NOT_FOUND != ret) {
-            mender_log_error("Unable to get OTA ID");
+            mender_log_error("Unable to get deployment ID or artifact name");
             return ret;
         }
     }
@@ -370,8 +370,8 @@ mender_client_authentication_work_function(void) {
         if (NULL != mender_client_callbacks.authentication_failure) {
             if (MENDER_OK != mender_client_callbacks.authentication_failure()) {
 
-                /* Check if OTA is pending */
-                if ((NULL != mender_client_ota_id) && (NULL != mender_client_ota_artifact_name)) {
+                /* Check if deployment is pending */
+                if ((NULL != mender_client_deployment_id) && (NULL != mender_client_deployment_artifact_name)) {
                     /* Authentication error callback inform the reboot should be done, probably something is broken and it prefers to rollback */
                     mender_log_error("Authentication error callback failed, rebooting");
                     goto REBOOT;
@@ -386,8 +386,8 @@ mender_client_authentication_work_function(void) {
     if (NULL != mender_client_callbacks.authentication_success) {
         if (MENDER_OK != mender_client_callbacks.authentication_success()) {
 
-            /* Check if OTA is pending */
-            if ((NULL != mender_client_ota_id) && (NULL != mender_client_ota_artifact_name)) {
+            /* Check if deployment is pending */
+            if ((NULL != mender_client_deployment_id) && (NULL != mender_client_deployment_artifact_name)) {
                 /* Authentication success callback inform the reboot should be done, probably something is broken and it prefers to rollback */
                 mender_log_error("Authentication success callback failed, rebooting");
                 goto REBOOT;
@@ -395,25 +395,25 @@ mender_client_authentication_work_function(void) {
         }
     }
 
-    /* Check if OTA is pending */
-    if ((NULL != mender_client_ota_id) && (NULL != mender_client_ota_artifact_name)) {
+    /* Check if deployment is pending */
+    if ((NULL != mender_client_deployment_id) && (NULL != mender_client_deployment_artifact_name)) {
 
         /* Check if artifact running is the pending one or if the configuration deployed is the expected one, fails if rollback occurred */
-        if ((!strcmp(mender_client_ota_artifact_name, mender_client_config.artifact_name))
-            || ((mender_utils_strbeginwith(mender_client_ota_artifact_name, "configuration"))
-                && (!strcmp(mender_client_ota_artifact_name + strlen("configuration") + 1, mender_client_ota_id)))) {
+        if ((!strcmp(mender_client_deployment_artifact_name, mender_client_config.artifact_name))
+            || ((mender_utils_strbeginwith(mender_client_deployment_artifact_name, "configuration"))
+                && (!strcmp(mender_client_deployment_artifact_name + strlen("configuration") + 1, mender_client_deployment_id)))) {
 
             /* Publish deployment status success */
-            mender_client_publish_deployment_status(mender_client_ota_id, MENDER_DEPLOYMENT_STATUS_SUCCESS);
+            mender_client_publish_deployment_status(mender_client_deployment_id, MENDER_DEPLOYMENT_STATUS_SUCCESS);
 
         } else {
 
             /* Publish deployment status failure */
-            mender_client_publish_deployment_status(mender_client_ota_id, MENDER_DEPLOYMENT_STATUS_FAILURE);
+            mender_client_publish_deployment_status(mender_client_deployment_id, MENDER_DEPLOYMENT_STATUS_FAILURE);
         }
 
-        /* Delete pending OTA */
-        mender_storage_delete_ota_deployment();
+        /* Delete pending deployment */
+        mender_storage_delete_deployment();
     }
 
     return MENDER_DONE;
@@ -475,9 +475,9 @@ mender_client_update_work_function(void) {
         goto END;
     }
 
-    /* Save OTA ID to publish deployment status after rebooting */
-    if (MENDER_OK != (ret = mender_storage_set_ota_deployment(id, artifact_name))) {
-        mender_log_error("Unable to save OTA ID");
+    /* Save deployment ID to publish deployment status after rebooting */
+    if (MENDER_OK != (ret = mender_storage_set_deployment(id, artifact_name))) {
+        mender_log_error("Unable to save deployment ID");
         mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
         goto END;
     }

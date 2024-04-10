@@ -67,27 +67,27 @@ mender_storage_delete_authentication_keys(void) {
 }
 
 __attribute__((weak)) mender_err_t
-mender_storage_set_ota_deployment(char *ota_id, char *ota_artifact_name) {
+mender_storage_set_deployment(char *id, char *artifact_name) {
 
-    (void)ota_id;
-    (void)ota_artifact_name;
-
-    /* Nothing to do */
-    return MENDER_NOT_IMPLEMENTED;
-}
-
-__attribute__((weak)) mender_err_t
-mender_storage_get_ota_deployment(char **ota_id, char **ota_artifact_name) {
-
-    (void)ota_id;
-    (void)ota_artifact_name;
+    (void)id;
+    (void)artifact_name;
 
     /* Nothing to do */
     return MENDER_NOT_IMPLEMENTED;
 }
 
 __attribute__((weak)) mender_err_t
-mender_storage_delete_ota_deployment(void) {
+mender_storage_get_deployment(char **id, char **artifact_name) {
+
+    (void)id;
+    (void)artifact_name;
+
+    /* Nothing to do */
+    return MENDER_NOT_IMPLEMENTED;
+}
+
+__attribute__((weak)) mender_err_t
+mender_storage_delete_deployment(void) {
 
     /* Nothing to do */
     return MENDER_NOT_IMPLEMENTED;
