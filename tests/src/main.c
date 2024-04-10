@@ -31,9 +31,9 @@
 #include <signal.h>
 #include "mender-client.h"
 #include "mender-configure.h"
+#include "mender-flash.h"
 #include "mender-inventory.h"
 #include "mender-log.h"
-#include "mender-ota.h"
 #include "mender-troubleshoot.h"
 
 /**
@@ -82,7 +82,7 @@ authentication_success_cb(void) {
 
     /* Validate the image if it is still pending */
     /* Note it is possible to do multiple diagnosic tests before validating the image */
-    if (MENDER_OK != (ret = mender_ota_mark_app_valid_cancel_rollback())) {
+    if (MENDER_OK != (ret = mender_flash_confirm_image())) {
         mender_log_error("Unable to validate the image");
         return ret;
     }
@@ -97,18 +97,17 @@ authentication_success_cb(void) {
 static mender_err_t
 authentication_failure_cb(void) {
 
-    mender_err_t ret;
-
-    /* Increment number of failures */
-    mender_log_info("Mender client authentication failed");
-
-    /* Invalidate the image if it is still pending */
-    if (MENDER_OK != (ret = mender_ota_mark_app_invalid_rollback_and_reboot())) {
-        mender_log_error("Unable to invalidate the image");
-        return ret;
+    /* Check if confirmation of the image is still pending */
+    if (true == mender_flash_is_image_confirmed()) {
+        mender_log_info("Mender client authentication failed");
+        return MENDER_OK;
     }
+    mender_log_error("Mender client authentication failed");
 
-    return ret;
+    /* Restart the application after authentication failure with the mender-server */
+    /* The image has not been confirmed and the system will now rollback to the previous working image */
+    /* Note it is possible to customize this depending of the wanted behavior */
+    return MENDER_FAIL;
 }
 
 /**
@@ -367,15 +366,15 @@ main(int argc, char **argv) {
                                                     .authentication_poll_interval = 0,
                                                     .update_poll_interval         = 0,
                                                     .recommissioning              = false };
-    mender_client_callbacks_t mender_client_callbacks = { .authentication_success = authentication_success_cb,
-                                                          .authentication_failure = authentication_failure_cb,
-                                                          .deployment_status      = deployment_status_cb,
-                                                          .ota_begin              = mender_ota_begin,
-                                                          .ota_write              = mender_ota_write,
-                                                          .ota_abort              = mender_ota_abort,
-                                                          .ota_end                = mender_ota_end,
-                                                          .ota_set_boot_partition = mender_ota_set_boot_partition,
-                                                          .restart                = restart_cb };
+    mender_client_callbacks_t mender_client_callbacks = { .authentication_success  = authentication_success_cb,
+                                                          .authentication_failure  = authentication_failure_cb,
+                                                          .deployment_status       = deployment_status_cb,
+                                                          .flash.open              = mender_flash_open,
+                                                          .flash.write             = mender_flash_write,
+                                                          .flash.close             = mender_flash_close,
+                                                          .flash.set_pending_image = mender_flash_set_pending_image,
+                                                          .flash.abort_deployment  = mender_flash_abort_deployment,
+                                                          .restart                 = restart_cb };
     mender_client_init(&mender_client_config, &mender_client_callbacks);
 
     /* Initialize mender add-ons */

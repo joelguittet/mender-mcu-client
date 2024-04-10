@@ -163,6 +163,23 @@ if MENDER_MCU_CLIENT
 
     menu "Platform configuration (ADVANCED)"
 
+        choice MENDER_PLATFORM_FLASH_TYPE
+            prompt "Mender platform flash implementation type"
+            default MENDER_PLATFORM_FLASH_TYPE_DEFAULT
+            help
+                Specify platform flash implementation type, select 'weak' to use you own implementation.
+
+            config MENDER_PLATFORM_FLASH_TYPE_DEFAULT
+                bool "default"
+            config MENDER_PLATFORM_FLASH_TYPE_WEAK
+                bool "weak"
+        endchoice
+
+        config MENDER_PLATFORM_FLASH_TYPE
+            string
+            default "zephyr" if MENDER_PLATFORM_FLASH_TYPE_DEFAULT
+            default "generic/weak" if MENDER_PLATFORM_FLASH_TYPE_WEAK
+
         choice MENDER_PLATFORM_LOG_TYPE
             prompt "Mender platform log implementation type"
             default MENDER_PLATFORM_LOG_TYPE_DEFAULT
@@ -196,23 +213,6 @@ if MENDER_MCU_CLIENT
             string
             default "zephyr" if MENDER_PLATFORM_NET_TYPE_DEFAULT
             default "generic/weak" if MENDER_PLATFORM_NET_TYPE_WEAK
-
-        choice MENDER_PLATFORM_OTA_TYPE
-            prompt "Mender platform OTA implementation type"
-            default MENDER_PLATFORM_OTA_TYPE_DEFAULT
-            help
-                Specify platform OTA implementation type, select 'weak' to use you own implementation.
-
-            config MENDER_PLATFORM_OTA_TYPE_DEFAULT
-                bool "default"
-            config MENDER_PLATFORM_OTA_TYPE_WEAK
-                bool "weak"
-        endchoice
-
-        config MENDER_PLATFORM_OTA_TYPE
-            string
-            default "zephyr" if MENDER_PLATFORM_OTA_TYPE_DEFAULT
-            default "generic/weak" if MENDER_PLATFORM_OTA_TYPE_WEAK
 
         choice MENDER_PLATFORM_RTOS_TYPE
             prompt "Mender platform RTOS implementation type"

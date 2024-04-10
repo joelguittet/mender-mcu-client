@@ -96,9 +96,9 @@ static char *mender_client_deployment_artifact_name = NULL;
 static void *mender_client_work_handle = NULL;
 
 /**
- * @brief OTA handle used to store temporary reference to write OTA data
+ * @brief Flash handle used to store temporary reference to write deployment data
  */
-static void *mender_client_ota_handle = NULL;
+static void *mender_client_flash_handle = NULL;
 
 /**
  * @brief Mender client work function
@@ -161,11 +161,11 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     assert(NULL != config->artifact_name);
     assert(NULL != config->device_type);
     assert(NULL != callbacks);
-    assert(NULL != callbacks->ota_begin);
-    assert(NULL != callbacks->ota_write);
-    assert(NULL != callbacks->ota_abort);
-    assert(NULL != callbacks->ota_end);
-    assert(NULL != callbacks->ota_set_boot_partition);
+    assert(NULL != callbacks->flash.open);
+    assert(NULL != callbacks->flash.write);
+    assert(NULL != callbacks->flash.close);
+    assert(NULL != callbacks->flash.set_pending_image);
+    assert(NULL != callbacks->flash.abort_deployment);
     assert(NULL != callbacks->restart);
     mender_err_t ret;
 
@@ -462,14 +462,14 @@ mender_client_update_work_function(void) {
     if (MENDER_OK != (ret = mender_api_download_artifact(uri, mender_client_download_artifact_callback))) {
         mender_log_error("Unable to download artifact");
         mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
-        mender_client_callbacks.ota_abort(mender_client_ota_handle);
+        mender_client_callbacks.flash.abort_deployment(mender_client_flash_handle);
         goto END;
     }
 
     /* Set boot partition */
     mender_log_info("Download done, installing artifact");
     mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_INSTALLING);
-    if (MENDER_OK != (ret = mender_client_callbacks.ota_set_boot_partition(mender_client_ota_handle))) {
+    if (MENDER_OK != (ret = mender_client_callbacks.flash.set_pending_image(mender_client_flash_handle))) {
         mender_log_error("Unable to set boot partition");
         mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
         goto END;
@@ -532,28 +532,28 @@ mender_client_download_artifact_callback(char *type, cJSON *meta_data, char *fil
         /* Check if the filename is provided */
         if (NULL != filename) {
 
-            /* Check if the OTA handle must be opened */
+            /* Check if the flash handle must be opened */
             if (0 == index) {
 
-                /* Open the OTA handle */
-                if (MENDER_OK != (ret = mender_client_callbacks.ota_begin(filename, size, &mender_client_ota_handle))) {
-                    mender_log_error("Unable to open OTA handle");
+                /* Open the flash handle */
+                if (MENDER_OK != (ret = mender_client_callbacks.flash.open(filename, size, &mender_client_flash_handle))) {
+                    mender_log_error("Unable to open flash handle");
                     goto END;
                 }
             }
 
             /* Write data */
-            if (MENDER_OK != (ret = mender_client_callbacks.ota_write(mender_client_ota_handle, data, index, length))) {
-                mender_log_error("Unable to write OTA data");
+            if (MENDER_OK != (ret = mender_client_callbacks.flash.write(mender_client_flash_handle, data, index, length))) {
+                mender_log_error("Unable to write data to flash");
                 goto END;
             }
 
-            /* Check if the OTA handle must be closed */
+            /* Check if the flash handle must be closed */
             if (index + length >= size) {
 
-                /* Close the OTA handle */
-                if (MENDER_OK != (ret = mender_client_callbacks.ota_end(mender_client_ota_handle))) {
-                    mender_log_error("Unable to close OTA handle");
+                /* Close the flash handle */
+                if (MENDER_OK != (ret = mender_client_callbacks.flash.close(mender_client_flash_handle))) {
+                    mender_log_error("Unable to close flash handle");
                     goto END;
                 }
             }
