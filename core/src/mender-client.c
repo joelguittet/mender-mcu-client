@@ -425,7 +425,7 @@ REBOOT:
         mender_client_callbacks.restart();
     }
 
-    return MENDER_DONE;
+    return ret;
 }
 
 static mender_err_t
