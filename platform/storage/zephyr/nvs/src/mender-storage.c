@@ -41,11 +41,11 @@
 /**
  * @brief NVS keys
  */
-#define MENDER_STORAGE_NVS_PRIVATE_KEY       1
-#define MENDER_STORAGE_NVS_PUBLIC_KEY        2
-#define MENDER_STORAGE_NVS_OTA_ID            3
-#define MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME 4
-#define MENDER_STORAGE_NVS_DEVICE_CONFIG     5
+#define MENDER_STORAGE_NVS_PRIVATE_KEY              1
+#define MENDER_STORAGE_NVS_PUBLIC_KEY               2
+#define MENDER_STORAGE_NVS_DEPLOYMENT_ID            3
+#define MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME 4
+#define MENDER_STORAGE_NVS_DEVICE_CONFIG            5
 
 /**
  * @brief NVS storage handle
@@ -158,15 +158,15 @@ mender_storage_delete_authentication_keys(void) {
 }
 
 mender_err_t
-mender_storage_set_ota_deployment(char *ota_id, char *ota_artifact_name) {
+mender_storage_set_deployment(char *id, char *artifact_name) {
 
-    assert(NULL != ota_id);
-    assert(NULL != ota_artifact_name);
+    assert(NULL != id);
+    assert(NULL != artifact_name);
 
     /* Write ID and artifact name */
-    if ((nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, ota_id, strlen(ota_id) + 1) < 0)
-        || (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, ota_artifact_name, strlen(ota_artifact_name) + 1) < 0)) {
-        mender_log_error("Unable to write OTA ID or artifact name");
+    if ((nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ID, id, strlen(id) + 1) < 0)
+        || (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME, artifact_name, strlen(artifact_name) + 1) < 0)) {
+        mender_log_error("Unable to write deployment ID or artifact name");
         return MENDER_FAIL;
     }
 
@@ -174,46 +174,46 @@ mender_storage_set_ota_deployment(char *ota_id, char *ota_artifact_name) {
 }
 
 mender_err_t
-mender_storage_get_ota_deployment(char **ota_id, char **ota_artifact_name) {
+mender_storage_get_deployment(char **id, char **artifact_name) {
 
-    assert(NULL != ota_id);
-    assert(NULL != ota_artifact_name);
-    size_t  ota_id_length            = 0;
-    size_t  ota_artifact_name_length = 0;
+    assert(NULL != id);
+    assert(NULL != artifact_name);
+    size_t  id_length            = 0;
+    size_t  artifact_name_length = 0;
     ssize_t ret;
 
     /* Retrieve length of the ID and artifact name */
-    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, NULL, 0)) <= 0) {
-        mender_log_info("OTA ID not available");
+    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ID, NULL, 0)) <= 0) {
+        mender_log_info("Deployment ID not available");
         return MENDER_NOT_FOUND;
     }
-    ota_id_length = (size_t)ret;
-    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, NULL, 0)) <= 0) {
+    id_length = (size_t)ret;
+    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME, NULL, 0)) <= 0) {
         mender_log_info("Artifact name not available");
         return MENDER_NOT_FOUND;
     }
-    ota_artifact_name_length = (size_t)ret;
+    artifact_name_length = (size_t)ret;
 
     /* Allocate memory to copy ID and artifact name */
-    if (NULL == (*ota_id = (char *)malloc(ota_id_length))) {
+    if (NULL == (*id = (char *)malloc(id_length))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
-    if (NULL == (*ota_artifact_name = (char *)malloc(ota_artifact_name_length))) {
+    if (NULL == (*artifact_name = (char *)malloc(artifact_name_length))) {
         mender_log_error("Unable to allocate memory");
-        free(*ota_id);
-        *ota_id = NULL;
+        free(*id);
+        *id = NULL;
         return MENDER_FAIL;
     }
 
     /* Read ID and artifact name */
-    if ((nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID, *ota_id, ota_id_length) < 0)
-        || (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME, *ota_artifact_name, ota_artifact_name_length) < 0)) {
-        mender_log_error("Unable to read OTA ID or artifact name");
-        free(*ota_id);
-        *ota_id = NULL;
-        free(*ota_artifact_name);
-        *ota_artifact_name = NULL;
+    if ((nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ID, *id, id_length) < 0)
+        || (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME, *artifact_name, artifact_name_length) < 0)) {
+        mender_log_error("Unable to read deployment ID or artifact name");
+        free(*id);
+        *id = NULL;
+        free(*artifact_name);
+        *artifact_name = NULL;
         return MENDER_FAIL;
     }
 
@@ -221,12 +221,12 @@ mender_storage_get_ota_deployment(char **ota_id, char **ota_artifact_name) {
 }
 
 mender_err_t
-mender_storage_delete_ota_deployment(void) {
+mender_storage_delete_deployment(void) {
 
     /* Delete ID and artifact name */
-    if ((0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ID))
-        || (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_OTA_ARTIFACT_NAME))) {
-        mender_log_error("Unable to delete OTA ID or artifact name");
+    if ((0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ID))
+        || (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME))) {
+        mender_log_error("Unable to delete deployment ID or artifact name");
         return MENDER_FAIL;
     }
 
