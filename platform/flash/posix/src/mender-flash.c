@@ -1,6 +1,6 @@
 /**
- * @file      mender-ota.c
- * @brief     Mender OTA interface for Posix platform
+ * @file      mender-flash.c
+ * @brief     Mender flash interface for Posix platform
  *
  * MIT License
  *
@@ -27,39 +27,39 @@
 
 #include <errno.h>
 #include <unistd.h>
+#include "mender-flash.h"
 #include "mender-log.h"
-#include "mender-ota.h"
 
 /**
- * @brief Default OTA path (working directory)
+ * @brief Default deployment path (working directory)
  */
-#ifndef CONFIG_MENDER_OTA_PATH
-#define CONFIG_MENDER_OTA_PATH ""
-#endif /* CONFIG_MENDER_OTA_PATH */
+#ifndef CONFIG_MENDER_FLASH_PATH
+#define CONFIG_MENDER_FLASH_PATH ""
+#endif /* CONFIG_MENDER_FLASH_PATH */
 
 /**
- * @brief OTA Files
+ * @brief Deployment files
  */
-#define MENDER_OTA_REQUEST_UPGRADE CONFIG_MENDER_OTA_PATH "request_upgrade"
+#define MENDER_FLASH_REQUEST_UPGRADE CONFIG_MENDER_FLASH_PATH "request_upgrade"
 
 mender_err_t
-mender_ota_begin(char *name, size_t size, void **handle) {
+mender_flash_open(char *name, size_t size, void **handle) {
 
     assert(NULL != name);
     assert(NULL != handle);
     char *path = NULL;
 
     /* Print current file name and size */
-    mender_log_info("Start flashing OTA artifact '%s' with size %d", name, size);
+    mender_log_info("Start flashing artifact '%s' with size %d", name, size);
 
     /* Compute path */
-    if (NULL == (path = (char *)malloc(strlen(CONFIG_MENDER_OTA_PATH) + strlen(name) + 1))) {
+    if (NULL == (path = (char *)malloc(strlen(CONFIG_MENDER_FLASH_PATH) + strlen(name) + 1))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
-    sprintf(path, "%s%s", CONFIG_MENDER_OTA_PATH, name);
+    sprintf(path, "%s%s", CONFIG_MENDER_FLASH_PATH, name);
 
-    /* Begin OTA with sequential writes */
+    /* Begin deployment with sequential writes */
     if (NULL == (*handle = fopen(path, "wb"))) {
         mender_log_error("fopen failed (%d)", errno);
         free(path);
@@ -73,13 +73,13 @@ mender_ota_begin(char *name, size_t size, void **handle) {
 }
 
 mender_err_t
-mender_ota_write(void *handle, void *data, size_t index, size_t length) {
+mender_flash_write(void *handle, void *data, size_t index, size_t length) {
 
     (void)index;
 
-    /* Check OTA handle */
+    /* Check flash handle */
     if (NULL == handle) {
-        mender_log_error("Invalid OTA handle");
+        mender_log_error("Invalid flash handle");
         return MENDER_FAIL;
     }
 
@@ -93,24 +93,11 @@ mender_ota_write(void *handle, void *data, size_t index, size_t length) {
 }
 
 mender_err_t
-mender_ota_abort(void *handle) {
+mender_flash_close(void *handle) {
 
-    /* Check OTA handle */
-    if (NULL != handle) {
-
-        /* Release memory */
-        fclose(handle);
-    }
-
-    return MENDER_OK;
-}
-
-mender_err_t
-mender_ota_end(void *handle) {
-
-    /* Check OTA handle */
+    /* Check flash handle */
     if (NULL == handle) {
-        mender_log_error("Invalid OTA handle");
+        mender_log_error("Invalid flash handle");
         return MENDER_FAIL;
     }
 
@@ -121,16 +108,16 @@ mender_ota_end(void *handle) {
 }
 
 mender_err_t
-mender_ota_set_boot_partition(void *handle) {
+mender_flash_set_pending_image(void *handle) {
 
     FILE *       file;
     mender_err_t ret = MENDER_OK;
 
-    /* Check OTA handle */
+    /* Check flash handle */
     if (NULL != handle) {
 
         /* Write request update file */
-        if (NULL == (file = fopen(MENDER_OTA_REQUEST_UPGRADE, "wb"))) {
+        if (NULL == (file = fopen(MENDER_FLASH_REQUEST_UPGRADE, "wb"))) {
             mender_log_error("fopen failed (%d)", errno);
             ret = MENDER_FAIL;
         } else {
@@ -142,14 +129,27 @@ mender_ota_set_boot_partition(void *handle) {
 }
 
 mender_err_t
-mender_ota_mark_app_valid_cancel_rollback(void) {
+mender_flash_abort_deployment(void *handle) {
+
+    /* Check flash handle */
+    if (NULL != handle) {
+
+        /* Release memory */
+        fclose(handle);
+    }
+
+    return MENDER_OK;
+}
+
+mender_err_t
+mender_flash_confirm_image(void) {
 
     mender_err_t ret = MENDER_OK;
 
     /* Validate the image if it is still pending */
-    if (!access(MENDER_OTA_REQUEST_UPGRADE, F_OK)) {
+    if (false == mender_flash_is_image_confirmed()) {
         /* Remove request upgrade file */
-        if (0 != unlink(MENDER_OTA_REQUEST_UPGRADE)) {
+        if (0 != unlink(MENDER_FLASH_REQUEST_UPGRADE)) {
             mender_log_error("Unable to mark application valid, application will rollback (%d)", errno);
             ret = MENDER_FAIL;
         } else {
@@ -160,13 +160,9 @@ mender_ota_mark_app_valid_cancel_rollback(void) {
     return ret;
 }
 
-mender_err_t
-mender_ota_mark_app_invalid_rollback_and_reboot(void) {
+bool
+mender_flash_is_image_confirmed(void) {
 
-    /* Reboot if validating the image it still pending */
-    if (!access(MENDER_OTA_REQUEST_UPGRADE, F_OK)) {
-        exit(EXIT_FAILURE);
-    }
-
-    return MENDER_OK;
+    /* Check if the image it still pending */
+    return (0 != access(MENDER_FLASH_REQUEST_UPGRADE, F_OK));
 }

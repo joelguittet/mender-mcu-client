@@ -106,7 +106,7 @@ The source code is separated into three main directories:
     * `mender-artifact`: parser to read [mender artifact](https://github.com/mendersoftware/mender-artifact/blob/master/Documentation/artifact-format-v3.md).
     * `mender-utils`: utilities.
 * `platform` contains source files specific to the platform or project, it is separated in several sub-directories for each feature of the client that rely on external dependency specific to the platforms:
-    * `mender-ota`: implementation of functions used to write artifact in the memory.
+    * `mender-flash`: implementation of functions used to write artifact in the memory.
     * `mender-storage`: provide storage area for the mender-client.
     * `mender-shell`: provide shell interface to the Device Troubleshoot add-on.
     * `mender-log`: logging API.
@@ -121,7 +121,7 @@ The source code is separated into three main directories:
 
 The `include` directory contains the header files that define the prototypes for each module of the library. They are common to all platforms and projects and they define the API to be used or implemented.
 
-The usage of the mender-mcu-client library should be to include all the `core` source files each time, and then to pick up wanted platform implementations, or to write your owns (but it's better to share them and open a Pull Request!). For example you may want to use esp-idf with mbedTLS or with a secure element, or using an other RTOS I have not integrated, or maybe you want to have mender storage located in an external EEPROM. The combinaisons are infinite.
+The usage of the mender-mcu-client library should be to include all the `core` source files each time, and then to pick up wanted platform implementations, or to write your owns (but it's better to share them and open a Pull Request!). For example you may want to use esp-idf with mbedTLS or with a secure element, or using an other RTOS I have not integrated, or maybe you want to have mender storage located in an external EEPROM. The combinations are infinite.
 
 The usage of the add-ons is at your own discretion, they are independent.
 
@@ -139,9 +139,9 @@ Note this is not including dependencies such as mbedTLS or HTTP client, etc. I s
 It is possible to reduce even more the footprint of the mender-mcu-client library by customizing the default log level at build time using `CONFIG_MENDER_LOG_LEVEL` configuration key. Default is `MENDER_LOG_LEVEL_INF` which means information, warning and error messages are included. In production, it is highly possible you don't have a logging interface and as a consequence you can disable all logs. This permits to save about 10kB on the total size of the application.
 
 
-## Roadmap
+## Road-map
 
-The following features are currently in the pipeline. Please note that I haven't set dates in this roadmap because I develop this in my free time, but you can contribute with Pull Requests:
+The following features are currently in the pipeline. Please note that I haven't set dates in this road-map because I develop this in my free time, but you can contribute with Pull Requests:
 
 * Support update of [modules](https://docs.mender.io/artifact-creation/create-a-custom-update-module) to perform other kind of updates that could be specific to one project: files, images, etc.
 * Integration of other nice to have Mender features: Device Troubleshoot sending and receiving files, ...

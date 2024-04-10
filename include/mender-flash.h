@@ -1,6 +1,6 @@
 /**
- * @file      mender-ota.h
- * @brief     Mender OTA interface, to be used in mender client callbacks (but you can also have your owns)
+ * @file      mender-flash.h
+ * @brief     Mender flash interface, to be used in mender client callbacks (but you can also have your owns)
  *
  * MIT License
  *
@@ -25,8 +25,8 @@
  * SOFTWARE.
  */
 
-#ifndef __MENDER_OTA_H__
-#define __MENDER_OTA_H__
+#ifndef __MENDER_FLASH_H__
+#define __MENDER_FLASH_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,59 +35,59 @@ extern "C" {
 #include "mender-utils.h"
 
 /**
- * @brief Begin new OTA deployment
+ * @brief Open flash device
  * @param name Name of the artifact
  * @param size Size of the artifact
- * @param handle Handle of the deployment to be used with mender OTA functions
+ * @param handle Handle of the deployment to be used with mender flash functions
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_begin(char *name, size_t size, void **handle);
+mender_err_t mender_flash_open(char *name, size_t size, void **handle);
 
 /**
- * @brief Write OTA data
- * @param handle Handle from mender_ota_begin
+ * @brief Write deployment data
+ * @param handle Handle from mender_flash_open
  * @param data Data to be written
  * @param index Index of the data to be written
  * @param length Length of the data to be written
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_write(void *handle, void *data, size_t index, size_t length);
+mender_err_t mender_flash_write(void *handle, void *data, size_t index, size_t length);
 
 /**
- * @brief Abort OTA
- * @param handle Handle from mender_ota_begin
+ * @brief Close flash device
+ * @param handle Handle from mender_flash_open
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_abort(void *handle);
-
-/**
- * @brief End OTA
- * @param handle Handle from mender_ota_begin
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_ota_end(void *handle);
+mender_err_t mender_flash_close(void *handle);
 
 /**
  * @brief Set new boot partition to be used at the next boot
- * @param handle Handle from mender_ota_begin
+ * @param handle Handle from mender_flash_open
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_set_boot_partition(void *handle);
+mender_err_t mender_flash_set_pending_image(void *handle);
 
 /**
- * @brief Mark application valid and cancel rollback if this is still pending
+ * @brief Abort current deployment
+ * @param handle Handle from mender_flash_open
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_mark_app_valid_cancel_rollback(void);
+mender_err_t mender_flash_abort_deployment(void *handle);
 
 /**
- * @brief Mark application invalid and perform rollback if this is still pending
+ * @brief Mark image valid and cancel rollback if this is still pending
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_ota_mark_app_invalid_rollback_and_reboot(void);
+mender_err_t mender_flash_confirm_image(void);
+
+/**
+ * @brief Check if image is confirmed
+ * @return true if the image is confirmed, false otherwise
+ */
+bool mender_flash_is_image_confirmed(void);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* __MENDER_OTA_H__ */
+#endif /* __MENDER_FLASH_H__ */

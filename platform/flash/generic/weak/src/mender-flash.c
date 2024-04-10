@@ -1,6 +1,6 @@
 /**
- * @file      mender-ota.c
- * @brief     Mender OTA interface for weak platform
+ * @file      mender-flash.c
+ * @brief     Mender flash interface for weak platform
  *
  * MIT License
  *
@@ -25,10 +25,10 @@
  * SOFTWARE.
  */
 
-#include "mender-ota.h"
+#include "mender-flash.h"
 
 __attribute__((weak)) mender_err_t
-mender_ota_begin(char *name, size_t size, void **handle) {
+mender_flash_open(char *name, size_t size, void **handle) {
 
     (void)name;
     (void)size;
@@ -39,7 +39,7 @@ mender_ota_begin(char *name, size_t size, void **handle) {
 }
 
 __attribute__((weak)) mender_err_t
-mender_ota_write(void *handle, void *data, size_t index, size_t length) {
+mender_flash_write(void *handle, void *data, size_t index, size_t length) {
 
     (void)handle;
     (void)data;
@@ -51,7 +51,7 @@ mender_ota_write(void *handle, void *data, size_t index, size_t length) {
 }
 
 __attribute__((weak)) mender_err_t
-mender_ota_abort(void *handle) {
+mender_flash_close(void *handle) {
 
     (void)handle;
 
@@ -60,7 +60,7 @@ mender_ota_abort(void *handle) {
 }
 
 __attribute__((weak)) mender_err_t
-mender_ota_end(void *handle) {
+mender_flash_set_pending_image(void *handle) {
 
     (void)handle;
 
@@ -69,7 +69,7 @@ mender_ota_end(void *handle) {
 }
 
 __attribute__((weak)) mender_err_t
-mender_ota_set_boot_partition(void *handle) {
+mender_flash_abort_deployment(void *handle) {
 
     (void)handle;
 
@@ -78,15 +78,15 @@ mender_ota_set_boot_partition(void *handle) {
 }
 
 __attribute__((weak)) mender_err_t
-mender_ota_mark_app_valid_cancel_rollback(void) {
+mender_flash_confirm_image(void) {
 
     /* Nothing to do */
     return MENDER_NOT_IMPLEMENTED;
 }
 
-__attribute__((weak)) mender_err_t
-mender_ota_mark_app_invalid_rollback_and_reboot(void) {
+__attribute__((weak)) bool
+mender_flash_is_image_confirmed(void) {
 
     /* Nothing to do */
-    return MENDER_NOT_IMPLEMENTED;
+    return false;
 }

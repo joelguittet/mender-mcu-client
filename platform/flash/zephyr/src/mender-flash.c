@@ -1,6 +1,6 @@
 /**
- * @file      mender-ota.c
- * @brief     Mender OTA interface for Zephyr platform
+ * @file      mender-flash.c
+ * @brief     Mender flash interface for Zephyr platform
  *
  * MIT License
  *
@@ -28,26 +28,26 @@
 #include <zephyr/dfu/flash_img.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/sys/reboot.h>
+#include "mender-flash.h"
 #include "mender-log.h"
-#include "mender-ota.h"
 
 mender_err_t
-mender_ota_begin(char *name, size_t size, void **handle) {
+mender_flash_open(char *name, size_t size, void **handle) {
 
     assert(NULL != name);
     assert(NULL != handle);
     int result;
 
     /* Print current file name and size */
-    mender_log_info("Start flashing OTA artifact '%s' with size %d", name, size);
+    mender_log_info("Start flashing artifact '%s' with size %d", name, size);
 
-    /* Allocate memory to store the OTA handle */
+    /* Allocate memory to store the flash handle */
     if (NULL == (*handle = malloc(sizeof(struct flash_img_context)))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
 
-    /* Begin OTA with sequential writes */
+    /* Begin deployment with sequential writes */
     if ((result = flash_img_init((struct flash_img_context *)*handle)) < 0) {
         mender_log_error("flash_img_init failed (%d)", result);
         return MENDER_FAIL;
@@ -57,14 +57,14 @@ mender_ota_begin(char *name, size_t size, void **handle) {
 }
 
 mender_err_t
-mender_ota_write(void *handle, void *data, size_t index, size_t length) {
+mender_flash_write(void *handle, void *data, size_t index, size_t length) {
 
     (void)index;
     int result;
 
-    /* Check OTA handle */
+    /* Check flash handle */
     if (NULL == handle) {
-        mender_log_error("Invalid OTA handle");
+        mender_log_error("Invalid flash handle");
         return MENDER_FAIL;
     }
 
@@ -78,26 +78,13 @@ mender_ota_write(void *handle, void *data, size_t index, size_t length) {
 }
 
 mender_err_t
-mender_ota_abort(void *handle) {
-
-    /* Check OTA handle */
-    if (NULL != handle) {
-
-        /* Release memory */
-        free(handle);
-    }
-
-    return MENDER_OK;
-}
-
-mender_err_t
-mender_ota_end(void *handle) {
+mender_flash_close(void *handle) {
 
     int result;
 
-    /* Check OTA handle */
+    /* Check flash handle */
     if (NULL == handle) {
-        mender_log_error("Invalid OTA handle");
+        mender_log_error("Invalid flash handle");
         return MENDER_FAIL;
     }
 
@@ -111,11 +98,11 @@ mender_ota_end(void *handle) {
 }
 
 mender_err_t
-mender_ota_set_boot_partition(void *handle) {
+mender_flash_set_pending_image(void *handle) {
 
     int result;
 
-    /* Check OTA handle */
+    /* Check flash handle */
     if (NULL != handle) {
 
         /* Set new boot partition */
@@ -132,13 +119,26 @@ mender_ota_set_boot_partition(void *handle) {
 }
 
 mender_err_t
-mender_ota_mark_app_valid_cancel_rollback(void) {
+mender_flash_abort_deployment(void *handle) {
+
+    /* Check flash handle */
+    if (NULL != handle) {
+
+        /* Release memory */
+        free(handle);
+    }
+
+    return MENDER_OK;
+}
+
+mender_err_t
+mender_flash_confirm_image(void) {
 
     int          result;
     mender_err_t ret = MENDER_OK;
 
     /* Validate the image if it is still pending */
-    if (!boot_is_img_confirmed()) {
+    if (false == mender_flash_is_image_confirmed()) {
         if ((result = boot_write_img_confirmed()) < 0) {
             mender_log_error("Unable to mark application valid, application will rollback (%d)", result);
             ret = MENDER_FAIL;
@@ -150,13 +150,9 @@ mender_ota_mark_app_valid_cancel_rollback(void) {
     return ret;
 }
 
-mender_err_t
-mender_ota_mark_app_invalid_rollback_and_reboot(void) {
+bool
+mender_flash_is_image_confirmed(void) {
 
-    /* Reboot if validating the image it still pending */
-    if (!boot_is_img_confirmed()) {
-        sys_reboot(SYS_REBOOT_WARM);
-    }
-
-    return MENDER_OK;
+    /* Check if the image it still pending */
+    return boot_is_img_confirmed();
 }
