@@ -67,6 +67,7 @@ typedef struct {
     mender_rtos_work_params_t params;       /**< Work parameters */
     SemaphoreHandle_t         sem_handle;   /**< Semaphore used to indicate work is pending or executing */
     TimerHandle_t             timer_handle; /**< Timer used to periodically execute work */
+    bool                      activated;    /**< Flag indicating the work is activated */
 } mender_rtos_work_context_t;
 
 /**
@@ -201,6 +202,9 @@ mender_rtos_work_activate(void *handle) {
         mender_rtos_timer_callback(work_context->timer_handle);
     }
 
+    /* Indicate the work has been activated */
+    work_context->activated = true;
+
     return MENDER_OK;
 }
 
@@ -251,16 +255,23 @@ mender_rtos_work_deactivate(void *handle) {
     /* Get work context */
     mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
 
-    /* Stop the timer used to periodically execute the work (if it is running) */
-    xTimerStop(work_context->timer_handle, portMAX_DELAY);
-    while (pdFALSE != xTimerIsTimerActive(work_context->timer_handle)) {
-        vTaskDelay(1);
-    }
+    /* Check if the work was activated */
+    if (true == work_context->activated) {
 
-    /* Wait if the work is pending or executing */
-    if (pdPASS != xSemaphoreTake(work_context->sem_handle, portMAX_DELAY)) {
-        mender_log_error("Work '%s' is pending or executing", work_context->params.name);
-        return MENDER_FAIL;
+        /* Stop the timer used to periodically execute the work (if it is running) */
+        xTimerStop(work_context->timer_handle, portMAX_DELAY);
+        while (pdFALSE != xTimerIsTimerActive(work_context->timer_handle)) {
+            vTaskDelay(1);
+        }
+
+        /* Wait if the work is pending or executing */
+        if (pdPASS != xSemaphoreTake(work_context->sem_handle, portMAX_DELAY)) {
+            mender_log_error("Work '%s' is pending or executing", work_context->params.name);
+            return MENDER_FAIL;
+        }
+
+        /* Indicate the work has been deactivated */
+        work_context->activated = false;
     }
 
     return MENDER_OK;

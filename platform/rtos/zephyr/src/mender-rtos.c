@@ -51,6 +51,7 @@ typedef struct {
     struct k_sem              sem_handle;   /**< Semaphore used to indicate work is pending or executing */
     struct k_timer            timer_handle; /**< Timer used to periodically execute work */
     struct k_work             work_handle;  /**< Work handle used to execute the work function */
+    bool                      activated;    /**< Flag indicating the work is activated */
 } mender_rtos_work_context_t;
 
 /**
@@ -163,6 +164,9 @@ mender_rtos_work_activate(void *handle) {
         k_timer_start(&work_context->timer_handle, K_NO_WAIT, K_MSEC(1000 * work_context->params.period));
     }
 
+    /* Indicate the work has been activated */
+    work_context->activated = true;
+
     return MENDER_OK;
 }
 
@@ -207,13 +211,20 @@ mender_rtos_work_deactivate(void *handle) {
     /* Get work context */
     mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
 
-    /* Stop the timer used to periodically execute the work (if it is running) */
-    k_timer_stop(&work_context->timer_handle);
+    /* Check if the work was activated */
+    if (true == work_context->activated) {
 
-    /* Wait if the work is pending or executing */
-    if (0 != k_sem_take(&work_context->sem_handle, K_FOREVER)) {
-        mender_log_error("Work '%s' is pending or executing", work_context->params.name);
-        return MENDER_FAIL;
+        /* Stop the timer used to periodically execute the work (if it is running) */
+        k_timer_stop(&work_context->timer_handle);
+
+        /* Wait if the work is pending or executing */
+        if (0 != k_sem_take(&work_context->sem_handle, K_FOREVER)) {
+            mender_log_error("Work '%s' is pending or executing", work_context->params.name);
+            return MENDER_FAIL;
+        }
+
+        /* Indicate the work has been deactivated */
+        work_context->activated = false;
     }
 
     return MENDER_OK;

@@ -63,6 +63,7 @@ typedef struct {
     mender_rtos_work_params_t params;       /**< Work parameters */
     pthread_mutex_t           sem_handle;   /**< Semaphore used to indicate work is pending or executing */
     timer_t                   timer_handle; /**< Timer used to periodically execute work */
+    bool                      activated;    /**< Flag indicating the work is activated */
 } mender_rtos_work_context_t;
 
 /**
@@ -227,6 +228,9 @@ mender_rtos_work_activate(void *handle) {
         mender_rtos_timer_callback(timer_data);
     }
 
+    /* Indicate the work has been activated */
+    work_context->activated = true;
+
     return MENDER_OK;
 }
 
@@ -278,18 +282,25 @@ mender_rtos_work_deactivate(void *handle) {
     /* Get work context */
     mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
 
-    /* Stop the timer used to periodically execute the work (if it is running) */
-    struct itimerspec its;
-    memset(&its, 0, sizeof(struct itimerspec));
-    if (0 != timer_settime(work_context->timer_handle, 0, &its, NULL)) {
-        mender_log_error("Unable to stop timer");
-        return MENDER_FAIL;
-    }
+    /* Check if the work was activated */
+    if (true == work_context->activated) {
 
-    /* Wait if the work is pending or executing */
-    if (0 != pthread_mutex_lock(&work_context->sem_handle)) {
-        mender_log_error("Work '%s' is pending or executing", work_context->params.name);
-        return MENDER_FAIL;
+        /* Stop the timer used to periodically execute the work (if it is running) */
+        struct itimerspec its;
+        memset(&its, 0, sizeof(struct itimerspec));
+        if (0 != timer_settime(work_context->timer_handle, 0, &its, NULL)) {
+            mender_log_error("Unable to stop timer");
+            return MENDER_FAIL;
+        }
+
+        /* Wait if the work is pending or executing */
+        if (0 != pthread_mutex_lock(&work_context->sem_handle)) {
+            mender_log_error("Work '%s' is pending or executing", work_context->params.name);
+            return MENDER_FAIL;
+        }
+
+        /* Indicate the work has been deactivated */
+        work_context->activated = false;
     }
 
     return MENDER_OK;
