@@ -55,14 +55,7 @@ typedef struct {
     mender_err_t (*authentication_success)(void);                          /**< Invoked when authentication with the mender server succeeded */
     mender_err_t (*authentication_failure)(void);                          /**< Invoked when authentication with the mender server failed */
     mender_err_t (*deployment_status)(mender_deployment_status_t, char *); /**< Invoked on transition changes to inform of the new deployment status */
-    struct {
-        mender_err_t (*open)(char *, size_t, void **);         /**< Invoked to open flash device when the deployment begins */
-        mender_err_t (*write)(void *, void *, size_t, size_t); /**< Invoked to write data received from the mender server */
-        mender_err_t (*close)(void *);                         /**< Invoked to indicate the end of the artifact */
-        mender_err_t (*set_pending_image)(void *);             /**< Invoked to set the new boot partition to be used on the next restart */
-        mender_err_t (*abort_deployment)(void *);              /**< Invoked to abort current deployment */
-    } flash;
-    mender_err_t (*restart)(void); /**< Invoked to restart the device */
+    mender_err_t (*restart)(void);                                         /**< Invoked to restart the device */
 } mender_client_callbacks_t;
 
 /**
@@ -78,6 +71,19 @@ char *mender_client_version(void);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *callbacks);
+
+/**
+ * @brief Register artifact type
+ * @param type Artifact type
+ * @param callback Artifact type callback
+ * @param needs_restart Flag to indicate if the artifact type requires the device to restart after downloading
+ * @param artifact_name Artifact name (optional, NULL otherwise), set to validate module update after restarting
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_client_register_artifact_type(char *type,
+                                                  mender_err_t (*callback)(char *, char *, char *, cJSON *, char *, size_t, void *, size_t, size_t),
+                                                  bool  needs_restart,
+                                                  char *artifact_name);
 
 /**
  * @brief Function used to trigger execution of the authentication and update work
