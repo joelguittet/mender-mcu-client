@@ -24,8 +24,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+set -e
+
 cd tests
-mkdir build
+mkdir -p build
 cd build
 
 # Build weak use case
