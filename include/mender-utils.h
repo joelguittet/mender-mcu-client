@@ -142,18 +142,18 @@ mender_err_t mender_utils_keystore_copy(mender_keystore_t **dst_keystore, mender
 /**
  * @brief Function used to set key-store from JSON string
  * @param keystore Key-store
- * @param data JSON string
+ * @param object JSON object
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_utils_keystore_from_string(mender_keystore_t **keystore, char *data);
+mender_err_t mender_utils_keystore_from_json(mender_keystore_t **keystore, cJSON *object);
 
 /**
- * @brief Function used to format key-store to JSON string
+ * @brief Function used to format key-store to JSON object
  * @param keystore Key-store
- * @param data JSON string
+ * @param object JSON object
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_utils_keystore_to_string(mender_keystore_t *keystore, char **data);
+mender_err_t mender_utils_keystore_to_json(mender_keystore_t *keystore, cJSON **object);
 
 /**
  * @brief Function used to set key-store item name and value

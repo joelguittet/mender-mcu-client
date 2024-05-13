@@ -444,10 +444,17 @@ mender_api_download_configuration_data(mender_keystore_t **configuration) {
 
     /* Treatment depending of the status */
     if (200 == status) {
-        if (MENDER_OK != (ret = mender_utils_keystore_from_string(configuration, response))) {
+        cJSON *json_response = cJSON_Parse(response);
+        if (NULL == json_response) {
             mender_log_error("Unable to set configuration");
             goto END;
         }
+        if (MENDER_OK != (ret = mender_utils_keystore_from_json(configuration, json_response))) {
+            mender_log_error("Unable to set configuration");
+            cJSON_Delete(json_response);
+            goto END;
+        }
+        cJSON_Delete(json_response);
     } else {
         mender_api_print_response_error(response, status);
         ret = MENDER_FAIL;
@@ -469,13 +476,19 @@ mender_err_t
 mender_api_publish_configuration_data(mender_keystore_t *configuration) {
 
     mender_err_t ret;
-    char *       payload  = NULL;
-    char *       response = NULL;
-    int          status   = 0;
+    cJSON *      json_configuration = NULL;
+    char *       payload            = NULL;
+    char *       response           = NULL;
+    int          status             = 0;
 
     /* Format payload */
-    if (MENDER_OK != (ret = mender_utils_keystore_to_string(configuration, &payload))) {
+    if (MENDER_OK != (ret = mender_utils_keystore_to_json(configuration, &json_configuration))) {
         mender_log_error("Unable to format payload");
+        goto END;
+    }
+    if (NULL == (payload = cJSON_PrintUnformatted(json_configuration))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
         goto END;
     }
 
@@ -510,6 +523,9 @@ END:
     }
     if (NULL != payload) {
         free(payload);
+    }
+    if (NULL != json_configuration) {
+        cJSON_Delete(json_configuration);
     }
 
     return ret;
