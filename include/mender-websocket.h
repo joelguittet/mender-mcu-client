@@ -32,8 +32,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-
 #include "mender-utils.h"
 
 /**
@@ -92,8 +90,6 @@ mender_err_t mender_websocket_disconnect(void *handle);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_websocket_exit(void);
-
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
 #ifdef __cplusplus
 }
