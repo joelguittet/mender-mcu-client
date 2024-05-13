@@ -366,16 +366,15 @@ main(int argc, char **argv) {
                                                     .authentication_poll_interval = 0,
                                                     .update_poll_interval         = 0,
                                                     .recommissioning              = false };
-    mender_client_callbacks_t mender_client_callbacks = { .authentication_success  = authentication_success_cb,
-                                                          .authentication_failure  = authentication_failure_cb,
-                                                          .deployment_status       = deployment_status_cb,
-                                                          .flash.open              = mender_flash_open,
-                                                          .flash.write             = mender_flash_write,
-                                                          .flash.close             = mender_flash_close,
-                                                          .flash.set_pending_image = mender_flash_set_pending_image,
-                                                          .flash.abort_deployment  = mender_flash_abort_deployment,
-                                                          .restart                 = restart_cb };
-    mender_client_init(&mender_client_config, &mender_client_callbacks);
+    mender_client_callbacks_t mender_client_callbacks = { .authentication_success = authentication_success_cb,
+                                                          .authentication_failure = authentication_failure_cb,
+                                                          .deployment_status      = deployment_status_cb,
+                                                          .restart                = restart_cb };
+    if (MENDER_OK != mender_client_init(&mender_client_config, &mender_client_callbacks)) {
+        mender_log_error("Unable to initialize mender-client");
+        ret = EXIT_FAILURE;
+        goto END;
+    }
 
     /* Initialize mender add-ons */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
@@ -385,17 +384,29 @@ main(int argc, char **argv) {
         .config_updated = config_updated_cb,
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
     };
-    mender_configure_init(&mender_configure_config, &mender_configure_callbacks);
+    if (MENDER_OK != mender_configure_init(&mender_configure_config, &mender_configure_callbacks)) {
+        mender_log_error("Unable to initialize mender-configure add-on");
+        ret = EXIT_FAILURE;
+        goto RELEASE;
+    }
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
     mender_inventory_config_t mender_inventory_config = { .refresh_interval = 0 };
-    mender_inventory_init(&mender_inventory_config);
+    if (MENDER_OK != mender_inventory_init(&mender_inventory_config)) {
+        mender_log_error("Unable to initialize mender-inventory add-on");
+        ret = EXIT_FAILURE;
+        goto RELEASE;
+    }
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
     mender_troubleshoot_config_t    mender_troubleshoot_config = { .healthcheck_interval = 0 };
     mender_troubleshoot_callbacks_t mender_troubleshoot_callbacks
         = { .shell_begin = shell_begin_cb, .shell_resize = shell_resize_cb, .shell_write = shell_write_cb, .shell_end = shell_end_cb };
-    mender_troubleshoot_init(&mender_troubleshoot_config, &mender_troubleshoot_callbacks);
+    if (MENDER_OK != mender_troubleshoot_init(&mender_troubleshoot_config, &mender_troubleshoot_callbacks)) {
+        mender_log_error("Unable to initialize mender-troubleshoot add-on");
+        ret = EXIT_FAILURE;
+        goto RELEASE;
+    }
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
     /* Wait for mender-mcu-client events */
@@ -407,6 +418,8 @@ main(int argc, char **argv) {
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
     mender_troubleshoot_deactivate();
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
+
+RELEASE:
 
     /* Release mender add-ons */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
