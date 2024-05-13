@@ -41,11 +41,10 @@
 /**
  * @brief NVS keys
  */
-#define MENDER_STORAGE_NVS_PRIVATE_KEY              1
-#define MENDER_STORAGE_NVS_PUBLIC_KEY               2
-#define MENDER_STORAGE_NVS_DEPLOYMENT_ID            3
-#define MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME 4
-#define MENDER_STORAGE_NVS_DEVICE_CONFIG            5
+#define MENDER_STORAGE_NVS_PRIVATE_KEY     1
+#define MENDER_STORAGE_NVS_PUBLIC_KEY      2
+#define MENDER_STORAGE_NVS_DEPLOYMENT_DATA 3
+#define MENDER_STORAGE_NVS_DEVICE_CONFIG   4
 
 /**
  * @brief NVS storage handle
@@ -158,15 +157,13 @@ mender_storage_delete_authentication_keys(void) {
 }
 
 mender_err_t
-mender_storage_set_deployment(char *id, char *artifact_name) {
+mender_storage_set_deployment_data(char *deployment_data) {
 
-    assert(NULL != id);
-    assert(NULL != artifact_name);
+    assert(NULL != deployment_data);
 
-    /* Write ID and artifact name */
-    if ((nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ID, id, strlen(id) + 1) < 0)
-        || (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME, artifact_name, strlen(artifact_name) + 1) < 0)) {
-        mender_log_error("Unable to write deployment ID or artifact name");
+    /* Write deployment data */
+    if (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_DATA, deployment_data, strlen(deployment_data) + 1) < 0) {
+        mender_log_error("Unable to write deployment data");
         return MENDER_FAIL;
     }
 
@@ -174,46 +171,30 @@ mender_storage_set_deployment(char *id, char *artifact_name) {
 }
 
 mender_err_t
-mender_storage_get_deployment(char **id, char **artifact_name) {
+mender_storage_get_deployment_data(char **deployment_data) {
 
-    assert(NULL != id);
-    assert(NULL != artifact_name);
-    size_t  id_length            = 0;
-    size_t  artifact_name_length = 0;
+    assert(NULL != deployment_data);
+    size_t  deployment_data_length = 0;
     ssize_t ret;
 
-    /* Retrieve length of the ID and artifact name */
-    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ID, NULL, 0)) <= 0) {
-        mender_log_info("Deployment ID not available");
+    /* Retrieve length of the deployment data */
+    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_DATA, NULL, 0)) <= 0) {
+        mender_log_info("Deployment data not available");
         return MENDER_NOT_FOUND;
     }
-    id_length = (size_t)ret;
-    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME, NULL, 0)) <= 0) {
-        mender_log_info("Artifact name not available");
-        return MENDER_NOT_FOUND;
-    }
-    artifact_name_length = (size_t)ret;
+    deployment_data_length = (size_t)ret;
 
-    /* Allocate memory to copy ID and artifact name */
-    if (NULL == (*id = (char *)malloc(id_length))) {
+    /* Allocate memory to copy deployment data */
+    if (NULL == (*deployment_data = (char *)malloc(deployment_data_length))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
-    if (NULL == (*artifact_name = (char *)malloc(artifact_name_length))) {
-        mender_log_error("Unable to allocate memory");
-        free(*id);
-        *id = NULL;
-        return MENDER_FAIL;
-    }
 
-    /* Read ID and artifact name */
-    if ((nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ID, *id, id_length) < 0)
-        || (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME, *artifact_name, artifact_name_length) < 0)) {
-        mender_log_error("Unable to read deployment ID or artifact name");
-        free(*id);
-        *id = NULL;
-        free(*artifact_name);
-        *artifact_name = NULL;
+    /* Read deployment data */
+    if (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_DATA, *deployment_data, deployment_data_length) < 0) {
+        mender_log_error("Unable to read deployment data");
+        free(*deployment_data);
+        *deployment_data = NULL;
         return MENDER_FAIL;
     }
 
@@ -221,12 +202,11 @@ mender_storage_get_deployment(char **id, char **artifact_name) {
 }
 
 mender_err_t
-mender_storage_delete_deployment(void) {
+mender_storage_delete_deployment_data(void) {
 
-    /* Delete ID and artifact name */
-    if ((0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ID))
-        || (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME))) {
-        mender_log_error("Unable to delete deployment ID or artifact name");
+    /* Delete deployment data */
+    if (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_DATA)) {
+        mender_log_error("Unable to delete deployment data");
         return MENDER_FAIL;
     }
 

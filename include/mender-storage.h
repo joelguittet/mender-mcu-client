@@ -70,26 +70,24 @@ mender_err_t mender_storage_get_authentication_keys(unsigned char **private_key,
 mender_err_t mender_storage_delete_authentication_keys(void);
 
 /**
- * @brief Set deployment
- * @param id Deployment ID to store
- * @param artifact_name Deployment artifact name to store
+ * @brief Set deployment data
+ * @param deployment_data Deployment data to store
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_storage_set_deployment(char *id, char *artifact_name);
+mender_err_t mender_storage_set_deployment_data(char *deployment_data);
 
 /**
- * @brief Get deployment
- * @param id Deployment ID from storage, NULL if not found
- * @param artifact_name Deployment artifact name from storage, NULL if not found
+ * @brief Get deployment data
+ * @param deployment_data Deployment data from storage, NULL if not found
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_storage_get_deployment(char **id, char **artifact_name);
+mender_err_t mender_storage_get_deployment_data(char **deployment_data);
 
 /**
- * @brief Delete deployment
+ * @brief Delete deployment data
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_storage_delete_deployment(void);
+mender_err_t mender_storage_delete_deployment_data(void);
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
 #ifdef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
