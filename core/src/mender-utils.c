@@ -302,7 +302,7 @@ END:
 }
 
 mender_err_t
-mender_utils_keystore_from_string(mender_keystore_t **keystore, char *data) {
+mender_utils_keystore_from_json(mender_keystore_t **keystore, cJSON *object) {
 
     assert(NULL != keystore);
     mender_err_t ret;
@@ -315,38 +315,30 @@ mender_utils_keystore_from_string(mender_keystore_t **keystore, char *data) {
     *keystore = NULL;
 
     /* Set key-store */
-    if (NULL != data) {
-        cJSON *json_data = cJSON_Parse(data);
-        if (NULL != json_data) {
-            size_t length       = 0;
-            cJSON *current_item = json_data->child;
+    if (NULL != object) {
+        size_t length       = 0;
+        cJSON *current_item = object->child;
+        while (NULL != current_item) {
+            if ((NULL != current_item->string) && (NULL != current_item->valuestring)) {
+                length++;
+            }
+            current_item = current_item->next;
+        }
+        if (NULL != (*keystore = mender_utils_keystore_new(length))) {
+            size_t index = 0;
+            current_item = object->child;
             while (NULL != current_item) {
                 if ((NULL != current_item->string) && (NULL != current_item->valuestring)) {
-                    length++;
+                    if (MENDER_OK != (ret = mender_utils_keystore_set_item(*keystore, index, current_item->string, current_item->valuestring))) {
+                        mender_log_error("Unable to allocate memory");
+                        return ret;
+                    }
+                    index++;
                 }
                 current_item = current_item->next;
             }
-            if (NULL != (*keystore = mender_utils_keystore_new(length))) {
-                size_t index = 0;
-                current_item = json_data->child;
-                while (NULL != current_item) {
-                    if ((NULL != current_item->string) && (NULL != current_item->valuestring)) {
-                        if (MENDER_OK != (ret = mender_utils_keystore_set_item(*keystore, index, current_item->string, current_item->valuestring))) {
-                            mender_log_error("Unable to allocate memory");
-                            cJSON_Delete(json_data);
-                            return ret;
-                        }
-                        index++;
-                    }
-                    current_item = current_item->next;
-                }
-            } else {
-                mender_log_error("Unable to allocate memory");
-                ret = MENDER_FAIL;
-            }
-            cJSON_Delete(json_data);
         } else {
-            mender_log_error("Invalid data");
+            mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
         }
     }
@@ -355,39 +347,25 @@ mender_utils_keystore_from_string(mender_keystore_t **keystore, char *data) {
 }
 
 mender_err_t
-mender_utils_keystore_to_string(mender_keystore_t *keystore, char **data) {
+mender_utils_keystore_to_json(mender_keystore_t *keystore, cJSON **object) {
 
-    assert(NULL != data);
-    mender_err_t ret = MENDER_OK;
+    assert(NULL != object);
 
     /* Format data */
-    cJSON *object = cJSON_CreateObject();
-    if (NULL == object) {
+    *object = cJSON_CreateObject();
+    if (NULL == *object) {
         mender_log_error("Unable to allocate memory");
-        ret = MENDER_FAIL;
-        goto END;
+        return MENDER_FAIL;
     }
     if (NULL != keystore) {
         size_t index = 0;
         while ((NULL != keystore[index].name) && (NULL != keystore[index].value)) {
-            cJSON_AddStringToObject(object, keystore[index].name, keystore[index].value);
+            cJSON_AddStringToObject(*object, keystore[index].name, keystore[index].value);
             index++;
         }
     }
-    if (NULL == (*data = cJSON_PrintUnformatted(object))) {
-        mender_log_error("Unable to allocate memory");
-        ret = MENDER_FAIL;
-        goto END;
-    }
 
-END:
-
-    /* Release memory */
-    if (NULL != object) {
-        cJSON_Delete(object);
-    }
-
-    return ret;
+    return MENDER_OK;
 }
 
 mender_err_t
