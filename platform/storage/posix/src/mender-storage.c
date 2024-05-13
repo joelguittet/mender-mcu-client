@@ -39,11 +39,10 @@
 /**
  * @brief NVS Files
  */
-#define MENDER_STORAGE_NVS_PRIVATE_KEY              CONFIG_MENDER_STORAGE_PATH "key.der"
-#define MENDER_STORAGE_NVS_PUBLIC_KEY               CONFIG_MENDER_STORAGE_PATH "pubkey.der"
-#define MENDER_STORAGE_NVS_DEPLOYMENT_ID            CONFIG_MENDER_STORAGE_PATH "id"
-#define MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME CONFIG_MENDER_STORAGE_PATH "artifact_name"
-#define MENDER_STORAGE_NVS_DEVICE_CONFIG            CONFIG_MENDER_STORAGE_PATH "config.json"
+#define MENDER_STORAGE_NVS_PRIVATE_KEY     CONFIG_MENDER_STORAGE_PATH "key.der"
+#define MENDER_STORAGE_NVS_PUBLIC_KEY      CONFIG_MENDER_STORAGE_PATH "pubkey.der"
+#define MENDER_STORAGE_NVS_DEPLOYMENT_DATA CONFIG_MENDER_STORAGE_PATH "deployment_data"
+#define MENDER_STORAGE_NVS_DEVICE_CONFIG   CONFIG_MENDER_STORAGE_PATH "config.json"
 
 mender_err_t
 mender_storage_init(void) {
@@ -172,33 +171,19 @@ mender_storage_delete_authentication_keys(void) {
 }
 
 mender_err_t
-mender_storage_set_deployment(char *id, char *artifact_name) {
+mender_storage_set_deployment_data(char *deployment_data) {
 
-    assert(NULL != id);
-    assert(NULL != artifact_name);
-    size_t id_length            = strlen(id);
-    size_t artifact_name_length = strlen(artifact_name);
+    assert(NULL != deployment_data);
+    size_t deployment_data_length = strlen(deployment_data);
     FILE * f;
 
-    /* Write ID */
-    if (NULL == (f = fopen(MENDER_STORAGE_NVS_DEPLOYMENT_ID, "wb"))) {
-        mender_log_error("Unable to write deployment ID");
+    /* Write deployment data */
+    if (NULL == (f = fopen(MENDER_STORAGE_NVS_DEPLOYMENT_DATA, "wb"))) {
+        mender_log_error("Unable to write deployment data");
         return MENDER_FAIL;
     }
-    if (fwrite(id, sizeof(unsigned char), id_length, f) != id_length) {
-        mender_log_error("Unable to write deployment ID");
-        fclose(f);
-        return MENDER_FAIL;
-    }
-    fclose(f);
-
-    /* Write artifact name */
-    if (NULL == (f = fopen(MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME, "wb"))) {
-        mender_log_error("Unable to write artifact name");
-        return MENDER_FAIL;
-    }
-    if (fwrite(artifact_name, sizeof(unsigned char), artifact_name_length, f) != artifact_name_length) {
-        mender_log_error("Unable to write artifact name");
+    if (fwrite(deployment_data, sizeof(unsigned char), deployment_data_length, f) != deployment_data_length) {
+        mender_log_error("Unable to write deployment data");
         fclose(f);
         return MENDER_FAIL;
     }
@@ -208,82 +193,48 @@ mender_storage_set_deployment(char *id, char *artifact_name) {
 }
 
 mender_err_t
-mender_storage_get_deployment(char **id, char **artifact_name) {
+mender_storage_get_deployment_data(char **deployment_data) {
 
-    assert(NULL != id);
-    assert(NULL != artifact_name);
-    size_t id_length            = 0;
-    size_t artifact_name_length = 0;
+    assert(NULL != deployment_data);
+    size_t deployment_data_length = 0;
     long   length;
     FILE * f;
 
-    /* Read ID */
-    if (NULL == (f = fopen(MENDER_STORAGE_NVS_DEPLOYMENT_ID, "rb"))) {
-        mender_log_info("Deployment ID is not available");
+    /* Read deployment data */
+    if (NULL == (f = fopen(MENDER_STORAGE_NVS_DEPLOYMENT_DATA, "rb"))) {
+        mender_log_info("Deployment data is not available");
         return MENDER_NOT_FOUND;
     }
     fseek(f, 0, SEEK_END);
     if ((length = ftell(f)) <= 0) {
-        mender_log_info("Deployment ID is not available");
+        mender_log_info("Deployment data is not available");
         fclose(f);
         return MENDER_NOT_FOUND;
     }
-    id_length = (size_t)length;
+    deployment_data_length = (size_t)length;
     fseek(f, 0, SEEK_SET);
-    if (NULL == (*id = (char *)malloc(id_length + 1))) {
+    if (NULL == (*deployment_data = (char *)malloc(deployment_data_length + 1))) {
         mender_log_error("Unable to allocate memory");
         fclose(f);
         return MENDER_FAIL;
     }
-    if (fread(*id, sizeof(unsigned char), id_length, f) != id_length) {
-        mender_log_error("Unable to read deployment ID");
+    if (fread(*deployment_data, sizeof(unsigned char), deployment_data_length, f) != deployment_data_length) {
+        mender_log_error("Unable to read deployment data");
         fclose(f);
         return MENDER_FAIL;
     }
-    (*id)[id_length] = '\0';
-    fclose(f);
-
-    /* Read artifact name */
-    if (NULL == (f = fopen(MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME, "rb"))) {
-        mender_log_info("Artifact name is not available");
-        free(*id);
-        *id = NULL;
-        return MENDER_NOT_FOUND;
-    }
-    fseek(f, 0, SEEK_END);
-    if ((length = ftell(f)) <= 0) {
-        mender_log_info("Artifact name is not available");
-        free(*id);
-        *id = NULL;
-        fclose(f);
-        return MENDER_NOT_FOUND;
-    }
-    artifact_name_length = (size_t)length;
-    fseek(f, 0, SEEK_SET);
-    if (NULL == (*artifact_name = (char *)malloc(artifact_name_length + 1))) {
-        mender_log_error("Unable to allocate memory");
-        free(*id);
-        *id = NULL;
-        fclose(f);
-        return MENDER_FAIL;
-    }
-    if (fread(*artifact_name, sizeof(unsigned char), artifact_name_length, f) != artifact_name_length) {
-        mender_log_error("Unable to read artifact name");
-        fclose(f);
-        return MENDER_FAIL;
-    }
-    (*artifact_name)[artifact_name_length] = '\0';
+    (*deployment_data)[deployment_data_length] = '\0';
     fclose(f);
 
     return MENDER_OK;
 }
 
 mender_err_t
-mender_storage_delete_deployment(void) {
+mender_storage_delete_deployment_data(void) {
 
-    /* Delete ID and artifact name */
-    if ((0 != unlink(MENDER_STORAGE_NVS_DEPLOYMENT_ID)) || (0 != unlink(MENDER_STORAGE_NVS_DEPLOYMENT_ARTIFACT_NAME))) {
-        mender_log_error("Unable to delete deployment ID or artifact name");
+    /* Delete deployment data */
+    if (0 != unlink(MENDER_STORAGE_NVS_DEPLOYMENT_DATA)) {
+        mender_log_error("Unable to delete deployment data");
         return MENDER_FAIL;
     }
 
