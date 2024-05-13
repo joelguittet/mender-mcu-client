@@ -54,7 +54,11 @@ Additionally, building the Device Troubleshoot add-on requires [msgpack-c](https
 
 The examples provide details to generate properly the artifact to be used. The most important is to create artifact with no compression at all, because the mender-mcu-client is not able to manage decompression of the artifact on the fly (it is flashed by blocks during the reception from the mender server).
 
-To create a new artifact first retrieve [mender-artifact](https://docs.mender.io/downloads#mender-artifact) tool. Then you should follow the template below to create the artifact:
+Artifact are created using [mender-artifact](https://docs.mender.io/downloads#mender-artifact) tool.
+
+### rootfs-image
+
+Follow the template below to create an artifact intended for firmware update:
 
 ```
 ./mender-artifact write rootfs-image --compression none --device-type <DEVICE-TYPE> --artifact-name <ARTIFACT-NAME> --output-path <ARTIFACT-FILE>.mender --file <BIN-FILE>
@@ -65,6 +69,21 @@ Where:
 * `ARTIFACT-NAME` is the artifact name to be used on mender, it should include the version number, for example `my-artifact-v1.0.0`.
 * `ARTIFACT-FILE` is the artifact output file to be uploaded on mender server.
 * `BIN-FILE` is the application binary file to be flashed on the MCU in the next OTA partition.
+
+### module-image
+
+Follow the template below to create an artifact intended for module update:
+
+```
+./mender-artifact write module-image --compression none --device-type <DEVICE-TYPE> --artifact-name <ARTIFACT-NAME> --type <MODULE-TYPE> --output-path <ARTIFACT-FILE>.mender --file <MODULE-FILE>
+```
+
+Where:
+* `DEVICE-TYPE` is the device type to be used on mender, for example `my-super-device`.
+* `ARTIFACT-NAME` is the artifact name to be used on mender, it should include the version number, for example `my-artifact-v1.0.0`.
+* `MODULE-TYPE` is the module type to be registered on the device to the mender client, for example `my-artifact`.
+* `ARTIFACT-FILE` is the artifact output file to be uploaded on mender server.
+* `MODULE-FILE` is the module file to be upgraded on the MCU. Multiple files are allowed repeating the option.
 
 
 ## API
@@ -143,7 +162,6 @@ It is possible to reduce even more the footprint of the mender-mcu-client librar
 
 The following features are currently in the pipeline. Please note that I haven't set dates in this road-map because I develop this in my free time, but you can contribute with Pull Requests:
 
-* Support update of [modules](https://docs.mender.io/artifact-creation/create-a-custom-update-module) to perform other kind of updates that could be specific to one project: files, images, etc.
 * Integration of other nice to have Mender features: Device Troubleshoot sending and receiving files, ...
 * Support new boards and prove it is cross-platform and that it is able to work on small MCU too: STM32F7, ATSAMD51...
 * Support other RTOS (particularly Azure RTOS) and bare metal platforms.
