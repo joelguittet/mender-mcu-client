@@ -39,7 +39,6 @@ menuconfig MENDER_MCU_CLIENT
     select NETWORKING
     select NET_TCP
     select NET_SOCKETS
-    select NET_SOCKETS_POSIX_NAMES
     select REBOOT
     select STREAM_FLASH
     select WEBSOCKET_CLIENT if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
