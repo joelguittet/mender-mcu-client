@@ -1,6 +1,6 @@
 /**
- * @file      mender-rtos.h
- * @brief     Mender RTOS interface
+ * @file      mender-scheduler.h
+ * @brief     Mender scheduler interface
  *
  * MIT License
  *
@@ -25,8 +25,8 @@
  * SOFTWARE.
  */
 
-#ifndef __MENDER_RTOS_H__
-#define __MENDER_RTOS_H__
+#ifndef __MENDER_SCHEDULER_H__
+#define __MENDER_SCHEDULER_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,13 +41,13 @@ typedef struct {
     mender_err_t (*function)(void); /**< Work function */
     int32_t period;                 /**< Work period (seconds), negative or null value permits to disable periodic execution */
     char *  name;                   /**< Work name */
-} mender_rtos_work_params_t;
+} mender_scheduler_work_params_t;
 
 /**
- * @brief Initialization of the RTOS
+ * @brief Initialization of the scheduler
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_init(void);
+mender_err_t mender_scheduler_init(void);
 
 /**
  * @brief Function used to register a new work
@@ -55,14 +55,14 @@ mender_err_t mender_rtos_init(void);
  * @param handle Work handle if the function succeeds, NULL otherwise
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle);
+mender_err_t mender_scheduler_work_create(mender_scheduler_work_params_t *work_params, void **handle);
 
 /**
  * @brief Function used to activate a work
  * @param handle Work handle
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_work_activate(void *handle);
+mender_err_t mender_scheduler_work_activate(void *handle);
 
 /**
  * @brief Function used to set work period
@@ -70,49 +70,49 @@ mender_err_t mender_rtos_work_activate(void *handle);
  * @param period Work period (seconds)
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_work_set_period(void *handle, uint32_t period);
+mender_err_t mender_scheduler_work_set_period(void *handle, uint32_t period);
 
 /**
  * @brief Function used to trigger execution of the work
  * @param handle Work handle
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_work_execute(void *handle);
+mender_err_t mender_scheduler_work_execute(void *handle);
 
 /**
  * @brief Function used to deactivate a work
  * @param handle Work handle
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_work_deactivate(void *handle);
+mender_err_t mender_scheduler_work_deactivate(void *handle);
 
 /**
  * @brief Function used to delete a work
  * @param handle Work handle
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_work_delete(void *handle);
+mender_err_t mender_scheduler_work_delete(void *handle);
 
 /**
- * @brief Function used to initialize handle to be used with mender_rtos_delay_until_* functions
+ * @brief Function used to initialize handle to be used with mender_scheduler_delay_until_* functions
  * @param handle Delay handle
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_delay_until_init(unsigned long *handle);
+mender_err_t mender_scheduler_delay_until_init(unsigned long *handle);
 
 /**
  * @brief Function used to make a delay until a specified time
  * @param delay Delay value (seconds)
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_delay_until_s(unsigned long *handle, uint32_t delay);
+mender_err_t mender_scheduler_delay_until_s(unsigned long *handle, uint32_t delay);
 
 /**
  * @brief Function used to create a mutex
  * @param handle Mutex handle if the function succeeds, NULL otherwise
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_mutex_create(void **handle);
+mender_err_t mender_scheduler_mutex_create(void **handle);
 
 /**
  * @brief Function used to take a mutex
@@ -120,30 +120,30 @@ mender_err_t mender_rtos_mutex_create(void **handle);
  * @param delay_ms Delay to obtain the mutex, -1 to block indefinitely (without a timeout)
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_mutex_take(void *handle, int32_t delay_ms);
+mender_err_t mender_scheduler_mutex_take(void *handle, int32_t delay_ms);
 
 /**
  * @brief Function used to give a mutex
  * @param handle Mutex handle
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_mutex_give(void *handle);
+mender_err_t mender_scheduler_mutex_give(void *handle);
 
 /**
  * @brief Function used to delete a mutex
  * @param handle Mutex handle
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_mutex_delete(void *handle);
+mender_err_t mender_scheduler_mutex_delete(void *handle);
 
 /**
- * @brief Release mender RTOS
+ * @brief Release mender scheduler
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_rtos_exit(void);
+mender_err_t mender_scheduler_exit(void);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* __MENDER_RTOS_H__ */
+#endif /* __MENDER_SCHEDULER_H__ */

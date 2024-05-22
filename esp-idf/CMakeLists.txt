@@ -32,7 +32,7 @@ list(APPEND srcs
     "${CMAKE_CURRENT_LIST_DIR}/../platform/flash/${CONFIG_MENDER_PLATFORM_FLASH_TYPE}/src/mender-flash.c"
     "${CMAKE_CURRENT_LIST_DIR}/../platform/log/${CONFIG_MENDER_PLATFORM_LOG_TYPE}/src/mender-log.c"
     "${CMAKE_CURRENT_LIST_DIR}/../platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/src/mender-http.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../platform/rtos/${CONFIG_MENDER_PLATFORM_RTOS_TYPE}/src/mender-rtos.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../platform/scheduler/${CONFIG_MENDER_PLATFORM_SCHEDULER_TYPE}/src/mender-scheduler.c"
     "${CMAKE_CURRENT_LIST_DIR}/../platform/storage/${CONFIG_MENDER_PLATFORM_STORAGE_TYPE}/src/mender-storage.c"
     "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/${CONFIG_MENDER_PLATFORM_TLS_TYPE}/src/mender-tls.c"
 )

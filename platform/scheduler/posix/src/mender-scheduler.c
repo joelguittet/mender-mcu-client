@@ -1,6 +1,6 @@
 /**
- * @file      mender-rtos.c
- * @brief     Mender RTOS interface for Posix platform
+ * @file      mender-scheduler.c
+ * @brief     Mender scheduler interface for Posix platform
  *
  * MIT License
  *
@@ -33,81 +33,81 @@
 #include <time.h>
 #include <unistd.h>
 #include "mender-log.h"
-#include "mender-rtos.h"
+#include "mender-scheduler.h"
 
 /**
  * @brief Default work queue stack size (kB)
  */
-#ifndef CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE
-#define CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE (64)
-#endif /* CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE */
+#ifndef CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE
+#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE (64)
+#endif /* CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE */
 
 /**
  * @brief Default work queue priority
  */
-#ifndef CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY
-#define CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY (0)
-#endif /* CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY */
+#ifndef CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY
+#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY (0)
+#endif /* CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY */
 
 /**
  * @brief Default work queue length
  */
-#ifndef CONFIG_MENDER_RTOS_WORK_QUEUE_LENGTH
-#define CONFIG_MENDER_RTOS_WORK_QUEUE_LENGTH (10)
-#endif /* CONFIG_MENDER_RTOS_WORK_QUEUE_LENGTH */
+#ifndef CONFIG_MENDER_SCHEDULER_WORK_QUEUE_LENGTH
+#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_LENGTH (10)
+#endif /* CONFIG_MENDER_SCHEDULER_WORK_QUEUE_LENGTH */
 
 /**
  * @brief Work context
  */
 typedef struct {
-    mender_rtos_work_params_t params;       /**< Work parameters */
-    pthread_mutex_t           sem_handle;   /**< Semaphore used to indicate work is pending or executing */
-    timer_t                   timer_handle; /**< Timer used to periodically execute work */
-    bool                      activated;    /**< Flag indicating the work is activated */
-} mender_rtos_work_context_t;
+    mender_scheduler_work_params_t params;       /**< Work parameters */
+    pthread_mutex_t                sem_handle;   /**< Semaphore used to indicate work is pending or executing */
+    timer_t                        timer_handle; /**< Timer used to periodically execute work */
+    bool                           activated;    /**< Flag indicating the work is activated */
+} mender_scheduler_work_context_t;
 
 /**
  *
  * @brief Work queue parameters
  */
-#define MENDER_RTOS_WORK_QUEUE_NAME  "/mender-work-queue"
-#define MENDER_RTOS_WORK_QUEUE_PERMS (0644)
+#define MENDER_SCHEDULER_WORK_QUEUE_NAME  "/mender-work-queue"
+#define MENDER_SCHEDULER_WORK_QUEUE_PERMS (0644)
 
 /**
  * @brief Function used to handle work context timer when it expires
  * @param timer_data Timer data
  */
-static void mender_rtos_timer_callback(union sigval timer_data);
+static void mender_scheduler_timer_callback(union sigval timer_data);
 
 /**
  * @brief Thread used to handle work queue
  * @param arg Not used
  * @return Not used
  */
-static void *mender_rtos_work_queue_thread(void *arg);
+static void *mender_scheduler_work_queue_thread(void *arg);
 
 /**
  * @brief Work queue handle
  */
-static mqd_t mender_rtos_work_queue_handle;
+static mqd_t mender_scheduler_work_queue_handle;
 
 /**
  * @brief Work queue thread handle
  */
-static pthread_t mender_rtos_work_queue_thread_handle;
+static pthread_t mender_scheduler_work_queue_thread_handle;
 
 mender_err_t
-mender_rtos_init(void) {
+mender_scheduler_init(void) {
 
     int ret;
 
     /* Create and start work queue */
     struct mq_attr mq_attr;
     memset(&mq_attr, 0, sizeof(struct mq_attr));
-    mq_attr.mq_maxmsg  = CONFIG_MENDER_RTOS_WORK_QUEUE_LENGTH;
-    mq_attr.mq_msgsize = sizeof(mender_rtos_work_context_t *);
-    mq_unlink(MENDER_RTOS_WORK_QUEUE_NAME);
-    if ((mender_rtos_work_queue_handle = mq_open(MENDER_RTOS_WORK_QUEUE_NAME, O_CREAT | O_RDWR, MENDER_RTOS_WORK_QUEUE_PERMS, &mq_attr)) < 0) {
+    mq_attr.mq_maxmsg  = CONFIG_MENDER_SCHEDULER_WORK_QUEUE_LENGTH;
+    mq_attr.mq_msgsize = sizeof(mender_scheduler_work_context_t *);
+    mq_unlink(MENDER_SCHEDULER_WORK_QUEUE_NAME);
+    if ((mender_scheduler_work_queue_handle = mq_open(MENDER_SCHEDULER_WORK_QUEUE_NAME, O_CREAT | O_RDWR, MENDER_SCHEDULER_WORK_QUEUE_PERMS, &mq_attr)) < 0) {
         mender_log_error("Unable to create work queue (errno=%d)", errno);
         return MENDER_FAIL;
     }
@@ -117,16 +117,16 @@ mender_rtos_init(void) {
         return MENDER_FAIL;
     }
     if (0
-        != (ret = pthread_attr_setstacksize(&pthread_attr,
-                                            ((CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE > 16) ? CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE : 16) * 1024))) {
+        != (ret = pthread_attr_setstacksize(
+                &pthread_attr, ((CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE > 16) ? CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE : 16) * 1024))) {
         mender_log_error("Unable to set work queue thread stack size (ret=%d)", ret);
         return MENDER_FAIL;
     }
-    if (0 != (ret = pthread_create(&mender_rtos_work_queue_thread_handle, &pthread_attr, mender_rtos_work_queue_thread, NULL))) {
+    if (0 != (ret = pthread_create(&mender_scheduler_work_queue_thread_handle, &pthread_attr, mender_scheduler_work_queue_thread, NULL))) {
         mender_log_error("Unable to create work queue thread (ret=%d)", ret);
         return MENDER_FAIL;
     }
-    if (0 != (ret = pthread_setschedprio(mender_rtos_work_queue_thread_handle, CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY))) {
+    if (0 != (ret = pthread_setschedprio(mender_scheduler_work_queue_thread_handle, CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY))) {
         mender_log_error("Unable to set work queue thread priority (ret=%d)", ret);
         return MENDER_FAIL;
     }
@@ -135,7 +135,7 @@ mender_rtos_init(void) {
 }
 
 mender_err_t
-mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle) {
+mender_scheduler_work_create(mender_scheduler_work_params_t *work_params, void **handle) {
 
     assert(NULL != work_params);
     assert(NULL != work_params->function);
@@ -143,12 +143,12 @@ mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle) {
     assert(NULL != handle);
 
     /* Create work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)malloc(sizeof(mender_rtos_work_context_t));
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)malloc(sizeof(mender_scheduler_work_context_t));
     if (NULL == work_context) {
         mender_log_error("Unable to allocate memory");
         goto FAIL;
     }
-    memset(work_context, 0, sizeof(mender_rtos_work_context_t));
+    memset(work_context, 0, sizeof(mender_scheduler_work_context_t));
 
     /* Copy work parameters */
     work_context->params.function = work_params->function;
@@ -168,7 +168,7 @@ mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle) {
     struct sigevent sev;
     memset(&sev, 0, sizeof(struct sigevent));
     sev.sigev_notify          = SIGEV_THREAD;
-    sev.sigev_notify_function = mender_rtos_timer_callback;
+    sev.sigev_notify_function = mender_scheduler_timer_callback;
     sev.sigev_value.sival_ptr = work_context;
     if (0 != timer_create(CLOCK_REALTIME, &sev, &work_context->timer_handle)) {
         mender_log_error("Unable to create timer");
@@ -196,12 +196,12 @@ FAIL:
 }
 
 mender_err_t
-mender_rtos_work_activate(void *handle) {
+mender_scheduler_work_activate(void *handle) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)handle;
 
     /* Give semaphore used to protect the work function */
     if (0 != pthread_mutex_unlock(&work_context->sem_handle)) {
@@ -225,7 +225,7 @@ mender_rtos_work_activate(void *handle) {
         /* Execute the work now */
         union sigval timer_data;
         timer_data.sival_ptr = (void *)work_context;
-        mender_rtos_timer_callback(timer_data);
+        mender_scheduler_timer_callback(timer_data);
     }
 
     /* Indicate the work has been activated */
@@ -235,12 +235,12 @@ mender_rtos_work_activate(void *handle) {
 }
 
 mender_err_t
-mender_rtos_work_set_period(void *handle, uint32_t period) {
+mender_scheduler_work_set_period(void *handle, uint32_t period) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)handle;
 
     /* Set timer period */
     work_context->params.period = period;
@@ -259,28 +259,28 @@ mender_rtos_work_set_period(void *handle, uint32_t period) {
 }
 
 mender_err_t
-mender_rtos_work_execute(void *handle) {
+mender_scheduler_work_execute(void *handle) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)handle;
 
     /* Execute the work now */
     union sigval timer_data;
     timer_data.sival_ptr = (void *)work_context;
-    mender_rtos_timer_callback(timer_data);
+    mender_scheduler_timer_callback(timer_data);
 
     return MENDER_OK;
 }
 
 mender_err_t
-mender_rtos_work_deactivate(void *handle) {
+mender_scheduler_work_deactivate(void *handle) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)handle;
 
     /* Check if the work was activated */
     if (true == work_context->activated) {
@@ -307,12 +307,12 @@ mender_rtos_work_deactivate(void *handle) {
 }
 
 mender_err_t
-mender_rtos_work_delete(void *handle) {
+mender_scheduler_work_delete(void *handle) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)handle;
 
     /* Release memory */
     timer_delete(work_context->timer_handle);
@@ -326,7 +326,7 @@ mender_rtos_work_delete(void *handle) {
 }
 
 mender_err_t
-mender_rtos_delay_until_init(unsigned long *handle) {
+mender_scheduler_delay_until_init(unsigned long *handle) {
 
     assert(NULL != handle);
 
@@ -339,7 +339,7 @@ mender_rtos_delay_until_init(unsigned long *handle) {
 }
 
 mender_err_t
-mender_rtos_delay_until_s(unsigned long *handle, uint32_t delay) {
+mender_scheduler_delay_until_s(unsigned long *handle, uint32_t delay) {
 
     assert(NULL != handle);
 
@@ -370,7 +370,7 @@ mender_rtos_delay_until_s(unsigned long *handle, uint32_t delay) {
 }
 
 mender_err_t
-mender_rtos_mutex_create(void **handle) {
+mender_scheduler_mutex_create(void **handle) {
 
     assert(NULL != handle);
 
@@ -388,7 +388,7 @@ mender_rtos_mutex_create(void **handle) {
 }
 
 mender_err_t
-mender_rtos_mutex_take(void *handle, int32_t delay_ms) {
+mender_scheduler_mutex_take(void *handle, int32_t delay_ms) {
 
     assert(NULL != handle);
 
@@ -410,7 +410,7 @@ mender_rtos_mutex_take(void *handle, int32_t delay_ms) {
 }
 
 mender_err_t
-mender_rtos_mutex_give(void *handle) {
+mender_scheduler_mutex_give(void *handle) {
 
     assert(NULL != handle);
 
@@ -423,7 +423,7 @@ mender_rtos_mutex_give(void *handle) {
 }
 
 mender_err_t
-mender_rtos_mutex_delete(void *handle) {
+mender_scheduler_mutex_delete(void *handle) {
 
     assert(NULL != handle);
 
@@ -435,26 +435,26 @@ mender_rtos_mutex_delete(void *handle) {
 }
 
 mender_err_t
-mender_rtos_exit(void) {
+mender_scheduler_exit(void) {
 
     /* Submit empty work to the work queue, this ask the work queue thread to terminate */
-    mender_rtos_work_context_t *work_context = NULL;
-    if (0 != mq_send(mender_rtos_work_queue_handle, (const char *)&work_context, sizeof(mender_rtos_work_context_t *), 0)) {
+    mender_scheduler_work_context_t *work_context = NULL;
+    if (0 != mq_send(mender_scheduler_work_queue_handle, (const char *)&work_context, sizeof(mender_scheduler_work_context_t *), 0)) {
         mender_log_error("Unable to submit empty work to the work queue");
         return MENDER_FAIL;
     }
 
     /* Wait end of execution of the work queue thread */
-    pthread_join(mender_rtos_work_queue_thread_handle, NULL);
+    pthread_join(mender_scheduler_work_queue_thread_handle, NULL);
 
     return MENDER_OK;
 }
 
 static void
-mender_rtos_timer_callback(union sigval timer_data) {
+mender_scheduler_timer_callback(union sigval timer_data) {
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)timer_data.sival_ptr;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)timer_data.sival_ptr;
     assert(NULL != work_context);
 
     /* Exit if the work is already pending or executing */
@@ -466,20 +466,20 @@ mender_rtos_timer_callback(union sigval timer_data) {
     }
 
     /* Submit the work to the work queue */
-    if (0 != mq_send(mender_rtos_work_queue_handle, (const char *)&work_context, sizeof(mender_rtos_work_context_t *), 0)) {
+    if (0 != mq_send(mender_scheduler_work_queue_handle, (const char *)&work_context, sizeof(mender_scheduler_work_context_t *), 0)) {
         mender_log_warning("Unable to submit work '%s' to the work queue", work_context->params.name);
         pthread_mutex_unlock(&work_context->sem_handle);
     }
 }
 
 __attribute__((noreturn)) static void *
-mender_rtos_work_queue_thread(void *arg) {
+mender_scheduler_work_queue_thread(void *arg) {
 
     (void)arg;
-    mender_rtos_work_context_t *work_context = NULL;
+    mender_scheduler_work_context_t *work_context = NULL;
 
     /* Handle work to be executed */
-    while (mq_receive(mender_rtos_work_queue_handle, (char *)&work_context, sizeof(mender_rtos_work_context_t *), NULL) > 0) {
+    while (mq_receive(mender_scheduler_work_queue_handle, (char *)&work_context, sizeof(mender_scheduler_work_context_t *), NULL) > 0) {
 
         /* Check if empty work is received from the work queue, this ask the work queue thread to terminate */
         if (NULL == work_context) {
@@ -504,8 +504,8 @@ mender_rtos_work_queue_thread(void *arg) {
 END:
 
     /* Release memory */
-    mq_close(mender_rtos_work_queue_handle);
-    mq_unlink(MENDER_RTOS_WORK_QUEUE_NAME);
+    mq_close(mender_scheduler_work_queue_handle);
+    mq_unlink(MENDER_SCHEDULER_WORK_QUEUE_NAME);
 
     /* Terminate work queue thread */
     pthread_exit(NULL);
