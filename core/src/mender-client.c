@@ -29,7 +29,7 @@
 #include "mender-client.h"
 #include "mender-flash.h"
 #include "mender-log.h"
-#include "mender-rtos.h"
+#include "mender-scheduler.h"
 #include "mender-storage.h"
 #include "mender-tls.h"
 
@@ -239,8 +239,8 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     memcpy(&mender_client_callbacks, callbacks, sizeof(mender_client_callbacks_t));
 
     /* Initializations */
-    if (MENDER_OK != (ret = mender_rtos_init())) {
-        mender_log_error("Unable to initialize rtos");
+    if (MENDER_OK != (ret = mender_scheduler_init())) {
+        mender_log_error("Unable to initialize scheduler");
         return ret;
     }
     if (MENDER_OK != (ret = mender_log_init())) {
@@ -275,17 +275,17 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     }
 
     /* Create mender client work */
-    mender_rtos_work_params_t update_work_params;
+    mender_scheduler_work_params_t update_work_params;
     update_work_params.function = mender_client_work_function;
     update_work_params.period   = mender_client_config.authentication_poll_interval;
     update_work_params.name     = "mender_client_update";
-    if (MENDER_OK != (ret = mender_rtos_work_create(&update_work_params, &mender_client_work_handle))) {
+    if (MENDER_OK != (ret = mender_scheduler_work_create(&update_work_params, &mender_client_work_handle))) {
         mender_log_error("Unable to create update work");
         return ret;
     }
 
     /* Activate update work */
-    if (MENDER_OK != (ret = mender_rtos_work_activate(mender_client_work_handle))) {
+    if (MENDER_OK != (ret = mender_scheduler_work_activate(mender_client_work_handle))) {
         mender_log_error("Unable to activate update work");
         return ret;
     }
@@ -337,7 +337,7 @@ mender_client_execute(void) {
     mender_err_t ret;
 
     /* Trigger execution of the work */
-    if (MENDER_OK != (ret = mender_rtos_work_execute(mender_client_work_handle))) {
+    if (MENDER_OK != (ret = mender_scheduler_work_execute(mender_client_work_handle))) {
         mender_log_error("Unable to trigger update work");
         return ret;
     }
@@ -349,10 +349,10 @@ mender_err_t
 mender_client_exit(void) {
 
     /* Deactivate mender client work */
-    mender_rtos_work_deactivate(mender_client_work_handle);
+    mender_scheduler_work_deactivate(mender_client_work_handle);
 
     /* Delete mender client work */
-    mender_rtos_work_delete(mender_client_work_handle);
+    mender_scheduler_work_delete(mender_client_work_handle);
     mender_client_work_handle = NULL;
 
     /* Release all modules */
@@ -360,7 +360,7 @@ mender_client_exit(void) {
     mender_tls_exit();
     mender_storage_exit();
     mender_log_exit();
-    mender_rtos_exit();
+    mender_scheduler_exit();
 
     /* Release memory */
     mender_client_config.mac_address                  = NULL;
@@ -405,7 +405,7 @@ mender_client_work_function(void) {
             goto END;
         }
         /* Update work period */
-        if (MENDER_OK != (ret = mender_rtos_work_set_period(mender_client_work_handle, mender_client_config.update_poll_interval))) {
+        if (MENDER_OK != (ret = mender_scheduler_work_set_period(mender_client_work_handle, mender_client_config.update_poll_interval))) {
             mender_log_error("Unable to set work period");
             goto END;
         }

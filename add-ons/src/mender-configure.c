@@ -29,7 +29,7 @@
 #include "mender-client.h"
 #include "mender-configure.h"
 #include "mender-log.h"
-#include "mender-rtos.h"
+#include "mender-scheduler.h"
 #include "mender-storage.h"
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
@@ -103,7 +103,7 @@ mender_configure_init(mender_configure_config_t *config, mender_configure_callba
     memcpy(&mender_configure_callbacks, callbacks, sizeof(mender_configure_callbacks_t));
 
     /* Create configure mutex */
-    if (MENDER_OK != (ret = mender_rtos_mutex_create(&mender_configure_mutex))) {
+    if (MENDER_OK != (ret = mender_scheduler_mutex_create(&mender_configure_mutex))) {
         mender_log_error("Unable to create configure mutex");
         goto END;
     }
@@ -144,11 +144,11 @@ mender_configure_init(mender_configure_config_t *config, mender_configure_callba
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
 
     /* Create mender configure work */
-    mender_rtos_work_params_t configure_work_params;
+    mender_scheduler_work_params_t configure_work_params;
     configure_work_params.function = mender_configure_work_function;
     configure_work_params.period   = mender_configure_config.refresh_interval;
     configure_work_params.name     = "mender_configure";
-    if (MENDER_OK != (ret = mender_rtos_work_create(&configure_work_params, &mender_configure_work_handle))) {
+    if (MENDER_OK != (ret = mender_scheduler_work_create(&configure_work_params, &mender_configure_work_handle))) {
         mender_log_error("Unable to create configure work");
         goto END;
     }
@@ -172,7 +172,7 @@ mender_configure_activate(void) {
     mender_err_t ret;
 
     /* Activate configure work */
-    if (MENDER_OK != (ret = mender_rtos_work_activate(mender_configure_work_handle))) {
+    if (MENDER_OK != (ret = mender_scheduler_work_activate(mender_configure_work_handle))) {
         mender_log_error("Unable to activate configure work");
         return ret;
     }
@@ -187,7 +187,7 @@ mender_configure_get(mender_keystore_t **configuration) {
     mender_err_t ret;
 
     /* Take mutex used to protect access to the configuration key-store */
-    if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_configure_mutex, -1))) {
+    if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_configure_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
@@ -201,7 +201,7 @@ mender_configure_get(mender_keystore_t **configuration) {
 END:
 
     /* Release mutex used to protect access to the configuration key-store */
-    mender_rtos_mutex_give(mender_configure_mutex);
+    mender_scheduler_mutex_give(mender_configure_mutex);
 
     return ret;
 }
@@ -215,7 +215,7 @@ mender_configure_set(mender_keystore_t *configuration) {
     mender_err_t ret;
 
     /* Take mutex used to protect access to the configuration key-store */
-    if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_configure_mutex, -1))) {
+    if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_configure_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
@@ -273,7 +273,7 @@ END:
     }
 
     /* Release mutex used to protect access to the configuration key-store */
-    mender_rtos_mutex_give(mender_configure_mutex);
+    mender_scheduler_mutex_give(mender_configure_mutex);
 
     return ret;
 }
@@ -284,7 +284,7 @@ mender_configure_execute(void) {
     mender_err_t ret;
 
     /* Trigger execution of the work */
-    if (MENDER_OK != (ret = mender_rtos_work_execute(mender_configure_work_handle))) {
+    if (MENDER_OK != (ret = mender_scheduler_work_execute(mender_configure_work_handle))) {
         mender_log_error("Unable to trigger configure work");
         return ret;
     }
@@ -298,14 +298,14 @@ mender_configure_exit(void) {
     mender_err_t ret;
 
     /* Deactivate mender configure work */
-    mender_rtos_work_deactivate(mender_configure_work_handle);
+    mender_scheduler_work_deactivate(mender_configure_work_handle);
 
     /* Delete mender configure work */
-    mender_rtos_work_delete(mender_configure_work_handle);
+    mender_scheduler_work_delete(mender_configure_work_handle);
     mender_configure_work_handle = NULL;
 
     /* Take mutex used to protect access to the configure key-store */
-    if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_configure_mutex, -1))) {
+    if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_configure_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
@@ -314,8 +314,8 @@ mender_configure_exit(void) {
     mender_configure_config.refresh_interval = 0;
     mender_utils_keystore_delete(mender_configure_keystore);
     mender_configure_keystore = NULL;
-    mender_rtos_mutex_give(mender_configure_mutex);
-    mender_rtos_mutex_delete(mender_configure_mutex);
+    mender_scheduler_mutex_give(mender_configure_mutex);
+    mender_scheduler_mutex_delete(mender_configure_mutex);
 
     return ret;
 }
@@ -326,7 +326,7 @@ mender_configure_work_function(void) {
     mender_err_t ret;
 
     /* Take mutex used to protect access to the configuration key-store */
-    if (MENDER_OK != (ret = mender_rtos_mutex_take(mender_configure_mutex, -1))) {
+    if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_configure_mutex, -1))) {
         mender_log_error("Unable to take mutex");
         return ret;
     }
@@ -374,7 +374,7 @@ END:
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
 
     /* Release mutex used to protect access to the configuration key-store */
-    mender_rtos_mutex_give(mender_configure_mutex);
+    mender_scheduler_mutex_give(mender_configure_mutex);
 
     return ret;
 }

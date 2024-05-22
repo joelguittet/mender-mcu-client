@@ -131,7 +131,7 @@ The source code is separated into three main directories:
     * `mender-log`: logging API.
     * `mender-http`: implementation of HTTP client.
     * `mender-websocket`: implementation of websocket client.
-    * `mender-rtos`: implementation of RTOS related functions.
+    * `mender-scheduler`: implementation of scheduler related functions.
     * `mender-tls`: provide TLS support.
 * `add-ons` contains source files of the mender add-ons:
     * `mender-inventory`: provide inventory key/value pairs to display inventory data on the mender server. This add-on is highly recommended and should be included by default. It is proposed as an add-on only to give the possibility to reduce the final code size for user who don't need it.

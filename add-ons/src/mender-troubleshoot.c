@@ -30,7 +30,7 @@
 #include "mender-inventory.h"
 #include "mender-troubleshoot.h"
 #include "mender-log.h"
-#include "mender-rtos.h"
+#include "mender-scheduler.h"
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
@@ -313,11 +313,11 @@ mender_troubleshoot_init(mender_troubleshoot_config_t *config, mender_troublesho
     memcpy(&mender_troubleshoot_callbacks, callbacks, sizeof(mender_troubleshoot_callbacks_t));
 
     /* Create troubleshoot healthcheck work */
-    mender_rtos_work_params_t healthcheck_work_params;
+    mender_scheduler_work_params_t healthcheck_work_params;
     healthcheck_work_params.function = mender_troubleshoot_healthcheck_work_function;
     healthcheck_work_params.period   = mender_troubleshoot_config.healthcheck_interval;
     healthcheck_work_params.name     = "mender_troubleshoot_healthcheck";
-    if (MENDER_OK != (ret = mender_rtos_work_create(&healthcheck_work_params, &mender_troubleshoot_healthcheck_work_handle))) {
+    if (MENDER_OK != (ret = mender_scheduler_work_create(&healthcheck_work_params, &mender_troubleshoot_healthcheck_work_handle))) {
         mender_log_error("Unable to create healthcheck work");
         return ret;
     }
@@ -331,7 +331,7 @@ mender_troubleshoot_activate(void) {
     mender_err_t ret;
 
     /* Activate troubleshoot healthcheck work */
-    if (MENDER_OK != (ret = mender_rtos_work_activate(mender_troubleshoot_healthcheck_work_handle))) {
+    if (MENDER_OK != (ret = mender_scheduler_work_activate(mender_troubleshoot_healthcheck_work_handle))) {
         mender_log_error("Unable to activate troubleshoot healthcheck work");
         return ret;
     }
@@ -345,7 +345,7 @@ mender_troubleshoot_deactivate(void) {
     mender_err_t ret = MENDER_OK;
 
     /* Deactivate troubleshoot healthcheck work */
-    mender_rtos_work_deactivate(mender_troubleshoot_healthcheck_work_handle);
+    mender_scheduler_work_deactivate(mender_troubleshoot_healthcheck_work_handle);
 
     /* Check if a session is already opened */
     if (NULL != mender_troubleshoot_shell_sid) {
@@ -470,7 +470,7 @@ mender_err_t
 mender_troubleshoot_exit(void) {
 
     /* Delete troubleshoot healthcheck work */
-    mender_rtos_work_delete(mender_troubleshoot_healthcheck_work_handle);
+    mender_scheduler_work_delete(mender_troubleshoot_healthcheck_work_handle);
     mender_troubleshoot_healthcheck_work_handle = NULL;
 
     /* Release memory */

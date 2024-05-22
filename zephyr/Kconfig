@@ -213,22 +213,22 @@ if MENDER_MCU_CLIENT
             default "zephyr" if MENDER_PLATFORM_NET_TYPE_DEFAULT
             default "generic/weak" if MENDER_PLATFORM_NET_TYPE_WEAK
 
-        choice MENDER_PLATFORM_RTOS_TYPE
-            prompt "Mender platform RTOS implementation type"
-            default MENDER_PLATFORM_RTOS_TYPE_DEFAULT
+        choice MENDER_PLATFORM_SCHEDULER_TYPE
+            prompt "Mender platform scheduler implementation type"
+            default MENDER_PLATFORM_SCHEDULER_TYPE_DEFAULT
             help
-                Specify platform RTOS implementation type, select 'weak' to use you own implementation.
+                Specify platform scheduler implementation type, select 'weak' to use you own implementation.
 
-            config MENDER_PLATFORM_RTOS_TYPE_DEFAULT
+            config MENDER_PLATFORM_SCHEDULER_TYPE_DEFAULT
                 bool "default"
-            config MENDER_PLATFORM_RTOS_TYPE_WEAK
+            config MENDER_PLATFORM_SCHEDULER_TYPE_WEAK
                 bool "weak"
         endchoice
 
-        config MENDER_PLATFORM_RTOS_TYPE
+        config MENDER_PLATFORM_SCHEDULER_TYPE
             string
-            default "zephyr" if MENDER_PLATFORM_RTOS_TYPE_DEFAULT
-            default "generic/weak" if MENDER_PLATFORM_RTOS_TYPE_WEAK
+            default "zephyr" if MENDER_PLATFORM_SCHEDULER_TYPE_DEFAULT
+            default "generic/weak" if MENDER_PLATFORM_SCHEDULER_TYPE_WEAK
 
         choice MENDER_PLATFORM_STORAGE_TYPE
             prompt "Mender platform storage implementation type"
@@ -325,23 +325,23 @@ if MENDER_MCU_CLIENT
 
     endif
 
-    if MENDER_PLATFORM_RTOS_TYPE_DEFAULT
+    if MENDER_PLATFORM_SCHEDULER_TYPE_DEFAULT
 
-        menu "RTOS options (ADVANCED)"
+        menu "Scheduler options (ADVANCED)"
 
-            config MENDER_RTOS_WORK_QUEUE_STACK_SIZE
-                int "Mender RTOS Work Queue Stack Size (kB)"
+            config MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE
+                int "Mender Scheduler Work Queue Stack Size (kB)"
                 range 0 64
                 default 12
                 help
-                    Mender RTOS work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+                    Mender scheduler work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
-            config MENDER_RTOS_WORK_QUEUE_PRIORITY
-                int "Mender RTOS Work Queue Priority"
+            config MENDER_SCHEDULER_WORK_QUEUE_PRIORITY
+                int "Mender Scheduler Work Queue Priority"
                 range 0 128
                 default 5
                 help
-                    Mender RTOS work queue priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
+                    Mender scheduler work queue priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
         endmenu
 

@@ -10,7 +10,7 @@
    fun:__start_helper_thread
    fun:__pthread_once_slow
    fun:timer_create@@GLIBC_2.3.3
-   fun:mender_rtos_work_create
+   fun:mender_scheduler_work_create
    fun:mender_client_init
    fun:main
 }

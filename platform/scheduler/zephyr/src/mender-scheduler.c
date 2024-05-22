@@ -1,6 +1,6 @@
 /**
- * @file      mender-rtos.c
- * @brief     Mender RTOS interface for Zephyr platform
+ * @file      mender-scheduler.c
+ * @brief     Mender scheduler interface for Zephyr platform
  *
  * MIT License
  *
@@ -27,72 +27,72 @@
 
 #include <zephyr/kernel.h>
 #include "mender-log.h"
-#include "mender-rtos.h"
+#include "mender-scheduler.h"
 
 /**
  * @brief Default work queue stack size (kB)
  */
-#ifndef CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE
-#define CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE (12)
-#endif /* CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE */
+#ifndef CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE
+#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE (12)
+#endif /* CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE */
 
 /**
  * @brief Default work queue priority
  */
-#ifndef CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY
-#define CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY (5)
-#endif /* CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY */
+#ifndef CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY
+#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY (5)
+#endif /* CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY */
 
 /**
  * @brief Work context
  */
 typedef struct {
-    mender_rtos_work_params_t params;       /**< Work parameters */
-    struct k_sem              sem_handle;   /**< Semaphore used to indicate work is pending or executing */
-    struct k_timer            timer_handle; /**< Timer used to periodically execute work */
-    struct k_work             work_handle;  /**< Work handle used to execute the work function */
-    bool                      activated;    /**< Flag indicating the work is activated */
-} mender_rtos_work_context_t;
+    mender_scheduler_work_params_t params;       /**< Work parameters */
+    struct k_sem                   sem_handle;   /**< Semaphore used to indicate work is pending or executing */
+    struct k_timer                 timer_handle; /**< Timer used to periodically execute work */
+    struct k_work                  work_handle;  /**< Work handle used to execute the work function */
+    bool                           activated;    /**< Flag indicating the work is activated */
+} mender_scheduler_work_context_t;
 
 /**
- * @brief Mender RTOS work queue stack
+ * @brief Mender scheduler work queue stack
  */
-K_THREAD_STACK_DEFINE(mender_rtos_work_queue_stack, CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE * 1024);
+K_THREAD_STACK_DEFINE(mender_scheduler_work_queue_stack, CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE * 1024);
 
 /**
  * @brief Function used to handle work context timer when it expires
  * @param handle Timer handler
  */
-static void mender_rtos_timer_callback(struct k_timer *handle);
+static void mender_scheduler_timer_callback(struct k_timer *handle);
 
 /**
  * @brief Function used to handle work
  * @param handle Work handler
  */
-static void mender_rtos_work_handler(struct k_work *handle);
+static void mender_scheduler_work_handler(struct k_work *handle);
 
 /**
- * @brief Mender RTOS work queue handle
+ * @brief Mender scheduler work queue handle
  */
-static struct k_work_q mender_rtos_work_queue_handle;
+static struct k_work_q mender_scheduler_work_queue_handle;
 
 mender_err_t
-mender_rtos_init(void) {
+mender_scheduler_init(void) {
 
     /* Create and start work queue */
-    k_work_queue_init(&mender_rtos_work_queue_handle);
-    k_work_queue_start(&mender_rtos_work_queue_handle,
-                       mender_rtos_work_queue_stack,
-                       CONFIG_MENDER_RTOS_WORK_QUEUE_STACK_SIZE * 1024,
-                       CONFIG_MENDER_RTOS_WORK_QUEUE_PRIORITY,
+    k_work_queue_init(&mender_scheduler_work_queue_handle);
+    k_work_queue_start(&mender_scheduler_work_queue_handle,
+                       mender_scheduler_work_queue_stack,
+                       CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE * 1024,
+                       CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY,
                        NULL);
-    k_thread_name_set(k_work_queue_thread_get(&mender_rtos_work_queue_handle), "mender_rtos_work_queue");
+    k_thread_name_set(k_work_queue_thread_get(&mender_scheduler_work_queue_handle), "mender_scheduler_work_queue");
 
     return MENDER_OK;
 }
 
 mender_err_t
-mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle) {
+mender_scheduler_work_create(mender_scheduler_work_params_t *work_params, void **handle) {
 
     assert(NULL != work_params);
     assert(NULL != work_params->function);
@@ -100,12 +100,12 @@ mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle) {
     assert(NULL != handle);
 
     /* Create work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)malloc(sizeof(mender_rtos_work_context_t));
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)malloc(sizeof(mender_scheduler_work_context_t));
     if (NULL == work_context) {
         mender_log_error("Unable to allocate memory");
         goto FAIL;
     }
-    memset(work_context, 0, sizeof(mender_rtos_work_context_t));
+    memset(work_context, 0, sizeof(mender_scheduler_work_context_t));
 
     /* Copy work parameters */
     work_context->params.function = work_params->function;
@@ -122,11 +122,11 @@ mender_rtos_work_create(mender_rtos_work_params_t *work_params, void **handle) {
     }
 
     /* Create timer to handle the work periodically */
-    k_timer_init(&work_context->timer_handle, mender_rtos_timer_callback, NULL);
+    k_timer_init(&work_context->timer_handle, mender_scheduler_timer_callback, NULL);
     k_timer_user_data_set(&work_context->timer_handle, (void *)work_context);
 
     /* Create work used to execute work function */
-    k_work_init(&work_context->work_handle, mender_rtos_work_handler);
+    k_work_init(&work_context->work_handle, mender_scheduler_work_handler);
 
     /* Return handle to the new work context */
     *handle = (void *)work_context;
@@ -147,12 +147,12 @@ FAIL:
 }
 
 mender_err_t
-mender_rtos_work_activate(void *handle) {
+mender_scheduler_work_activate(void *handle) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)handle;
 
     /* Give semaphore used to protect the work function */
     k_sem_give(&work_context->sem_handle);
@@ -171,26 +171,26 @@ mender_rtos_work_activate(void *handle) {
 }
 
 mender_err_t
-mender_rtos_work_execute(void *handle) {
+mender_scheduler_work_execute(void *handle) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)handle;
 
     /* Execute the work now */
-    mender_rtos_timer_callback(&work_context->timer_handle);
+    mender_scheduler_timer_callback(&work_context->timer_handle);
 
     return MENDER_OK;
 }
 
 mender_err_t
-mender_rtos_work_set_period(void *handle, uint32_t period) {
+mender_scheduler_work_set_period(void *handle, uint32_t period) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)handle;
 
     /* Set timer period */
     work_context->params.period = period;
@@ -204,12 +204,12 @@ mender_rtos_work_set_period(void *handle, uint32_t period) {
 }
 
 mender_err_t
-mender_rtos_work_deactivate(void *handle) {
+mender_scheduler_work_deactivate(void *handle) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)handle;
 
     /* Check if the work was activated */
     if (true == work_context->activated) {
@@ -231,12 +231,12 @@ mender_rtos_work_deactivate(void *handle) {
 }
 
 mender_err_t
-mender_rtos_work_delete(void *handle) {
+mender_scheduler_work_delete(void *handle) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)handle;
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)handle;
 
     /* Release memory */
     if (NULL != work_context->params.name) {
@@ -248,7 +248,7 @@ mender_rtos_work_delete(void *handle) {
 }
 
 mender_err_t
-mender_rtos_delay_until_init(unsigned long *handle) {
+mender_scheduler_delay_until_init(unsigned long *handle) {
 
     assert(NULL != handle);
 
@@ -259,7 +259,7 @@ mender_rtos_delay_until_init(unsigned long *handle) {
 }
 
 mender_err_t
-mender_rtos_delay_until_s(unsigned long *handle, uint32_t delay) {
+mender_scheduler_delay_until_s(unsigned long *handle, uint32_t delay) {
 
     assert(NULL != handle);
 
@@ -274,7 +274,7 @@ mender_rtos_delay_until_s(unsigned long *handle, uint32_t delay) {
 }
 
 mender_err_t
-mender_rtos_mutex_create(void **handle) {
+mender_scheduler_mutex_create(void **handle) {
 
     assert(NULL != handle);
 
@@ -292,7 +292,7 @@ mender_rtos_mutex_create(void **handle) {
 }
 
 mender_err_t
-mender_rtos_mutex_take(void *handle, int32_t delay_ms) {
+mender_scheduler_mutex_take(void *handle, int32_t delay_ms) {
 
     assert(NULL != handle);
 
@@ -305,7 +305,7 @@ mender_rtos_mutex_take(void *handle, int32_t delay_ms) {
 }
 
 mender_err_t
-mender_rtos_mutex_give(void *handle) {
+mender_scheduler_mutex_give(void *handle) {
 
     assert(NULL != handle);
 
@@ -318,7 +318,7 @@ mender_rtos_mutex_give(void *handle) {
 }
 
 mender_err_t
-mender_rtos_mutex_delete(void *handle) {
+mender_scheduler_mutex_delete(void *handle) {
 
     assert(NULL != handle);
 
@@ -329,19 +329,19 @@ mender_rtos_mutex_delete(void *handle) {
 }
 
 mender_err_t
-mender_rtos_exit(void) {
+mender_scheduler_exit(void) {
 
     /* Nothing to do */
     return MENDER_OK;
 }
 
 static void
-mender_rtos_timer_callback(struct k_timer *handle) {
+mender_scheduler_timer_callback(struct k_timer *handle) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = (mender_rtos_work_context_t *)k_timer_user_data_get(handle);
+    mender_scheduler_work_context_t *work_context = (mender_scheduler_work_context_t *)k_timer_user_data_get(handle);
     assert(NULL != work_context);
 
     /* Exit if the work is already pending or executing */
@@ -351,19 +351,19 @@ mender_rtos_timer_callback(struct k_timer *handle) {
     }
 
     /* Submit the work to the work queue */
-    if (k_work_submit_to_queue(&mender_rtos_work_queue_handle, &work_context->work_handle) < 0) {
+    if (k_work_submit_to_queue(&mender_scheduler_work_queue_handle, &work_context->work_handle) < 0) {
         mender_log_warning("Unable to submit work '%s' to the work queue", work_context->params.name);
         k_sem_give(&work_context->sem_handle);
     }
 }
 
 static void
-mender_rtos_work_handler(struct k_work *handle) {
+mender_scheduler_work_handler(struct k_work *handle) {
 
     assert(NULL != handle);
 
     /* Get work context */
-    mender_rtos_work_context_t *work_context = CONTAINER_OF(handle, mender_rtos_work_context_t, work_handle);
+    mender_scheduler_work_context_t *work_context = CONTAINER_OF(handle, mender_scheduler_work_context_t, work_handle);
     assert(NULL != work_context);
 
     /* Call work function */
