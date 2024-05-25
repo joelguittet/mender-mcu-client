@@ -218,10 +218,23 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     } else {
         mender_client_config.host = CONFIG_MENDER_SERVER_HOST;
     }
+    if ((NULL == mender_client_config.host) || (0 == strlen(mender_client_config.host))) {
+        mender_log_error("Invalid server host configuration, can't be null or empty");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    if ('/' == mender_client_config.host[strlen(mender_client_config.host) - 1]) {
+        mender_log_error("Invalid server host configuration, trailing '/' is not allowed");
+        ret = MENDER_FAIL;
+        goto END;
+    }
     if ((NULL != config->tenant_token) && (strlen(config->tenant_token) > 0)) {
         mender_client_config.tenant_token = config->tenant_token;
     } else {
         mender_client_config.tenant_token = CONFIG_MENDER_SERVER_TENANT_TOKEN;
+    }
+    if ((NULL != mender_client_config.tenant_token) && (0 == strlen(mender_client_config.tenant_token))) {
+        mender_client_config.tenant_token = NULL;
     }
     if (0 != config->authentication_poll_interval) {
         mender_client_config.authentication_poll_interval = config->authentication_poll_interval;
@@ -241,19 +254,19 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     /* Initializations */
     if (MENDER_OK != (ret = mender_scheduler_init())) {
         mender_log_error("Unable to initialize scheduler");
-        return ret;
+        goto END;
     }
     if (MENDER_OK != (ret = mender_log_init())) {
         mender_log_error("Unable to initialize log");
-        return ret;
+        goto END;
     }
     if (MENDER_OK != (ret = mender_storage_init())) {
         mender_log_error("Unable to initialize storage");
-        return ret;
+        goto END;
     }
     if (MENDER_OK != (ret = mender_tls_init())) {
         mender_log_error("Unable to initialize TLS");
-        return ret;
+        goto END;
     }
     mender_api_config_t mender_api_config = {
         .mac_address   = mender_client_config.mac_address,
@@ -264,14 +277,14 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     };
     if (MENDER_OK != (ret = mender_api_init(&mender_api_config))) {
         mender_log_error("Unable to initialize API");
-        return ret;
+        goto END;
     }
 
     /* Register rootfs-image artifact type */
     if (MENDER_OK
         != (ret = mender_client_register_artifact_type("rootfs-image", &mender_client_download_artifact_flash_callback, true, config->artifact_name))) {
         mender_log_error("Unable to register 'rootfs-image' artifact type");
-        return ret;
+        goto END;
     }
 
     /* Create mender client work */
@@ -281,14 +294,16 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     update_work_params.name     = "mender_client_update";
     if (MENDER_OK != (ret = mender_scheduler_work_create(&update_work_params, &mender_client_work_handle))) {
         mender_log_error("Unable to create update work");
-        return ret;
+        goto END;
     }
 
     /* Activate update work */
     if (MENDER_OK != (ret = mender_scheduler_work_activate(mender_client_work_handle))) {
         mender_log_error("Unable to activate update work");
-        return ret;
+        goto END;
     }
+
+END:
 
     return ret;
 }
@@ -339,10 +354,12 @@ mender_client_execute(void) {
     /* Trigger execution of the work */
     if (MENDER_OK != (ret = mender_scheduler_work_execute(mender_client_work_handle))) {
         mender_log_error("Unable to trigger update work");
-        return ret;
+        goto END;
     }
 
-    return MENDER_OK;
+END:
+
+    return ret;
 }
 
 mender_err_t
@@ -432,26 +449,31 @@ mender_client_initialization_work_function(void) {
     /* Retrieve or generate authentication keys */
     if (MENDER_OK != (ret = mender_tls_init_authentication_keys(mender_client_config.recommissioning))) {
         mender_log_error("Unable to retrieve or generate authentication keys");
-        return ret;
+        goto END;
     }
 
     /* Retrieve deployment data if it is found (following an update) */
     if (MENDER_OK != (ret = mender_storage_get_deployment_data(&deployment_data))) {
         if (MENDER_NOT_FOUND != ret) {
             mender_log_error("Unable to get deployment data");
-            return ret;
+            goto END;
         }
     }
     if (NULL != deployment_data) {
         if (NULL == (mender_client_deployment_data = cJSON_Parse(deployment_data))) {
             mender_log_error("Unable to allocate memory");
             free(deployment_data);
-            return MENDER_FAIL;
+            ret = MENDER_FAIL;
+            goto END;
         }
         free(deployment_data);
     }
 
     return MENDER_DONE;
+
+END:
+
+    return ret;
 }
 
 static mender_err_t
