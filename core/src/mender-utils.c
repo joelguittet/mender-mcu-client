@@ -200,7 +200,7 @@ mender_utils_str_replace(char *input, char *search, char *replace) {
 
                 /* Reallocate output memory */
                 if (NULL == (tmp = (char *)realloc(output, index + strlen(replace) + 1))) {
-                    mender_log_error(NULL, "Unable to allocate memory");
+                    mender_log_error("Unable to allocate memory");
                     regfree(&regex);
                     free(output);
                     return NULL;
@@ -221,7 +221,7 @@ mender_utils_str_replace(char *input, char *search, char *replace) {
     /* Reallocate output memory */
     char *tmp = (char *)realloc(output, index + (strlen(input) - previous_match_finish) + 1);
     if (NULL == tmp) {
-        mender_log_error(NULL, "Unable to allocate memory");
+        mender_log_error("Unable to allocate memory");
         regfree(&regex);
         free(output);
         return NULL;
