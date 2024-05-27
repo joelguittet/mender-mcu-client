@@ -130,19 +130,21 @@ mender_websocket_connect(
     /* Compute URL if required */
     if ((false == mender_utils_strbeginwith(path, "ws://")) && (false == mender_utils_strbeginwith(path, "wss://"))) {
         if ((true == mender_utils_strbeginwith(path, "http://")) || (true == mender_utils_strbeginwith(mender_websocket_config.host, "http://"))) {
-            if (NULL == (url = (char *)malloc(strlen(mender_websocket_config.host) - strlen("http://") + strlen("ws://") + strlen(path) + 1))) {
+            size_t str_length = strlen(mender_websocket_config.host) - strlen("http://") + strlen("ws://") + strlen(path) + 1;
+            if (NULL == (url = (char *)malloc(str_length))) {
                 mender_log_error("Unable to allocate memory");
                 ret = MENDER_FAIL;
                 goto FAIL;
             }
-            sprintf(url, "ws://%s%s", mender_websocket_config.host + strlen("http://"), path);
+            snprintf(url, str_length, "ws://%s%s", mender_websocket_config.host + strlen("http://"), path);
         } else if ((true == mender_utils_strbeginwith(path, "https://")) || (true == mender_utils_strbeginwith(mender_websocket_config.host, "https://"))) {
-            if (NULL == (url = (char *)malloc(strlen(mender_websocket_config.host) - strlen("https://") + strlen("wss://") + strlen(path) + 1))) {
+            size_t str_length = strlen(mender_websocket_config.host) - strlen("https://") + strlen("wss://") + strlen(path) + 1;
+            if (NULL == (url = (char *)malloc(str_length))) {
                 mender_log_error("Unable to allocate memory");
                 ret = MENDER_FAIL;
                 goto FAIL;
             }
-            sprintf(url, "wss://%s%s", mender_websocket_config.host + strlen("https://"), path);
+            snprintf(url, str_length, "wss://%s%s", mender_websocket_config.host + strlen("https://"), path);
         }
     }
 
@@ -161,12 +163,13 @@ mender_websocket_connect(
         config.transport = WEBSOCKET_TRANSPORT_UNKNOWN;
     }
     if (NULL != jwt) {
-        if (NULL == (bearer = (char *)malloc(strlen("Authorization: Bearer ") + strlen(jwt) + strlen("\r\n") + 1))) {
+        size_t str_length = strlen("Authorization: Bearer ") + strlen(jwt) + strlen("\r\n") + 1;
+        if (NULL == (bearer = (char *)malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(bearer, "Authorization: Bearer %s\r\n", jwt);
+        snprintf(bearer, str_length, "Authorization: Bearer %s\r\n", jwt);
     }
     config.headers = bearer;
 

@@ -53,11 +53,12 @@ mender_flash_open(char *name, size_t size, void **handle) {
     mender_log_info("Start flashing artifact '%s' with size %d", name, size);
 
     /* Compute path */
-    if (NULL == (path = (char *)malloc(strlen(CONFIG_MENDER_FLASH_PATH) + strlen(name) + 1))) {
+    size_t str_length = strlen(CONFIG_MENDER_FLASH_PATH) + strlen(name) + 1;
+    if (NULL == (path = (char *)malloc(str_length))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
-    sprintf(path, "%s%s", CONFIG_MENDER_FLASH_PATH, name);
+    snprintf(path, str_length, "%s%s", CONFIG_MENDER_FLASH_PATH, name);
 
     /* Begin deployment with sequential writes */
     if (NULL == (*handle = fopen(path, "wb"))) {

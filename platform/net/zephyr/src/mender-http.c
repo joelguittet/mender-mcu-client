@@ -138,29 +138,32 @@ mender_http_perform(char *               jwt,
         goto END;
     }
     request.recv_buf_len = MENDER_HTTP_RECV_BUF_LENGTH;
-    if (NULL == (header_fields[header_index] = malloc(strlen("User-Agent: ") + strlen(MENDER_HTTP_USER_AGENT) + strlen("\r\n") + 1))) {
+    size_t str_length    = strlen("User-Agent: ") + strlen(MENDER_HTTP_USER_AGENT) + strlen("\r\n") + 1;
+    if (NULL == (header_fields[header_index] = malloc(str_length))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
     }
-    sprintf(header_fields[header_index], "User-Agent: %s\r\n", MENDER_HTTP_USER_AGENT);
+    snprintf(header_fields[header_index], str_length, "User-Agent: %s\r\n", MENDER_HTTP_USER_AGENT);
     header_index++;
     if (NULL != jwt) {
-        if (NULL == (header_fields[header_index] = (char *)malloc(strlen("Authorization: Bearer ") + strlen(jwt) + strlen("\r\n") + 1))) {
+        str_length = strlen("Authorization: Bearer ") + strlen(jwt) + strlen("\r\n") + 1;
+        if (NULL == (header_fields[header_index] = (char *)malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(header_fields[header_index], "Authorization: Bearer %s\r\n", jwt);
+        snprintf(header_fields[header_index], str_length, "Authorization: Bearer %s\r\n", jwt);
         header_index++;
     }
     if (NULL != signature) {
-        if (NULL == (header_fields[header_index] = (char *)malloc(strlen("X-MEN-Signature: ") + strlen(signature) + strlen("\r\n") + 1))) {
+        str_length = strlen("X-MEN-Signature: ") + strlen(signature) + strlen("\r\n") + 1;
+        if (NULL == (header_fields[header_index] = (char *)malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(header_fields[header_index], "X-MEN-Signature: %s\r\n", signature);
+        snprintf(header_fields[header_index], str_length, "X-MEN-Signature: %s\r\n", signature);
         header_index++;
     }
     if (NULL != payload) {

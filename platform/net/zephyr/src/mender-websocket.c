@@ -168,20 +168,22 @@ mender_websocket_connect(
         goto FAIL;
     }
     request.tmp_buf_len = MENDER_WEBSOCKET_RECV_BUF_LENGTH;
-    if (NULL == (header_fields[header_index] = malloc(strlen("User-Agent: ") + strlen(MENDER_WEBSOCKET_USER_AGENT) + strlen("\r\n") + 1))) {
+    size_t str_length   = strlen("User-Agent: ") + strlen(MENDER_WEBSOCKET_USER_AGENT) + strlen("\r\n") + 1;
+    if (NULL == (header_fields[header_index] = malloc(str_length))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto FAIL;
     }
-    sprintf(header_fields[header_index], "User-Agent: %s\r\n", MENDER_WEBSOCKET_USER_AGENT);
+    snprintf(header_fields[header_index], str_length, "User-Agent: %s\r\n", MENDER_WEBSOCKET_USER_AGENT);
     header_index++;
     if (NULL != jwt) {
-        if (NULL == (header_fields[header_index] = malloc(strlen("Authorization: Bearer ") + strlen(jwt) + strlen("\r\n") + 1))) {
+        str_length = strlen("Authorization: Bearer ") + strlen(jwt) + strlen("\r\n") + 1;
+        if (NULL == (header_fields[header_index] = malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto FAIL;
         }
-        sprintf(header_fields[header_index], "Authorization: Bearer %s\r\n", jwt);
+        snprintf(header_fields[header_index], str_length, "Authorization: Bearer %s\r\n", jwt);
         header_index++;
     }
     request.optional_headers = (0 != header_index) ? ((const char **)header_fields) : NULL;

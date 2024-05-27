@@ -111,12 +111,13 @@ mender_http_perform(char *               jwt,
 
     /* Compute URL if required */
     if ((false == mender_utils_strbeginwith(path, "http://")) && (false == mender_utils_strbeginwith(path, "https://"))) {
-        if (NULL == (url = (char *)malloc(strlen(mender_http_config.host) + strlen(path) + 1))) {
+        size_t str_length = strlen(mender_http_config.host) + strlen(path) + 1;
+        if (NULL == (url = (char *)malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(url, "%s%s", mender_http_config.host, path);
+        snprintf(url, str_length, "%s%s", mender_http_config.host, path);
     }
 
     /* Initialization of the client */
@@ -164,21 +165,23 @@ mender_http_perform(char *               jwt,
         goto END;
     }
     if (NULL != jwt) {
-        if (NULL == (bearer = (char *)malloc(strlen("Authorization: Bearer ") + strlen(jwt) + 1))) {
+        size_t str_length = strlen("Authorization: Bearer ") + strlen(jwt) + 1;
+        if (NULL == (bearer = (char *)malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(bearer, "Authorization: Bearer %s", jwt);
+        snprintf(bearer, str_length, "Authorization: Bearer %s", jwt);
         headers = curl_slist_append(headers, bearer);
     }
     if (NULL != signature) {
-        if (NULL == (x_men_signature = (char *)malloc(strlen("X-MEN-Signature: ") + strlen(signature) + 1))) {
+        size_t str_length = strlen("X-MEN-Signature: ") + strlen(signature) + 1;
+        if (NULL == (x_men_signature = (char *)malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(x_men_signature, "X-MEN-Signature: %s", signature);
+        snprintf(x_men_signature, str_length, "X-MEN-Signature: %s", signature);
         headers = curl_slist_append(headers, x_men_signature);
     }
     if (NULL != payload) {

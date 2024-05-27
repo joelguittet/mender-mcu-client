@@ -130,10 +130,10 @@ mender_err_t
 mender_api_perform_authentication(void) {
 
     mender_err_t ret;
-    cJSON *      json_identity    = NULL;
-    char *       tmp              = NULL;
-    char *       identity         = NULL;
     char *       public_key_pem   = NULL;
+    cJSON *      json_identity    = NULL;
+    char *       identity         = NULL;
+    cJSON *      json_payload     = NULL;
     char *       payload          = NULL;
     char *       response         = NULL;
     char *       signature        = NULL;
@@ -156,30 +156,22 @@ mender_api_perform_authentication(void) {
         ret = MENDER_FAIL;
         goto END;
     }
-    if (NULL == (tmp = mender_utils_str_replace(identity, "\"", "\\\""))) {
+
+    /* Format payload */
+    if (NULL == (json_payload = cJSON_CreateObject())) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
     }
-    identity = tmp;
-
-    /* Format payload */
+    cJSON_AddStringToObject(json_payload, "id_data", identity);
+    cJSON_AddStringToObject(json_payload, "pubkey", public_key_pem);
     if (NULL != mender_api_config.tenant_token) {
-        if (NULL
-            == (payload = (char *)malloc(strlen("{ \"id_data\": \"\", \"pubkey\": \"\", \"tenant_token\": \"\" }") + strlen(identity) + strlen(public_key_pem)
-                                         + strlen(mender_api_config.tenant_token) + 1))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto END;
-        }
-        sprintf(payload, "{ \"id_data\": \"%s\", \"pubkey\": \"%s\", \"tenant_token\": \"%s\" }", identity, public_key_pem, mender_api_config.tenant_token);
-    } else {
-        if (NULL == (payload = (char *)malloc(strlen("{ \"id_data\": \"\", \"pubkey\": \"\" }") + strlen(identity) + strlen(public_key_pem) + 1))) {
-            mender_log_error("Unable to allocate memory");
-            ret = MENDER_FAIL;
-            goto END;
-        }
-        sprintf(payload, "{ \"id_data\": \"%s\", \"pubkey\": \"%s\" }", identity, public_key_pem);
+        cJSON_AddStringToObject(json_payload, "tenant_token", mender_api_config.tenant_token);
+    }
+    if (NULL == (payload = cJSON_PrintUnformatted(json_payload))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
     }
 
     /* Sign payload */
@@ -235,14 +227,17 @@ END:
     if (NULL != payload) {
         free(payload);
     }
-    if (NULL != public_key_pem) {
-        free(public_key_pem);
+    if (NULL != json_payload) {
+        cJSON_Delete(json_payload);
     }
     if (NULL != identity) {
         free(identity);
     }
     if (NULL != json_identity) {
         cJSON_Delete(json_identity);
+    }
+    if (NULL != public_key_pem) {
+        free(public_key_pem);
     }
 
     return ret;
@@ -260,14 +255,19 @@ mender_api_check_for_deployment(char **id, char **artifact_name, char **uri) {
     int          status   = 0;
 
     /* Compute path */
-    if (NULL
-        == (path = (char *)malloc(strlen("?artifact_name=&device_type=") + strlen(MENDER_API_PATH_GET_NEXT_DEPLOYMENT) + strlen(mender_api_config.artifact_name)
-                                  + strlen(mender_api_config.device_type) + 1))) {
+    size_t str_length = strlen("?artifact_name=&device_type=") + strlen(MENDER_API_PATH_GET_NEXT_DEPLOYMENT) + strlen(mender_api_config.artifact_name)
+                        + strlen(mender_api_config.device_type) + 1;
+    if (NULL == (path = (char *)malloc(str_length))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
     }
-    sprintf(path, "%s?artifact_name=%s&device_type=%s", MENDER_API_PATH_GET_NEXT_DEPLOYMENT, mender_api_config.artifact_name, mender_api_config.device_type);
+    snprintf(path,
+             str_length,
+             "%s?artifact_name=%s&device_type=%s",
+             MENDER_API_PATH_GET_NEXT_DEPLOYMENT,
+             mender_api_config.artifact_name,
+             mender_api_config.device_type);
 
     /* Perform HTTP request */
     if (MENDER_OK
@@ -348,11 +348,12 @@ mender_api_publish_deployment_status(char *id, mender_deployment_status_t deploy
 
     assert(NULL != id);
     mender_err_t ret;
-    char *       value    = NULL;
-    char *       payload  = NULL;
-    char *       path     = NULL;
-    char *       response = NULL;
-    int          status   = 0;
+    char *       value        = NULL;
+    cJSON *      json_payload = NULL;
+    char *       payload      = NULL;
+    char *       path         = NULL;
+    char *       response     = NULL;
+    int          status       = 0;
 
     /* Deployment status to string */
     if (NULL == (value = mender_utils_deployment_status_to_string(deployment_status))) {
@@ -362,20 +363,26 @@ mender_api_publish_deployment_status(char *id, mender_deployment_status_t deploy
     }
 
     /* Format payload */
-    if (NULL == (payload = (char *)malloc(strlen("{ \"status\": \"\" }") + strlen(value) + 1))) {
+    if (NULL == (json_payload = cJSON_CreateObject())) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
     }
-    sprintf(payload, "{ \"status\": \"%s\" }", value);
+    cJSON_AddStringToObject(json_payload, "status", value);
+    if (NULL == (payload = cJSON_PrintUnformatted(json_payload))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
 
     /* Compute path */
-    if (NULL == (path = (char *)malloc(strlen(MENDER_API_PATH_PUT_DEPLOYMENT_STATUS) - strlen("%s") + strlen(id) + 1))) {
+    size_t str_length = strlen(MENDER_API_PATH_PUT_DEPLOYMENT_STATUS) - strlen("%s") + strlen(id) + 1;
+    if (NULL == (path = (char *)malloc(str_length))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
     }
-    sprintf(path, MENDER_API_PATH_PUT_DEPLOYMENT_STATUS, id);
+    snprintf(path, str_length, MENDER_API_PATH_PUT_DEPLOYMENT_STATUS, id);
 
     /* Perform HTTP request */
     if (MENDER_OK
@@ -404,6 +411,9 @@ END:
     }
     if (NULL != payload) {
         free(payload);
+    }
+    if (NULL != json_payload) {
+        cJSON_Delete(json_payload);
     }
 
     return ret;

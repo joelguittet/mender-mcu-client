@@ -55,7 +55,7 @@ static size_t         mender_tls_public_key_length = 0;
 
 /**
  * @brief Write a buffer of PEM information from a DER encoded buffer
- * @note This function is derived from mbedtls_pem_write_buffer with const header and footer, and line feed is "\\n"
+ * @note This function is derived from mbedtls_pem_write_buffer with const header and footer
  * @param der_data The DER data to encode
  * @param der_len The length of the DER data
  * @param buf The buffer to write to
@@ -276,7 +276,7 @@ mender_tls_pem_write_buffer(const unsigned char *der_data, size_t der_len, char 
     size_t use_len = 2 * ATCA_PUB_KEY_SIZE;
 
     /* Compute length required to format PEM */
-    size_t add_len = strlen(PEM_BEGIN_PUBLIC_KEY) + 2 + strlen(PEM_END_PUBLIC_KEY) + 2 * ((use_len / 64) + 1);
+    size_t add_len = strlen(PEM_BEGIN_PUBLIC_KEY) + 1 + strlen(PEM_END_PUBLIC_KEY) + ((use_len / 64) + 1);
 
     /* Check buffer length */
     if (use_len + add_len > buf_len) {
@@ -311,8 +311,7 @@ mender_tls_pem_write_buffer(const unsigned char *der_data, size_t der_len, char 
     /* Copy header */
     memcpy(p, PEM_BEGIN_PUBLIC_KEY, strlen(PEM_BEGIN_PUBLIC_KEY));
     p += strlen(PEM_BEGIN_PUBLIC_KEY);
-    *p++ = '\\';
-    *p++ = 'n';
+    *p++ = '\n';
 
     /* Copy PEM data */
     unsigned char *c = encode_buf;
@@ -322,8 +321,7 @@ mender_tls_pem_write_buffer(const unsigned char *der_data, size_t der_len, char 
         use_len -= len;
         p += len;
         c += len;
-        *p++ = '\\';
-        *p++ = 'n';
+        *p++ = '\n';
     }
 
     /* Copy footer */
