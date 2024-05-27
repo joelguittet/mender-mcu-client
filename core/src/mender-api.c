@@ -100,7 +100,7 @@ mender_err_t
 mender_api_init(mender_api_config_t *config) {
 
     assert(NULL != config);
-    assert(NULL != config->mac_address);
+    assert(NULL != config->identity);
     assert(NULL != config->artifact_name);
     assert(NULL != config->device_type);
     assert(NULL != config->host);
@@ -130,6 +130,9 @@ mender_err_t
 mender_api_perform_authentication(void) {
 
     mender_err_t ret;
+    cJSON *      json_identity    = NULL;
+    char *       tmp              = NULL;
+    char *       identity         = NULL;
     char *       public_key_pem   = NULL;
     char *       payload          = NULL;
     char *       response         = NULL;
@@ -143,29 +146,40 @@ mender_api_perform_authentication(void) {
         goto END;
     }
 
+    /* Format identity */
+    if (MENDER_OK != (ret = mender_utils_keystore_to_json(mender_api_config.identity, &json_identity))) {
+        mender_log_error("Unable to format identity");
+        goto END;
+    }
+    if (NULL == (identity = cJSON_PrintUnformatted(json_identity))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    if (NULL == (tmp = mender_utils_str_replace(identity, "\"", "\\\""))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    identity = tmp;
+
     /* Format payload */
     if (NULL != mender_api_config.tenant_token) {
         if (NULL
-            == (payload = (char *)malloc(strlen("{ \"id_data\": \"{ \\\"mac\\\": \\\"\\\"}\", \"pubkey\": \"\", \"tenant_token\": \"\" }")
-                                         + strlen(mender_api_config.mac_address) + strlen(public_key_pem) + strlen(mender_api_config.tenant_token) + 1))) {
+            == (payload = (char *)malloc(strlen("{ \"id_data\": \"\", \"pubkey\": \"\", \"tenant_token\": \"\" }") + strlen(identity) + strlen(public_key_pem)
+                                         + strlen(mender_api_config.tenant_token) + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(payload,
-                "{ \"id_data\": \"{ \\\"mac\\\": \\\"%s\\\"}\", \"pubkey\": \"%s\", \"tenant_token\": \"%s\" }",
-                mender_api_config.mac_address,
-                public_key_pem,
-                mender_api_config.tenant_token);
+        sprintf(payload, "{ \"id_data\": \"%s\", \"pubkey\": \"%s\", \"tenant_token\": \"%s\" }", identity, public_key_pem, mender_api_config.tenant_token);
     } else {
-        if (NULL
-            == (payload = (char *)malloc(strlen("{ \"id_data\": \"{ \\\"mac\\\": \\\"\\\"}\", \"pubkey\": \"\" }") + strlen(mender_api_config.mac_address)
-                                         + strlen(public_key_pem) + 1))) {
+        if (NULL == (payload = (char *)malloc(strlen("{ \"id_data\": \"\", \"pubkey\": \"\" }") + strlen(identity) + strlen(public_key_pem) + 1))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(payload, "{ \"id_data\": \"{ \\\"mac\\\": \\\"%s\\\"}\", \"pubkey\": \"%s\" }", mender_api_config.mac_address, public_key_pem);
+        sprintf(payload, "{ \"id_data\": \"%s\", \"pubkey\": \"%s\" }", identity, public_key_pem);
     }
 
     /* Sign payload */
@@ -223,6 +237,12 @@ END:
     }
     if (NULL != public_key_pem) {
         free(public_key_pem);
+    }
+    if (NULL != identity) {
+        free(identity);
+    }
+    if (NULL != json_identity) {
+        cJSON_Delete(json_identity);
     }
 
     return ret;
