@@ -307,11 +307,12 @@ mender_artifact_parse_tar_header(mender_artifact_ctx_t *ctx) {
 
     /* Compute the new file name */
     if (NULL != ctx->file.name) {
-        if (NULL == (tmp = (char *)malloc(strlen(ctx->file.name) + strlen("/") + strlen(tar_header->name) + 1))) {
+        size_t str_length = strlen(ctx->file.name) + strlen("/") + strlen(tar_header->name) + 1;
+        if (NULL == (tmp = (char *)malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
             return MENDER_FAIL;
         }
-        sprintf(tmp, "%s/%s", ctx->file.name, tar_header->name);
+        snprintf(tmp, str_length, "%s/%s", ctx->file.name, tar_header->name);
     } else {
         if (NULL == (tmp = strdup(tar_header->name))) {
             mender_log_error("Unable to allocate memory");

@@ -87,12 +87,13 @@ mender_http_perform(char *               jwt,
 
     /* Compute URL if required */
     if ((false == mender_utils_strbeginwith(path, "http://")) && (false == mender_utils_strbeginwith(path, "https://"))) {
-        if (NULL == (url = (char *)malloc(strlen(mender_http_config.host) + strlen(path) + 1))) {
+        size_t str_length = strlen(mender_http_config.host) + strlen(path) + 1;
+        if (NULL == (url = (char *)malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(url, "%s%s", mender_http_config.host, path);
+        snprintf(url, str_length, "%s%s", mender_http_config.host, path);
     }
 
     /* Configuration of the client */
@@ -107,12 +108,13 @@ mender_http_perform(char *               jwt,
     }
     esp_http_client_set_method(client, mender_http_method_to_esp_http_client_method(method));
     if (NULL != jwt) {
-        if (NULL == (bearer = (char *)malloc(strlen("Bearer ") + strlen(jwt) + 1))) {
+        size_t str_length = strlen("Bearer ") + strlen(jwt) + 1;
+        if (NULL == (bearer = (char *)malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
             goto END;
         }
-        sprintf(bearer, "Bearer %s", jwt);
+        snprintf(bearer, str_length, "Bearer %s", jwt);
         esp_http_client_set_header(client, "Authorization", bearer);
     }
     if (NULL != signature) {
