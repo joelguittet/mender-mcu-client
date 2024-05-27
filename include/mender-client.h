@@ -38,14 +38,14 @@ extern "C" {
  * @brief Mender client configuration
  */
 typedef struct {
-    char *  mac_address;                  /**< MAC address of the device */
-    char *  artifact_name;                /**< Artifact name */
-    char *  device_type;                  /**< Device type */
-    char *  host;                         /**< URL of the mender server */
-    char *  tenant_token;                 /**< Tenant token used to authenticate on the mender server (optional) */
-    int32_t authentication_poll_interval; /**< Authentication poll interval, default is 60 seconds, -1 permits to disable periodic execution */
-    int32_t update_poll_interval;         /**< Update poll interval, default is 1800 seconds, -1 permits to disable periodic execution */
-    bool    recommissioning;              /**< Used to force creation of new authentication keys */
+    mender_keystore_t *identity;                     /**< Identity of the device */
+    char *             artifact_name;                /**< Artifact name */
+    char *             device_type;                  /**< Device type */
+    char *             host;                         /**< URL of the mender server */
+    char *             tenant_token;                 /**< Tenant token used to authenticate on the mender server (optional) */
+    int32_t            authentication_poll_interval; /**< Authentication poll interval, default is 60 seconds, -1 permits to disable periodic execution */
+    int32_t            update_poll_interval;         /**< Update poll interval, default is 1800 seconds, -1 permits to disable periodic execution */
+    bool               recommissioning;              /**< Used to force creation of new authentication keys */
 } mender_client_config_t;
 
 /**
