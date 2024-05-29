@@ -94,20 +94,6 @@ mender_err_t mender_scheduler_work_deactivate(void *handle);
 mender_err_t mender_scheduler_work_delete(void *handle);
 
 /**
- * @brief Function used to initialize handle to be used with mender_scheduler_delay_until_* functions
- * @param handle Delay handle
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_scheduler_delay_until_init(unsigned long *handle);
-
-/**
- * @brief Function used to make a delay until a specified time
- * @param delay Delay value (seconds)
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_scheduler_delay_until_s(unsigned long *handle, uint32_t delay);
-
-/**
  * @brief Function used to create a mutex
  * @param handle Mutex handle if the function succeeds, NULL otherwise
  * @return MENDER_OK if the function succeeds, error code otherwise

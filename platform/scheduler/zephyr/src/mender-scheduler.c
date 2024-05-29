@@ -248,32 +248,6 @@ mender_scheduler_work_delete(void *handle) {
 }
 
 mender_err_t
-mender_scheduler_delay_until_init(unsigned long *handle) {
-
-    assert(NULL != handle);
-
-    /* Get uptime */
-    *handle = (unsigned long)k_uptime_get();
-
-    return MENDER_OK;
-}
-
-mender_err_t
-mender_scheduler_delay_until_s(unsigned long *handle, uint32_t delay) {
-
-    assert(NULL != handle);
-
-    /* Compute sleep time and sleep */
-    int64_t ms = (1000 * delay) - (k_uptime_get() - *handle);
-    k_msleep((ms > 0) ? ((int32_t)ms) : 1);
-
-    /* Update uptime */
-    *handle = (unsigned long)k_uptime_get();
-
-    return MENDER_OK;
-}
-
-mender_err_t
 mender_scheduler_mutex_create(void **handle) {
 
     assert(NULL != handle);

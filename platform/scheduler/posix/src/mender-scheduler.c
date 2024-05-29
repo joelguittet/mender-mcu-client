@@ -326,50 +326,6 @@ mender_scheduler_work_delete(void *handle) {
 }
 
 mender_err_t
-mender_scheduler_delay_until_init(unsigned long *handle) {
-
-    assert(NULL != handle);
-
-    /* Read clock */
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    *handle = (unsigned long)(now.tv_sec * 1000000 + now.tv_nsec / 1000);
-
-    return MENDER_OK;
-}
-
-mender_err_t
-mender_scheduler_delay_until_s(unsigned long *handle, uint32_t delay) {
-
-    assert(NULL != handle);
-
-    /* Compute elapsed time (amount of time since start marker) */
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    unsigned long elapsed = (now.tv_sec * 1000000 + now.tv_nsec / 1000) - *handle;
-
-    /* Time to wait is the delay - elapsed time */
-    unsigned long delay_us      = delay * 1000000;
-    unsigned long real_delay_us = (unsigned long)ceil((double)(delay_us - elapsed));
-    if ((0 < real_delay_us) && (real_delay_us <= delay_us)) {
-        struct timespec request;
-        struct timespec remaining;
-        remaining.tv_sec  = real_delay_us / 1000000;
-        remaining.tv_nsec = (real_delay_us % 1000000) * 1000;
-        do {
-            request.tv_sec  = remaining.tv_sec;
-            request.tv_nsec = remaining.tv_nsec;
-        } while (nanosleep(&request, &remaining) < 0);
-    }
-
-    /* Read clock */
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    *handle = (unsigned long)(now.tv_sec * 1000000 + now.tv_nsec / 1000);
-
-    return MENDER_OK;
-}
-
-mender_err_t
 mender_scheduler_mutex_create(void **handle) {
 
     assert(NULL != handle);
