@@ -116,15 +116,6 @@ bool mender_utils_strbeginwith(const char *s1, const char *s2);
 bool mender_utils_strendwith(const char *s1, const char *s2);
 
 /**
- * @brief Function used to replace a string in the input buffer
- * @param input Input buffer
- * @param search String to be replaced or regex expression
- * @param replace Replacement string
- * @return New string with replacements if the function succeeds, NULL otherwise
- */
-char *mender_utils_str_replace(char *input, char *search, char *replace);
-
-/**
  * @brief Function used to create a key-store
  * @param length Length of the key-store
  * @return Key-store if the function succeeds, NULL otherwise
