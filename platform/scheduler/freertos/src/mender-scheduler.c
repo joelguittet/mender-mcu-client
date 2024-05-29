@@ -297,26 +297,6 @@ mender_scheduler_work_delete(void *handle) {
 }
 
 mender_err_t
-mender_scheduler_delay_until_init(unsigned long *handle) {
-
-    assert(NULL != handle);
-
-    /* Get uptime */
-    *handle = (unsigned long)xTaskGetTickCount();
-
-    return MENDER_OK;
-}
-
-mender_err_t
-mender_scheduler_delay_until_s(unsigned long *handle, uint32_t delay) {
-
-    /* Sleep */
-    vTaskDelayUntil((TickType_t *)handle, (1000 * delay) / portTICK_PERIOD_MS);
-
-    return MENDER_OK;
-}
-
-mender_err_t
 mender_scheduler_mutex_create(void **handle) {
 
     assert(NULL != handle);

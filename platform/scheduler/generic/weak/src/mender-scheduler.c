@@ -91,25 +91,6 @@ mender_scheduler_work_delete(void *handle) {
 }
 
 __attribute__((weak)) mender_err_t
-mender_scheduler_delay_until_init(unsigned long *handle) {
-
-    (void)handle;
-
-    /* Nothing to do */
-    return MENDER_NOT_IMPLEMENTED;
-}
-
-__attribute__((weak)) mender_err_t
-mender_scheduler_delay_until_s(unsigned long *handle, uint32_t delay) {
-
-    (void)handle;
-    (void)delay;
-
-    /* Nothing to do */
-    return MENDER_NOT_IMPLEMENTED;
-}
-
-__attribute__((weak)) mender_err_t
 mender_scheduler_mutex_create(void **handle) {
 
     (void)handle;
