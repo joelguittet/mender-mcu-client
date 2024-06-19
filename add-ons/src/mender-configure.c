@@ -316,6 +316,7 @@ mender_configure_exit(void) {
     mender_configure_keystore = NULL;
     mender_scheduler_mutex_give(mender_configure_mutex);
     mender_scheduler_mutex_delete(mender_configure_mutex);
+    mender_configure_mutex = NULL;
 
     return ret;
 }
