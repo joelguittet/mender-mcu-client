@@ -52,7 +52,7 @@ static mender_configure_config_t mender_configure_config;
 static mender_configure_callbacks_t mender_configure_callbacks;
 
 /**
- * @brief Mender configure
+ * @brief Mender configure keystore
  */
 static mender_keystore_t *mender_configure_keystore = NULL;
 static void *             mender_configure_mutex    = NULL;
@@ -406,7 +406,7 @@ mender_configure_download_artifact_callback(
             goto END;
         }
         cJSON_AddStringToObject(json_device_config, "artifact_name", artifact_name);
-        cJSON_AddItemToObject(json_device_config, "config", meta_data);
+        cJSON_AddItemToObject(json_device_config, "config", cJSON_Duplicate(meta_data, true));
         if (NULL == (device_config = cJSON_PrintUnformatted(json_device_config))) {
             mender_log_error("Unable to allocate memory");
             ret = MENDER_FAIL;
