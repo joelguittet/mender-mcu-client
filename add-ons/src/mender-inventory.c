@@ -176,6 +176,7 @@ mender_inventory_exit(void) {
     mender_inventory_keystore = NULL;
     mender_scheduler_mutex_give(mender_inventory_mutex);
     mender_scheduler_mutex_delete(mender_inventory_mutex);
+    mender_inventory_mutex = NULL;
 
     return ret;
 }
