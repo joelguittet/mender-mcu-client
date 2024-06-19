@@ -93,19 +93,20 @@ static cJSON *mender_client_deployment_data = NULL;
 /**
  * @brief Mender client artifact type
  */
-typedef struct mender_client_artifact_type_s {
+typedef struct {
     char *type; /**< Artifact type */
     mender_err_t (*callback)(
         char *, char *, char *, cJSON *, char *, size_t, void *, size_t, size_t); /**< Callback to be invoked to handle the artifact type */
-    bool                                  needs_restart;                          /**< Indicate the artifact type needs a restart to be applied on the system */
-    char *                                artifact_name; /**< Artifact name (optional, NULL otherwise), set to validate module update after restarting */
-    struct mender_client_artifact_type_s *next;          /**< Next artifact type */
+    bool  needs_restart;                                                          /**< Indicate the artifact type needs a restart to be applied on the system */
+    char *artifact_name; /**< Artifact name (optional, NULL otherwise), set to validate module update after restarting */
 } mender_client_artifact_type_t;
 
 /**
- * @brief Mender client artifact types list
+ * @brief Mender client artifact types list and mutex
  */
-static mender_client_artifact_type_t *mender_client_artifact_types = NULL;
+static mender_client_artifact_type_t **mender_client_artifact_types_list  = NULL;
+static size_t                          mender_client_artifact_types_count = 0;
+static void *                          mender_client_artifact_types_mutex = NULL;
 
 /**
  * @brief Mender client work handle
@@ -283,6 +284,12 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
         goto END;
     }
 
+    /* Create artifact types management mutex */
+    if (MENDER_OK != (ret = mender_scheduler_mutex_create(&mender_client_artifact_types_mutex))) {
+        mender_log_error("Unable to create artifact types management mutex");
+        return ret;
+    }
+
     /* Register rootfs-image artifact type */
     if (MENDER_OK
         != (ret = mender_client_register_artifact_type("rootfs-image", &mender_client_download_artifact_flash_callback, true, config->artifact_name))) {
@@ -318,8 +325,15 @@ mender_client_register_artifact_type(char *type,
                                      char *artifact_name) {
 
     assert(NULL != type);
-    mender_client_artifact_type_t *artifact_type;
-    mender_err_t                   ret = MENDER_OK;
+    mender_client_artifact_type_t * artifact_type;
+    mender_client_artifact_type_t **tmp;
+    mender_err_t                    ret;
+
+    /* Take mutex used to protect access to the artifact types management list */
+    if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_client_artifact_types_mutex, -1))) {
+        mender_log_error("Unable to take mutex");
+        return ret;
+    }
 
     /* Create mender artifact type */
     if (NULL == (artifact_type = (mender_client_artifact_type_t *)malloc(sizeof(mender_client_artifact_type_t)))) {
@@ -331,20 +345,23 @@ mender_client_register_artifact_type(char *type,
     artifact_type->callback      = callback;
     artifact_type->needs_restart = needs_restart;
     artifact_type->artifact_name = artifact_name;
-    artifact_type->next          = NULL;
 
     /* Add mender artifact type to the list */
-    if (NULL == mender_client_artifact_types) {
-        mender_client_artifact_types = artifact_type;
-    } else {
-        mender_client_artifact_type_t *last = mender_client_artifact_types;
-        while (NULL != last->next) {
-            last = last->next;
-        }
-        last->next = artifact_type;
+    if (NULL
+        == (tmp = (mender_client_artifact_type_t **)realloc(mender_client_artifact_types_list,
+                                                            (mender_client_artifact_types_count + 1) * sizeof(mender_client_artifact_type_t *)))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
     }
+    mender_client_artifact_types_list                                     = tmp;
+    mender_client_artifact_types_list[mender_client_artifact_types_count] = artifact_type;
+    mender_client_artifact_types_count++;
 
 END:
+
+    /* Release mutex used to protect access to the artifact types management list */
+    mender_scheduler_mutex_give(mender_client_artifact_types_mutex);
 
     return ret;
 }
@@ -395,12 +412,17 @@ mender_client_exit(void) {
         cJSON_Delete(mender_client_deployment_data);
         mender_client_deployment_data = NULL;
     }
-    mender_client_artifact_type_t *artifact_type = mender_client_artifact_types;
-    while (NULL != artifact_type) {
-        mender_client_artifact_type_t *tmp = artifact_type;
-        artifact_type                      = artifact_type->next;
-        free(tmp);
+    if (NULL != mender_client_artifact_types_list) {
+        for (size_t artifact_type_index = 0; artifact_type_index < mender_client_artifact_types_count; artifact_type_index++) {
+            free(mender_client_artifact_types_list[artifact_type_index]);
+        }
+        free(mender_client_artifact_types_list);
+        mender_client_artifact_types_list = NULL;
     }
+    mender_client_artifact_types_count = 0;
+    mender_scheduler_mutex_give(mender_client_artifact_types_mutex);
+    mender_scheduler_mutex_delete(mender_client_artifact_types_mutex);
+    mender_client_artifact_types_mutex = NULL;
 
     return MENDER_OK;
 }
@@ -520,7 +542,7 @@ mender_client_authentication_work_function(void) {
     /* Check if deployment is pending */
     if (NULL != mender_client_deployment_data) {
 
-        bool   success = true;
+        /* Retrieve deployment data */
         cJSON *json_id = NULL;
         if (NULL == (json_id = cJSON_GetObjectItemCaseSensitive(mender_client_deployment_data, "id"))) {
             mender_log_error("Unable to get ID from the deployment data");
@@ -546,31 +568,38 @@ mender_client_authentication_work_function(void) {
             mender_log_error("Unable to get types from the deployment data");
             goto RELEASE;
         }
+
+        /* Take mutex used to protect access to the artifact types management list */
+        if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_client_artifact_types_mutex, -1))) {
+            mender_log_error("Unable to take mutex");
+            goto RELEASE;
+        }
+
+        /* Check if artifact running is the pending one */
+        bool   success   = true;
         cJSON *json_type = NULL;
         cJSON_ArrayForEach(json_type, json_types) {
-            /* Check if artifact running is the pending one */
-            mender_client_artifact_type_t *artifact_type = mender_client_artifact_types;
-            while (NULL != artifact_type) {
-                if (!strcmp(artifact_type->type, cJSON_GetStringValue(json_type))) {
-                    if (NULL != artifact_type->artifact_name) {
-                        if (strcmp(artifact_type->artifact_name, artifact_name)) {
-                            /* Deployment status failure */
-                            success = false;
+            if (NULL != mender_client_artifact_types_list) {
+                for (size_t artifact_type_index = 0; artifact_type_index < mender_client_artifact_types_count; artifact_type_index++) {
+                    if (!strcmp(mender_client_artifact_types_list[artifact_type_index]->type, cJSON_GetStringValue(json_type))) {
+                        if (NULL != mender_client_artifact_types_list[artifact_type_index]->artifact_name) {
+                            if (strcmp(mender_client_artifact_types_list[artifact_type_index]->artifact_name, artifact_name)) {
+                                /* Deployment status failure */
+                                success = false;
+                            }
                         }
                     }
-                    break;
                 }
-                artifact_type = artifact_type->next;
             }
         }
+
+        /* Release mutex used to protect access to the artifact types management list */
+        mender_scheduler_mutex_give(mender_client_artifact_types_mutex);
+
+        /* Publish deployment status */
         if (true == success) {
-
-            /* Publish deployment status success */
             mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_SUCCESS);
-
         } else {
-
-            /* Publish deployment status failure */
             mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
         }
 
@@ -741,74 +770,80 @@ mender_client_download_artifact_callback(char *type, cJSON *meta_data, char *fil
 
     assert(NULL != type);
     cJSON *      json_types;
-    mender_err_t ret = MENDER_OK;
+    mender_err_t ret;
+
+    /* Take mutex used to protect access to the artifact types management list */
+    if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_client_artifact_types_mutex, -1))) {
+        mender_log_error("Unable to take mutex");
+        return ret;
+    }
 
     /* Treatment depending of the type */
-    mender_client_artifact_type_t *artifact_type = mender_client_artifact_types;
-    while (NULL != artifact_type) {
+    if (NULL != mender_client_artifact_types_list) {
+        for (size_t artifact_type_index = 0; artifact_type_index < mender_client_artifact_types_count; artifact_type_index++) {
 
-        /* Check artifact type */
-        if (!strcmp(type, artifact_type->type)) {
+            /* Check artifact type */
+            if (!strcmp(type, mender_client_artifact_types_list[artifact_type_index]->type)) {
 
-            /* Retrieve ID and artifact name */
-            cJSON *json_id = NULL;
-            if (NULL == (json_id = cJSON_GetObjectItemCaseSensitive(mender_client_deployment_data, "id"))) {
-                mender_log_error("Unable to get ID from the deployment data");
-                goto END;
-            }
-            char *id;
-            if (NULL == (id = cJSON_GetStringValue(json_id))) {
-                mender_log_error("Unable to get ID from the deployment data");
-                goto END;
-            }
-            cJSON *json_artifact_name = NULL;
-            if (NULL == (json_artifact_name = cJSON_GetObjectItemCaseSensitive(mender_client_deployment_data, "artifact_name"))) {
-                mender_log_error("Unable to get artifact name from the deployment data");
-                goto END;
-            }
-            char *artifact_name;
-            if (NULL == (artifact_name = cJSON_GetStringValue(json_artifact_name))) {
-                mender_log_error("Unable to get artifact name from the deployment data");
-                goto END;
-            }
-
-            /* Invoke artifact type callback */
-            if (MENDER_OK != (ret = artifact_type->callback(id, artifact_name, type, meta_data, filename, size, data, index, length))) {
-                mender_log_error("An error occurred while processing data of the artifact '%s'", type);
-                goto END;
-            }
-
-            /* Treatments related to the artifact type (once) */
-            if (0 == index) {
-
-                /* Add type to the deployment data */
-                if (NULL == (json_types = cJSON_GetObjectItemCaseSensitive(mender_client_deployment_data, "types"))) {
-                    mender_log_error("Unable to add type to the deployment data");
-                    ret = MENDER_FAIL;
+                /* Retrieve ID and artifact name */
+                cJSON *json_id = NULL;
+                if (NULL == (json_id = cJSON_GetObjectItemCaseSensitive(mender_client_deployment_data, "id"))) {
+                    mender_log_error("Unable to get ID from the deployment data");
                     goto END;
                 }
-                bool   found     = false;
-                cJSON *json_type = NULL;
-                cJSON_ArrayForEach(json_type, json_types) {
-                    if (!strcmp(type, cJSON_GetStringValue(json_type))) {
-                        found = true;
+                char *id;
+                if (NULL == (id = cJSON_GetStringValue(json_id))) {
+                    mender_log_error("Unable to get ID from the deployment data");
+                    goto END;
+                }
+                cJSON *json_artifact_name = NULL;
+                if (NULL == (json_artifact_name = cJSON_GetObjectItemCaseSensitive(mender_client_deployment_data, "artifact_name"))) {
+                    mender_log_error("Unable to get artifact name from the deployment data");
+                    goto END;
+                }
+                char *artifact_name;
+                if (NULL == (artifact_name = cJSON_GetStringValue(json_artifact_name))) {
+                    mender_log_error("Unable to get artifact name from the deployment data");
+                    goto END;
+                }
+
+                /* Invoke artifact type callback */
+                if (MENDER_OK
+                    != (ret = mender_client_artifact_types_list[artifact_type_index]->callback(
+                            id, artifact_name, type, meta_data, filename, size, data, index, length))) {
+                    mender_log_error("An error occurred while processing data of the artifact '%s'", type);
+                    goto END;
+                }
+
+                /* Treatments related to the artifact type (once) */
+                if (0 == index) {
+
+                    /* Add type to the deployment data */
+                    if (NULL == (json_types = cJSON_GetObjectItemCaseSensitive(mender_client_deployment_data, "types"))) {
+                        mender_log_error("Unable to add type to the deployment data");
+                        ret = MENDER_FAIL;
+                        goto END;
+                    }
+                    bool   found     = false;
+                    cJSON *json_type = NULL;
+                    cJSON_ArrayForEach(json_type, json_types) {
+                        if (!strcmp(type, cJSON_GetStringValue(json_type))) {
+                            found = true;
+                        }
+                    }
+                    if (false == found) {
+                        cJSON_AddItemToArray(json_types, cJSON_CreateString(type));
+                    }
+
+                    /* Set flags */
+                    if (true == mender_client_artifact_types_list[artifact_type_index]->needs_restart) {
+                        mender_client_deployment_needs_restart = true;
                     }
                 }
-                if (false == found) {
-                    cJSON_AddItemToArray(json_types, cJSON_CreateString(type));
-                }
 
-                /* Set flags */
-                if (true == artifact_type->needs_restart) {
-                    mender_client_deployment_needs_restart = true;
-                }
+                goto END;
             }
-
-            goto END;
         }
-
-        /* Next artifact type */
-        artifact_type = artifact_type->next;
     }
 
     /* Content is not supported by the mender-mcu-client */
@@ -816,6 +851,9 @@ mender_client_download_artifact_callback(char *type, cJSON *meta_data, char *fil
     ret = MENDER_FAIL;
 
 END:
+
+    /* Release mutex used to protect access to the artifact types management list */
+    mender_scheduler_mutex_give(mender_client_artifact_types_mutex);
 
     return ret;
 }
