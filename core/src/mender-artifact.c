@@ -313,6 +313,7 @@ mender_artifact_parse_tar_header(mender_artifact_ctx_t *ctx) {
             return MENDER_FAIL;
         }
         snprintf(tmp, str_length, "%s/%s", ctx->file.name, tar_header->name);
+        free(ctx->file.name);
     } else {
         if (NULL == (tmp = strdup(tar_header->name))) {
             mender_log_error("Unable to allocate memory");
