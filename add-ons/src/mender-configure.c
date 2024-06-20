@@ -64,6 +64,11 @@ static mender_keystore_t *mender_configure_keystore = NULL;
 static void *             mender_configure_mutex    = NULL;
 
 /**
+ * @brief Mender configure artifact name
+ */
+static char *mender_configure_artifact_name = NULL;
+
+/**
  * @brief Mender configure work handle
  */
 static void *mender_configure_work_handle = NULL;
@@ -96,6 +101,7 @@ mender_configure_init(void *config, void *callbacks) {
     assert(NULL != config);
     char *       device_config      = NULL;
     cJSON *      json_device_config = NULL;
+    char *       artifact_name;
     mender_err_t ret;
 
     /* Save configuration */
@@ -126,25 +132,36 @@ mender_configure_init(void *config, void *callbacks) {
         }
     }
 
-    /* Set device configuration */
+    /* Check if configuration is available */
     if (NULL != device_config) {
+
+        /* Parse configuration */
         if (NULL == (json_device_config = cJSON_Parse(device_config))) {
             mender_log_error("Unable to set device configuration");
             ret = MENDER_FAIL;
             goto END;
         }
+
+        /* Set device configuration */
         if (MENDER_OK != (ret = mender_utils_keystore_from_json(&mender_configure_keystore, cJSON_GetObjectItemCaseSensitive(json_device_config, "config")))) {
             mender_log_error("Unable to set device configuration");
             goto END;
+        }
+
+        /* Retrieve artifact name if it is available */
+        if (NULL != (artifact_name = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(json_device_config, "artifact_name")))) {
+            if (NULL == (mender_configure_artifact_name = strdup(artifact_name))) {
+                mender_log_error("Unable to allocate memory");
+                ret = MENDER_FAIL;
+                goto END;
+            }
         }
     }
 
     /* Register mender-configure artifact type */
     if (MENDER_OK
-        != (ret = mender_client_register_artifact_type("mender-configure",
-                                                       &mender_configure_download_artifact_callback,
-                                                       true,
-                                                       cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(json_device_config, "artifact_name"))))) {
+        != (ret
+            = mender_client_register_artifact_type("mender-configure", &mender_configure_download_artifact_callback, true, mender_configure_artifact_name))) {
         mender_log_error("Unable to register 'mender-configure' artifact type");
         goto END;
     }
@@ -331,6 +348,10 @@ mender_configure_exit(void) {
     mender_scheduler_mutex_give(mender_configure_mutex);
     mender_scheduler_mutex_delete(mender_configure_mutex);
     mender_configure_mutex = NULL;
+    if (NULL != mender_configure_artifact_name) {
+        free(mender_configure_artifact_name);
+        mender_configure_artifact_name = NULL;
+    }
 
     return ret;
 }
