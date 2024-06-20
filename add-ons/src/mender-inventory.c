@@ -26,6 +26,7 @@
  */
 
 #include "mender-api.h"
+#include "mender-client.h"
 #include "mender-inventory.h"
 #include "mender-log.h"
 #include "mender-scheduler.h"
@@ -205,10 +206,23 @@ mender_inventory_work_function(void) {
         return ret;
     }
 
+    /* Request access to the network */
+    if (MENDER_OK != (ret = mender_client_network_connect())) {
+        mender_log_error("Requesting access to the network failed");
+        goto END;
+    }
+
     /* Publish inventory */
     if (MENDER_OK != (ret = mender_api_publish_inventory_data(mender_inventory_keystore))) {
         mender_log_error("Unable to publish inventory data");
     }
+
+RELEASE:
+
+    /* Release access to the network */
+    mender_client_network_release();
+
+END:
 
     /* Release mutex used to protect access to the inventory key-store */
     mender_scheduler_mutex_give(mender_inventory_mutex);

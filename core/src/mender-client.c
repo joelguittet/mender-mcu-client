@@ -86,6 +86,12 @@ typedef enum {
 static mender_client_state_t mender_client_state = MENDER_CLIENT_STATE_INITIALIZATION;
 
 /**
+ * @brief Counter and mutex for the management of network connect/release callbacks
+ */
+static uint8_t mender_client_network_count = 0;
+static void *  mender_client_network_mutex = NULL;
+
+/**
  * @brief Deployment data (ID, artifact name and payload types), used to report deployment status after rebooting
  */
 static cJSON *mender_client_deployment_data = NULL;
@@ -291,6 +297,12 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
         goto END;
     }
 
+    /* Create network management mutex */
+    if (MENDER_OK != (ret = mender_scheduler_mutex_create(&mender_client_network_mutex))) {
+        mender_log_error("Unable to create network management mutex");
+        return ret;
+    }
+
     /* Create artifact types management mutex */
     if (MENDER_OK != (ret = mender_scheduler_mutex_create(&mender_client_artifact_types_mutex))) {
         mender_log_error("Unable to create artifact types management mutex");
@@ -491,6 +503,74 @@ END:
 }
 
 mender_err_t
+mender_client_network_connect(void) {
+
+    mender_err_t ret;
+
+    /* Take mutex used to protect access to the network management counter */
+    if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_client_network_mutex, -1))) {
+        mender_log_error("Unable to take mutex");
+        return ret;
+    }
+
+    /* Check the network management counter value */
+    if (0 == mender_client_network_count) {
+
+        /* Request network access */
+        if (NULL != mender_client_callbacks.network_connect) {
+            if (MENDER_OK != (ret = mender_client_callbacks.network_connect())) {
+                mender_log_error("Unable to connect network");
+                goto END;
+            }
+        }
+    }
+
+    /* Increment network management counter */
+    mender_client_network_count++;
+
+END:
+
+    /* Release mutex used to protect access to the network management counter */
+    mender_scheduler_mutex_give(mender_client_network_mutex);
+
+    return ret;
+}
+
+mender_err_t
+mender_client_network_release(void) {
+
+    mender_err_t ret;
+
+    /* Take mutex used to protect access to the network management counter */
+    if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_client_network_mutex, -1))) {
+        mender_log_error("Unable to take mutex");
+        return ret;
+    }
+
+    /* Decrement network management counter */
+    mender_client_network_count--;
+
+    /* Check the network management counter value */
+    if (0 == mender_client_network_count) {
+
+        /* Release network access */
+        if (NULL != mender_client_callbacks.network_release) {
+            if (MENDER_OK != (ret = mender_client_callbacks.network_release())) {
+                mender_log_error("Unable to release network");
+                goto END;
+            }
+        }
+    }
+
+END:
+
+    /* Release mutex used to protect access to the network management counter */
+    mender_scheduler_mutex_give(mender_client_network_mutex);
+
+    return ret;
+}
+
+mender_err_t
 mender_client_exit(void) {
 
     mender_err_t ret;
@@ -533,6 +613,10 @@ mender_client_exit(void) {
     mender_client_config.tenant_token                 = NULL;
     mender_client_config.authentication_poll_interval = 0;
     mender_client_config.update_poll_interval         = 0;
+    mender_client_network_count                       = 0;
+    mender_scheduler_mutex_give(mender_client_network_mutex);
+    mender_scheduler_mutex_delete(mender_client_network_mutex);
+    mender_client_network_mutex = NULL;
     if (NULL != mender_client_deployment_data) {
         cJSON_Delete(mender_client_deployment_data);
         mender_client_deployment_data = NULL;
@@ -574,16 +658,20 @@ mender_client_work_function(void) {
         /* Update client state */
         mender_client_state = MENDER_CLIENT_STATE_AUTHENTICATION;
     }
+    /* Request access to the network */
+    if (MENDER_OK != (ret = mender_client_network_connect())) {
+        goto END;
+    }
     /* Intentional pass-through */
     if (MENDER_CLIENT_STATE_AUTHENTICATION == mender_client_state) {
         /* Perform authentication with the server */
         if (MENDER_DONE != (ret = mender_client_authentication_work_function())) {
-            goto END;
+            goto RELEASE;
         }
         /* Update work period */
         if (MENDER_OK != (ret = mender_scheduler_work_set_period(mender_client_work_handle, mender_client_config.update_poll_interval))) {
             mender_log_error("Unable to set work period");
-            goto END;
+            goto RELEASE;
         }
         /* Update client state */
         mender_client_state = MENDER_CLIENT_STATE_AUTHENTICATED;
@@ -593,6 +681,11 @@ mender_client_work_function(void) {
         /* Perform updates */
         ret = mender_client_update_work_function();
     }
+
+RELEASE:
+
+    /* Release access to the network */
+    mender_client_network_release();
 
 END:
 
