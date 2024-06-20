@@ -54,6 +54,12 @@
 #define MENDER_TROUBLESHOOT_SBUFFER_INIT_SIZE (256)
 
 /**
+ * @brief Mender troubleshoot instance
+ */
+const mender_addon_instance_t mender_troubleshoot_addon_instance
+    = { .init = mender_troubleshoot_init, .activate = NULL, .deactivate = mender_troubleshoot_deactivate, .exit = mender_troubleshoot_exit };
+
+/**
  * Proto type
  */
 typedef enum {
@@ -297,20 +303,22 @@ static void mender_troubleshoot_release_protohdr(mender_troubleshoot_protohdr_t 
 static void mender_troubleshoot_release_protohdr_properties(mender_troubleshoot_protohdr_properties_t *properties);
 
 mender_err_t
-mender_troubleshoot_init(mender_troubleshoot_config_t *config, mender_troubleshoot_callbacks_t *callbacks) {
+mender_troubleshoot_init(void *config, void *callbacks) {
 
     assert(NULL != config);
     mender_err_t ret;
 
     /* Save configuration */
-    if (0 != config->healthcheck_interval) {
-        mender_troubleshoot_config.healthcheck_interval = config->healthcheck_interval;
+    if (0 != ((mender_troubleshoot_config_t *)config)->healthcheck_interval) {
+        mender_troubleshoot_config.healthcheck_interval = ((mender_troubleshoot_config_t *)config)->healthcheck_interval;
     } else {
         mender_troubleshoot_config.healthcheck_interval = CONFIG_MENDER_CLIENT_TROUBLESHOOT_HEALTHCHECK_INTERVAL;
     }
 
     /* Save callbacks */
-    memcpy(&mender_troubleshoot_callbacks, callbacks, sizeof(mender_troubleshoot_callbacks_t));
+    if (NULL != callbacks) {
+        memcpy(&mender_troubleshoot_callbacks, callbacks, sizeof(mender_troubleshoot_callbacks_t));
+    }
 
     /* Create troubleshoot healthcheck work */
     mender_scheduler_work_params_t healthcheck_work_params;

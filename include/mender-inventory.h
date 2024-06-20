@@ -32,9 +32,15 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include "mender-addon.h"
 #include "mender-utils.h"
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
+
+/**
+ * @brief Mender inventory instance
+ */
+extern const mender_addon_instance_t mender_inventory_addon_instance;
 
 /**
  * @brief Mender inventory configuration
@@ -46,15 +52,23 @@ typedef struct {
 /**
  * @brief Initialize mender inventory add-on
  * @param config Mender inventory configuration
+ * @param callbacks Mender inventory callbacks (not used)
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_inventory_init(mender_inventory_config_t *config);
+mender_err_t mender_inventory_init(void *config, void *callbacks);
 
 /**
  * @brief Activate mender inventory add-on
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_inventory_activate(void);
+
+/**
+ * @brief Deactivate mender inventory add-on
+ * @note This function stops synchronization with the server
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_inventory_deactivate(void);
 
 /**
  * @brief Set mender inventory
