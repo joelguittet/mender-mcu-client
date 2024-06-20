@@ -383,6 +383,9 @@ mender_troubleshoot_deactivate(void) {
             mender_log_error("Unable to disconnect the device of the server");
         }
         mender_troubleshoot_handle = NULL;
+
+        /* Release access to the network */
+        mender_client_network_release();
     }
 
     /* Release session ID */
@@ -511,6 +514,12 @@ mender_troubleshoot_healthcheck_work_function(void) {
 
     } else {
 
+        /* Request access to the network */
+        if (MENDER_OK != (ret = mender_client_network_connect())) {
+            mender_log_error("Requesting access to the network failed");
+            goto END;
+        }
+
         /* Connect the device to the server */
         if (MENDER_OK != (ret = mender_api_troubleshoot_connect(&mender_troubleshoot_data_received_callback, &mender_troubleshoot_handle))) {
             mender_log_error("Unable to connect the device to the server");
@@ -541,6 +550,9 @@ FAIL:
             mender_log_error("Unable to disconnect the device of the server");
         }
         mender_troubleshoot_handle = NULL;
+
+        /* Release access to the network */
+        mender_client_network_release();
     }
 
     /* Release session ID */

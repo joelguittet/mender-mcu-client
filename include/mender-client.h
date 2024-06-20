@@ -53,6 +53,8 @@ typedef struct {
  * @brief Mender client callbacks
  */
 typedef struct {
+    mender_err_t (*network_connect)(void);                                 /**< Invoked when mender-client requests access to the network */
+    mender_err_t (*network_release)(void);                                 /**< Invoked when mender-client releases access to the network */
     mender_err_t (*authentication_success)(void);                          /**< Invoked when authentication with the mender server succeeded */
     mender_err_t (*authentication_failure)(void);                          /**< Invoked when authentication with the mender server failed */
     mender_err_t (*deployment_status)(mender_deployment_status_t, char *); /**< Invoked on transition changes to inform of the new deployment status */
@@ -115,6 +117,18 @@ mender_err_t mender_client_deactivate(void);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_client_execute(void);
+
+/**
+ * @brief Function to be called from add-ons to request network access
+ * @return MENDER_OK if network is connected following the request, error code otherwise
+ */
+mender_err_t mender_client_network_connect(void);
+
+/**
+ * @brief Function to be called from add-ons to release network access
+ * @return MENDER_OK if network is released following the request, error code otherwise
+ */
+mender_err_t mender_client_network_release(void);
 
 /**
  * @brief Release mender client

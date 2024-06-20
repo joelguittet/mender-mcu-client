@@ -367,25 +367,31 @@ mender_configure_work_function(void) {
         return ret;
     }
 
+    /* Request access to the network */
+    if (MENDER_OK != (ret = mender_client_network_connect())) {
+        mender_log_error("Requesting access to the network failed");
+        goto END;
+    }
+
 #ifndef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
 
     /* Download configuration */
     mender_keystore_t *configuration = NULL;
     if (MENDER_OK != (ret = mender_api_download_configuration_data(&configuration))) {
         mender_log_error("Unable to get configuration data");
-        goto END;
+        goto RELEASE;
     }
 
     /* Release previous configuration */
     if (MENDER_OK != (ret = mender_utils_keystore_delete(mender_configure_keystore))) {
         mender_log_error("Unable to delete device configuration");
-        goto END;
+        goto RELEASE;
     }
 
     /* Update device configuration */
     if (MENDER_OK != (ret = mender_utils_keystore_copy(&mender_configure_keystore, configuration))) {
         mender_log_error("Unable to update device configuration");
-        goto END;
+        goto RELEASE;
     }
 
     /* Invoke the update callback */
@@ -400,9 +406,14 @@ mender_configure_work_function(void) {
         mender_log_error("Unable to publish configuration data");
     }
 
-#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
+RELEASE:
+
+    /* Release access to the network */
+    mender_client_network_release();
 
 END:
+
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
 
     /* Release memeory */
     mender_utils_keystore_delete(configuration);

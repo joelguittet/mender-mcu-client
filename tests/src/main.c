@@ -50,6 +50,38 @@ static pthread_mutex_t mender_client_events_mutex;
 static pthread_cond_t  mender_client_events_cond;
 
 /**
+ * @brief Network connnect callback
+ * @return MENDER_OK if network is connected following the request, error code otherwise
+ */
+static mender_err_t
+network_connect_cb(void) {
+
+    mender_log_info("Mender client connect network");
+
+    /* This callback can be used to configure network connection */
+    /* Note that the application can connect the network before if required */
+    /* This callback only indicates the mender-client requests network access now */
+    /* Nothing to do in this test application just return network is available */
+    return MENDER_OK;
+}
+
+/**
+ * @brief Network release callback
+ * @return MENDER_OK if network is released following the request, error code otherwise
+ */
+static mender_err_t
+network_release_cb(void) {
+
+    mender_log_info("Mender client released network");
+
+    /* This callback can be used to release network connection */
+    /* Note that the application can keep network activated if required */
+    /* This callback only indicates the mender-client doesn't request network access now */
+    /* Nothing to do in this test application just return network is released */
+    return MENDER_OK;
+}
+
+/**
  * @brief Authentication success callback
  * @return MENDER_OK if application is marked valid and success deployment status should be reported to the server, error code otherwise
  */
@@ -454,7 +486,9 @@ main(int argc, char **argv) {
                                                     .authentication_poll_interval = 0,
                                                     .update_poll_interval         = 0,
                                                     .recommissioning              = false };
-    mender_client_callbacks_t mender_client_callbacks = { .authentication_success = authentication_success_cb,
+    mender_client_callbacks_t mender_client_callbacks = { .network_connect        = network_connect_cb,
+                                                          .network_release        = network_release_cb,
+                                                          .authentication_success = authentication_success_cb,
                                                           .authentication_failure = authentication_failure_cb,
                                                           .deployment_status      = deployment_status_cb,
                                                           .restart                = restart_cb };
