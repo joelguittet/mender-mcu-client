@@ -32,9 +32,15 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include "mender-addon.h"
 #include "mender-utils.h"
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
+
+/**
+ * @brief Mender configure instance
+ */
+extern const mender_addon_instance_t mender_configure_addon_instance;
 
 /**
  * @brief Mender configure configuration
@@ -55,16 +61,23 @@ typedef struct {
 /**
  * @brief Initialize mender configure add-on
  * @param config Mender configure configuration
- * @param callbacks Mender configure callbacks
+ * @param callbacks Mender configure callbacks (optional)
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_configure_init(mender_configure_config_t *config, mender_configure_callbacks_t *callbacks);
+mender_err_t mender_configure_init(void *config, void *callbacks);
 
 /**
  * @brief Activate mender configure add-on
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_configure_activate(void);
+
+/**
+ * @brief Deactivate mender configure add-on
+ * @note This function stops synchronization with the server
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_configure_deactivate(void);
 
 /**
  * @brief Get mender configuration

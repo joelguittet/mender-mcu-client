@@ -32,6 +32,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include "mender-addon.h"
 #include "mender-utils.h"
 
 /**
@@ -84,6 +85,28 @@ mender_err_t mender_client_register_artifact_type(char *type,
                                                   mender_err_t (*callback)(char *, char *, char *, cJSON *, char *, size_t, void *, size_t, size_t),
                                                   bool  needs_restart,
                                                   char *artifact_name);
+
+/**
+ * @brief Register add-on
+ * @param addon Add-on
+ * @param config Add-on configuration
+ * @param callbacks Add-on callbacks
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_client_register_addon(mender_addon_instance_t *addon, void *config, void *callbacks);
+
+/**
+ * @brief Activate mender client
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_client_activate(void);
+
+/**
+ * @brief Deactivate mender client
+ * @note This function stops synchronization with the server
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_client_deactivate(void);
 
 /**
  * @brief Function used to trigger execution of the authentication and update work

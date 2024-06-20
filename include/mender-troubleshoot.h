@@ -32,9 +32,15 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include "mender-addon.h"
+#include "mender-utils.h"
+
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
-#include "mender-utils.h"
+/**
+ * @brief Mender troubleshoot instance
+ */
+extern const mender_addon_instance_t mender_troubleshoot_addon_instance;
 
 /**
  * @brief Mender troubleshoot configuration
@@ -56,10 +62,10 @@ typedef struct {
 /**
  * @brief Initialize mender troubleshoot add-on
  * @param config Mender troubleshoot configuration
- * @param callbacks Mender troubleshoot callbacks
+ * @param callbacks Mender troubleshoot callbacks (optional)
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_troubleshoot_init(mender_troubleshoot_config_t *config, mender_troubleshoot_callbacks_t *callbacks);
+mender_err_t mender_troubleshoot_init(void *config, void *callbacks);
 
 /**
  * @brief Activate mender troubleshoot add-on

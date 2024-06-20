@@ -40,12 +40,18 @@
 #endif /* CONFIG_MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL */
 
 /**
+ * @brief Mender inventory instance
+ */
+const mender_addon_instance_t mender_inventory_addon_instance
+    = { .init = mender_inventory_init, .activate = mender_inventory_activate, .deactivate = mender_inventory_deactivate, .exit = mender_inventory_exit };
+
+/**
  * @brief Mender inventory configuration
  */
 static mender_inventory_config_t mender_inventory_config;
 
 /**
- * @brief Mender inventory
+ * @brief Mender inventory keystore
  */
 static mender_keystore_t *mender_inventory_keystore = NULL;
 static void *             mender_inventory_mutex    = NULL;
@@ -62,14 +68,15 @@ static void *mender_inventory_work_handle = NULL;
 static mender_err_t mender_inventory_work_function(void);
 
 mender_err_t
-mender_inventory_init(mender_inventory_config_t *config) {
+mender_inventory_init(void *config, void *callbacks) {
 
     assert(NULL != config);
+    (void)callbacks;
     mender_err_t ret;
 
     /* Save configuration */
-    if (0 != config->refresh_interval) {
-        mender_inventory_config.refresh_interval = config->refresh_interval;
+    if (0 != ((mender_inventory_config_t *)config)->refresh_interval) {
+        mender_inventory_config.refresh_interval = ((mender_inventory_config_t *)config)->refresh_interval;
     } else {
         mender_inventory_config.refresh_interval = CONFIG_MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL;
     }
@@ -105,6 +112,15 @@ mender_inventory_activate(void) {
     }
 
     return ret;
+}
+
+mender_err_t
+mender_inventory_deactivate(void) {
+
+    /* Deactivate mender inventory work */
+    mender_scheduler_work_deactivate(mender_inventory_work_handle);
+
+    return MENDER_OK;
 }
 
 mender_err_t
@@ -156,9 +172,6 @@ mender_err_t
 mender_inventory_exit(void) {
 
     mender_err_t ret;
-
-    /* Deactivate mender inventory work */
-    mender_scheduler_work_deactivate(mender_inventory_work_handle);
 
     /* Delete mender inventory work */
     mender_scheduler_work_delete(mender_inventory_work_handle);

@@ -42,6 +42,12 @@
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_REFRESH_INTERVAL */
 
 /**
+ * @brief Mender configure instance
+ */
+const mender_addon_instance_t mender_configure_addon_instance
+    = { .init = mender_configure_init, .activate = mender_configure_activate, .deactivate = mender_configure_deactivate, .exit = mender_configure_exit };
+
+/**
  * @brief Mender configure configuration
  */
 static mender_configure_config_t mender_configure_config;
@@ -85,7 +91,7 @@ static mender_err_t mender_configure_download_artifact_callback(
     char *id, char *artifact_name, char *type, cJSON *meta_data, char *filename, size_t size, void *data, size_t index, size_t length);
 
 mender_err_t
-mender_configure_init(mender_configure_config_t *config, mender_configure_callbacks_t *callbacks) {
+mender_configure_init(void *config, void *callbacks) {
 
     assert(NULL != config);
     char *       device_config      = NULL;
@@ -93,14 +99,16 @@ mender_configure_init(mender_configure_config_t *config, mender_configure_callba
     mender_err_t ret;
 
     /* Save configuration */
-    if (0 != config->refresh_interval) {
-        mender_configure_config.refresh_interval = config->refresh_interval;
+    if (0 != ((mender_configure_config_t *)config)->refresh_interval) {
+        mender_configure_config.refresh_interval = ((mender_configure_config_t *)config)->refresh_interval;
     } else {
         mender_configure_config.refresh_interval = CONFIG_MENDER_CLIENT_CONFIGURE_REFRESH_INTERVAL;
     }
 
     /* Save callbacks */
-    memcpy(&mender_configure_callbacks, callbacks, sizeof(mender_configure_callbacks_t));
+    if (NULL != callbacks) {
+        memcpy(&mender_configure_callbacks, callbacks, sizeof(mender_configure_callbacks_t));
+    }
 
     /* Create configure mutex */
     if (MENDER_OK != (ret = mender_scheduler_mutex_create(&mender_configure_mutex))) {
@@ -178,6 +186,15 @@ mender_configure_activate(void) {
     }
 
     return ret;
+}
+
+mender_err_t
+mender_configure_deactivate(void) {
+
+    /* Deactivate mender configure work */
+    mender_scheduler_work_deactivate(mender_configure_work_handle);
+
+    return MENDER_OK;
 }
 
 mender_err_t
@@ -296,9 +313,6 @@ mender_err_t
 mender_configure_exit(void) {
 
     mender_err_t ret;
-
-    /* Deactivate mender configure work */
-    mender_scheduler_work_deactivate(mender_configure_work_handle);
 
     /* Delete mender configure work */
     mender_scheduler_work_delete(mender_configure_work_handle);

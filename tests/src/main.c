@@ -60,21 +60,8 @@ authentication_success_cb(void) {
 
     mender_log_info("Mender client authenticated");
 
-    /* Activate mender add-ons */
-    /* The application can activate each add-on depending of the current status of the device */
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
-    if (MENDER_OK != (ret = mender_configure_activate())) {
-        mender_log_error("Unable to activate configure add-on");
-        return ret;
-    }
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
-    if (MENDER_OK != (ret = mender_inventory_activate())) {
-        mender_log_error("Unable to activate inventory add-on");
-        return ret;
-    }
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+    /* Activate troubleshoot add-on (deactivated by default) */
     if (MENDER_OK != (ret = mender_troubleshoot_activate())) {
         mender_log_error("Unable to activate troubleshoot add-on");
         return ret;
@@ -485,16 +472,18 @@ main(int argc, char **argv) {
         .config_updated = config_updated_cb,
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
     };
-    if (MENDER_OK != mender_configure_init(&mender_configure_config, &mender_configure_callbacks)) {
-        mender_log_error("Unable to initialize mender-configure add-on");
+    if (MENDER_OK
+        != mender_client_register_addon(
+            (mender_addon_instance_t *)&mender_configure_addon_instance, (void *)&mender_configure_config, (void *)&mender_configure_callbacks)) {
+        mender_log_error("Unable to register mender-configure add-on");
         ret = EXIT_FAILURE;
         goto RELEASE;
     }
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
     mender_inventory_config_t mender_inventory_config = { .refresh_interval = 0 };
-    if (MENDER_OK != mender_inventory_init(&mender_inventory_config)) {
-        mender_log_error("Unable to initialize mender-inventory add-on");
+    if (MENDER_OK != mender_client_register_addon((mender_addon_instance_t *)&mender_inventory_addon_instance, (void *)&mender_inventory_config, NULL)) {
+        mender_log_error("Unable to register mender-inventory add-on");
         ret = EXIT_FAILURE;
         goto RELEASE;
     }
@@ -503,37 +492,31 @@ main(int argc, char **argv) {
     mender_troubleshoot_config_t    mender_troubleshoot_config = { .healthcheck_interval = 0 };
     mender_troubleshoot_callbacks_t mender_troubleshoot_callbacks
         = { .shell_begin = shell_begin_cb, .shell_resize = shell_resize_cb, .shell_write = shell_write_cb, .shell_end = shell_end_cb };
-    if (MENDER_OK != mender_troubleshoot_init(&mender_troubleshoot_config, &mender_troubleshoot_callbacks)) {
-        mender_log_error("Unable to initialize mender-troubleshoot add-on");
+    if (MENDER_OK
+        != mender_client_register_addon(
+            (mender_addon_instance_t *)&mender_troubleshoot_addon_instance, (void *)&mender_troubleshoot_config, (void *)&mender_troubleshoot_callbacks)) {
+        mender_log_error("Unable to register mender-troubleshoot add-on");
         ret = EXIT_FAILURE;
         goto RELEASE;
     }
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
+
+    /* Finally activate mender client */
+    if (MENDER_OK != mender_client_activate()) {
+        mender_log_error("Unable to activate mender-client");
+        ret = EXIT_FAILURE;
+        goto RELEASE;
+    }
 
     /* Wait for mender-mcu-client events */
     pthread_mutex_lock(&mender_client_events_mutex);
     pthread_cond_wait(&mender_client_events_cond, &mender_client_events_mutex);
     pthread_mutex_unlock(&mender_client_events_mutex);
 
-    /* Deactivate mender add-ons */
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-    mender_troubleshoot_deactivate();
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
-
 RELEASE:
 
-    /* Release mender add-ons */
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-    mender_troubleshoot_exit();
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
-    mender_inventory_exit();
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
-    mender_configure_exit();
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
-
-    /* Release mender-client */
+    /* Deactivate and release mender-client */
+    mender_client_deactivate();
     mender_client_exit();
 
 END:
