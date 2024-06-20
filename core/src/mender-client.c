@@ -358,6 +358,7 @@ mender_client_register_artifact_type(char *type,
         == (tmp = (mender_client_artifact_type_t **)realloc(mender_client_artifact_types_list,
                                                             (mender_client_artifact_types_count + 1) * sizeof(mender_client_artifact_type_t *)))) {
         mender_log_error("Unable to allocate memory");
+        free(artifact_type);
         ret = MENDER_FAIL;
         goto END;
     }
