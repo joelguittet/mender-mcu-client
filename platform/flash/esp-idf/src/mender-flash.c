@@ -33,8 +33,8 @@
  * @brief Flash handle
  */
 typedef struct {
-    esp_partition_t *partition;  /**< Update partition to which the firmware is flashed */
-    esp_ota_handle_t ota_handle; /**< OTA handle used to flash the firmware */
+    const esp_partition_t *partition;  /**< Update partition to which the firmware is flashed */
+    esp_ota_handle_t       ota_handle; /**< OTA handle used to flash the firmware */
 } mender_flash_handle_t;
 
 mender_err_t
@@ -54,7 +54,7 @@ mender_flash_open(char *name, size_t size, void **handle) {
     }
 
     /* Check for the next update partition */
-    if (NULL == (((mender_flash_handle_t *)(*handle))->partition = (esp_partition_t *)esp_ota_get_next_update_partition(NULL))) {
+    if (NULL == (((mender_flash_handle_t *)(*handle))->partition = esp_ota_get_next_update_partition(NULL))) {
         mender_log_error("Unable to find next update partition");
         return MENDER_FAIL;
     }
