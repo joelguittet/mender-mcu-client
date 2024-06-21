@@ -406,7 +406,11 @@ mender_configure_work_function(void) {
         mender_log_error("Unable to publish configuration data");
     }
 
+#ifndef CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE
+
 RELEASE:
+
+#endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
 
     /* Release access to the network */
     mender_client_network_release();
