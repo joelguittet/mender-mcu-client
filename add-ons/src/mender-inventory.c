@@ -217,8 +217,6 @@ mender_inventory_work_function(void) {
         mender_log_error("Unable to publish inventory data");
     }
 
-RELEASE:
-
     /* Release access to the network */
     mender_client_network_release();
 
