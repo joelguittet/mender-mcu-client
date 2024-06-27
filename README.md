@@ -32,18 +32,18 @@ To start using Mender, we recommend that you begin with the Getting started sect
 To start using mender-mcu-client, we recommend that you begin with one of the example provided with the library:
 
 * [mender-esp32-example](https://github.com/joelguittet/mender-esp32-example) demonstrates the usage of mender-mcu-client on ESP32 MCU to perform upgrade with dual OTA partitions and rollback capability using ESP-IDF framework.
-* [mender-stm32l4a6-zephyr-example](https://github.com/joelguittet/mender-stm32l4a6-zephyr-example) demonstrates the usage of mender-mcu-client on STM32L4A6 MCU to perform upgrade with dual OTA partitions and rollback capability using Zephyr RTOS.
+* [mender-stm32l4a6-zephyr-example](https://github.com/joelguittet/mender-stm32l4a6-zephyr-example) demonstrates the usage of mender-mcu-client on STM32L4A6 MCU to perform upgrade with dual OTA partitions and rollback capability using Zephyr RTOS. Additionally demonstrates usage of mender-modules using Zephyr LLEXT subsystem permitting to load and execute LLEXT modules.
 * [mender-stm32h745-zephyr-example](https://github.com/joelguittet/mender-stm32h745-zephyr-example) demonstrates the usage of mender-mcu-client on STM32H745 MCU to perform upgrade with dual OTA partitions and rollback capability using Zephyr RTOS. Additionally demonstrates usage of ATECC608 secure element to perform authentication of the device and custom platform integration using the weak functions of mender-mcu-client library.
 * More examples will come, and particularly new platforms support will be added soon.
 
 
 ## Dependencies
 
-The mender-mcu-client library tries to be very light in order to be used on most projects wanted to have over-the-air updates. The library mainly rely on the presence of an RTOS to have thread, semaphore and memory allocation support.
+The mender-mcu-client library tries to be very light in order to be used on most projects wanted to have over-the-air updates. The library mainly relies on the presence of an RTOS to have thread, semaphore and memory allocation support.
 
 Additionally, a TCP/IP interface is required because communications are done using HTTPS protocol, however it is possible to have an abstraction for example using a WiFi module connected to the MCU with a serial interface and using AT commands.
 
-And finally, 4kB of storage should be reserved to save client private and public keys used for authentication with mender server, plus OTA ID and artifact name to be deployed when an update is done (this is used internally to perform OTA report to the server).
+And finally, 4kB of storage should be reserved to save client private and public keys used for authentication with mender server, plus OTA ID and artifact name to be deployed when an update is done (this is used internally to perform OTA report to the server). As an alternative, using a secure element to store secrets is also available.
 
 From the source code perspective, the dependencies of the core part of the library are limited to [cJSON](https://github.com/DaveGamble/cJSON). The platform source files may depends of external libraries or Hardware Abstraction Layers: [esp-idf](https://github.com/espressif/esp-idf), [mbedTLS](https://github.com/Mbed-TLS/mbedtls), [cryptoauthlib](https://github.com/MicrochipTech/cryptoauthlib), ...
 
@@ -148,14 +148,14 @@ The final code size of the mender-mcu-client library depends of your configurati
 
 |                      | Debug (-Og) | Optimize for size (-Os) |
 |:---------------------|:------------|:------------------------|
-| mender-client (core) | 24KB        | 21KB                    |
-| mender-inventory     | 3KB         | 3KB                     |
-| mender-configure     | 4KB         | 4KB                     |
-| mender-troubleshoot  | 14KB        | 11KB                    |
+| mender-client (core) | 29KB        | 25KB                    |
+| mender-inventory     | 2KB         | 2KB                     |
+| mender-configure     | 3KB         | 3KB                     |
+| mender-troubleshoot  | 13KB        | 11KB                    |
 
 Note this is not including dependencies such as mbedTLS or HTTP client, etc. I suppose this kind of libraries is already available and used in your project.
 
-It is possible to reduce even more the footprint of the mender-mcu-client library by customizing the default log level at build time using `CONFIG_MENDER_LOG_LEVEL` configuration key. Default is `MENDER_LOG_LEVEL_INF` which means information, warning and error messages are included. In production, it is highly possible you don't have a logging interface and as a consequence you can disable all logs. This permits to save about 10kB on the total size of the application.
+It is possible to reduce even more the footprint of the mender-mcu-client library by customizing the default log level at build time using `CONFIG_MENDER_LOG_LEVEL` configuration key. Default is `MENDER_LOG_LEVEL_INF` which means information, warning and error messages are included. In production, it is highly possible you don't have a logging interface and as a consequence you can disable all logs. This permits to save about 10 to 18kB on the total size of the application (down to 16kB only with the default configuration including mender-client and mender-inventory add-on).
 
 
 ## Road-map
@@ -164,7 +164,7 @@ The following features are currently in the pipeline. Please note that I haven't
 
 * Integration of other nice to have Mender features: Device Troubleshoot sending and receiving files, ...
 * Support new boards and prove it is cross-platform and that it is able to work on small MCU too: STM32F7, ATSAMD51...
-* Support other RTOS (particularly Azure RTOS) and bare metal platforms.
+* Support other RTOS (particularly Azure RTOS is in progress actually) and bare metal platforms.
 * ...
 
 
