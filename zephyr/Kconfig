@@ -83,9 +83,9 @@ if MENDER_MCU_CLIENT
 
     endmenu
 
-    menu "Addons integration"
+    menu "Add-ons integration"
 
-        menu "Configure Addon configuration"
+        menu "Configure Add-on configuration"
 
             config MENDER_CLIENT_ADD_ON_CONFIGURE
                 bool "Mender client Configure"
@@ -113,7 +113,7 @@ if MENDER_MCU_CLIENT
 
         endmenu
 
-        menu "Inventory Addon configuration"
+        menu "Inventory Add-on configuration"
 
             config MENDER_CLIENT_ADD_ON_INVENTORY
                 bool "Mender client Inventory"
@@ -136,7 +136,7 @@ if MENDER_MCU_CLIENT
 
         endmenu
 
-        menu "Troubleshoot Addon configuration"
+        menu "Troubleshoot Add-on configuration"
 
             config MENDER_CLIENT_ADD_ON_TROUBLESHOOT
                 bool "Mender client Troubleshoot (EXPERIMENTAL)"
@@ -355,7 +355,7 @@ if MENDER_MCU_CLIENT
                 string "Mender Shell prompt"
                 default "~$ "
                 help
-                    Mender Shell prompt to be dislayed on the Mender server Troubleshoot addon interface.
+                    Mender Shell prompt to be dislayed on the Mender server Troubleshoot add-on interface.
 
             config MENDER_SHELL_RX_RING_BUFFER_SIZE
                 int "Mender Shell RX ring buffer size (bytes)"
