@@ -129,7 +129,7 @@ mender_utils_strbeginwith(const char *s1, const char *s2) {
         return false;
     }
 
-    /* Compare the begining of the string */
+    /* Compare the beginning of the string */
     return (0 == strncmp(s1, s2, strlen(s2)));
 }
 

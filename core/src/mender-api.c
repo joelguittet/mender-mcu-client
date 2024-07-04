@@ -870,7 +870,7 @@ mender_api_websocket_callback(mender_websocket_client_event_t event, void *data,
             mender_log_info("Troubleshoot client disconnected");
             break;
         case MENDER_WEBSOCKET_EVENT_ERROR:
-            /* Websocket conection fails */
+            /* Websocket connection fails */
             mender_log_error("An error occurred");
             ret = MENDER_FAIL;
             break;
