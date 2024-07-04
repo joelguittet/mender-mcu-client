@@ -42,14 +42,14 @@ mender_err_t mender_tls_init(void);
 
 /**
  * @brief Initialize mender TLS authentication keys
- * @param recommissioning perform recommisioning (if supported by the platform)
+ * @param recommissioning Perform recommissioning (if supported by the platform)
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_tls_init_authentication_keys(bool recommissioning);
 
 /**
  * @brief Get public key (PEM format suitable to be integrated in mender authentication request)
- * @param public_key Public key, NULL if an error occured
+ * @param public_key Public key, NULL if an error occurred
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_tls_get_public_key_pem(char **public_key);

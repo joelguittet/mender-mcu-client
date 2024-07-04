@@ -176,7 +176,7 @@ static mender_err_t mender_client_update_work_function(void);
  * @param data Artifact data
  * @param index Artifact data index
  * @param length Artifact data length
- * @return MENDER_OK if the function succeeds, error code if an error occured
+ * @return MENDER_OK if the function succeeds, error code if an error occurred
  */
 static mender_err_t mender_client_download_artifact_callback(
     char *type, cJSON *meta_data, char *filename, size_t size, void *data, size_t index, size_t length);
@@ -192,7 +192,7 @@ static mender_err_t mender_client_download_artifact_callback(
  * @param data Artifact data
  * @param index Artifact data index
  * @param length Artifact data length
- * @return MENDER_OK if the function succeeds, error code if an error occured
+ * @return MENDER_OK if the function succeeds, error code if an error occurred
  */
 static mender_err_t mender_client_download_artifact_flash_callback(
     char *id, char *artifact_name, char *type, cJSON *meta_data, char *filename, size_t size, void *data, size_t index, size_t length);

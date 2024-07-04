@@ -64,28 +64,28 @@ typedef struct {
 /**
  * @brief Parse header of TAR file
  * @param ctx Artifact context
- * @return MENDER_DONE if the data have been parsed, MENDER_OK if there is not enougth data to parse, error code if an error occured
+ * @return MENDER_DONE if the data have been parsed, MENDER_OK if there is not enough data to parse, error code if an error occurred
  */
 static mender_err_t mender_artifact_parse_tar_header(mender_artifact_ctx_t *ctx);
 
 /**
  * @brief Check version file of the artifact
  * @param ctx Artifact context
- * @return MENDER_DONE if the data have been parsed and version verified, MENDER_OK if there is not enougth data to parse, error code if an error occured
+ * @return MENDER_DONE if the data have been parsed and version verified, MENDER_OK if there is not enough data to parse, error code if an error occurred
  */
 static mender_err_t mender_artifact_check_version(mender_artifact_ctx_t *ctx);
 
 /**
  * @brief Read header-info file of the artifact
  * @param ctx Artifact context
- * @return MENDER_DONE if the data have been parsed and payloads retrieved, MENDER_OK if there is not enougth data to parse, error code if an error occured
+ * @return MENDER_DONE if the data have been parsed and payloads retrieved, MENDER_OK if there is not enough data to parse, error code if an error occurred
  */
 static mender_err_t mender_artifact_read_header_info(mender_artifact_ctx_t *ctx);
 
 /**
  * @brief Read meta-data file of the artifact
  * @param ctx Artifact context
- * @return MENDER_DONE if the data have been parsed and payloads retrieved, MENDER_OK if there is not enougth data to parse, error code if an error occured
+ * @return MENDER_DONE if the data have been parsed and payloads retrieved, MENDER_OK if there is not enough data to parse, error code if an error occurred
  */
 static mender_err_t mender_artifact_read_meta_data(mender_artifact_ctx_t *ctx);
 
@@ -93,14 +93,14 @@ static mender_err_t mender_artifact_read_meta_data(mender_artifact_ctx_t *ctx);
  * @brief Read data file of the artifact
  * @param ctx Artifact context
  * @param callback Callback function to be invoked to perform the treatment of the data from the artifact
- * @return MENDER_DONE if the data have been parsed and payloads retrieved, MENDER_OK if there is not enougth data to parse, error code if an error occured
+ * @return MENDER_DONE if the data have been parsed and payloads retrieved, MENDER_OK if there is not enough data to parse, error code if an error occurred
  */
 static mender_err_t mender_artifact_read_data(mender_artifact_ctx_t *ctx, mender_err_t (*callback)(char *, cJSON *, char *, size_t, void *, size_t, size_t));
 
 /**
  * @brief Drop content of the current file of the artifact
  * @param ctx Artifact context
- * @return MENDER_DONE if the data have been parsed and dropped, MENDER_OK if there is not enougth data to parse, error code if an error occured
+ * @return MENDER_DONE if the data have been parsed and dropped, MENDER_OK if there is not enough data to parse, error code if an error occurred
  */
 static mender_err_t mender_artifact_drop_file(mender_artifact_ctx_t *ctx);
 
@@ -113,7 +113,7 @@ static mender_err_t mender_artifact_drop_file(mender_artifact_ctx_t *ctx);
 static mender_err_t mender_artifact_shift_data(mender_artifact_ctx_t *ctx, size_t length);
 
 /**
- * @brief Compute length rounded up to increment (usualy the block size)
+ * @brief Compute length rounded up to increment (usually the block size)
  * @param length Length
  * @param incr Increment
  * @return Rounded length
@@ -255,7 +255,7 @@ mender_artifact_parse_tar_header(mender_artifact_ctx_t *ctx) {
     assert(NULL != ctx);
     char *tmp;
 
-    /* Check if enought data are received (at least one block) */
+    /* Check if enough data are received (at least one block) */
     if ((NULL == ctx->input.data) || (ctx->input.length < MENDER_ARTIFACT_STREAM_BLOCK_SIZE)) {
         return MENDER_OK;
     }
@@ -266,7 +266,7 @@ mender_artifact_parse_tar_header(mender_artifact_ctx_t *ctx) {
     /* Check if file name is provided, else the end of the current TAR file is reached */
     if ('\0' == tar_header->name[0]) {
 
-        /* Check if enought data are received (at least 2 blocks) */
+        /* Check if enough data are received (at least 2 blocks) */
         if (ctx->input.length < 2 * MENDER_ARTIFACT_STREAM_BLOCK_SIZE) {
             return MENDER_OK;
         }
@@ -533,9 +533,9 @@ mender_artifact_read_data(mender_artifact_ctx_t *ctx, mender_err_t (*callback)(c
     /* Check if a file name is provided (we don't check the extension because we don't know it) */
     if (strlen("data/xxxx.tar") == strlen(ctx->file.name)) {
 
-        /* Begining of the data file */
+        /* Beginning of the data file */
         if (MENDER_OK != (ret = callback(ctx->payloads.values[index].type, ctx->payloads.values[index].meta_data, NULL, 0, NULL, 0, 0))) {
-            mender_log_error("An error occured");
+            mender_log_error("An error occurred");
             return ret;
         }
 
@@ -551,7 +551,7 @@ mender_artifact_read_data(mender_artifact_ctx_t *ctx, mender_err_t (*callback)(c
     /* Parse data until the end of the file has been reached */
     do {
 
-        /* Check if enought data are received (at least one block) */
+        /* Check if enough data are received (at least one block) */
         if ((NULL == ctx->input.data) || (ctx->input.length < MENDER_ARTIFACT_STREAM_BLOCK_SIZE)) {
             return MENDER_OK;
         }
@@ -569,7 +569,7 @@ mender_artifact_read_data(mender_artifact_ctx_t *ctx, mender_err_t (*callback)(c
                                ctx->input.data,
                                ctx->file.index,
                                length))) {
-            mender_log_error("An error occured");
+            mender_log_error("An error occurred");
             return ret;
         }
 
@@ -602,7 +602,7 @@ mender_artifact_drop_file(mender_artifact_ctx_t *ctx) {
     /* Parse data until the end of the file has been reached */
     do {
 
-        /* Check if enought data are received (at least one block) */
+        /* Check if enough data are received (at least one block) */
         if ((NULL == ctx->input.data) || (ctx->input.length < MENDER_ARTIFACT_STREAM_BLOCK_SIZE)) {
             return MENDER_OK;
         }
