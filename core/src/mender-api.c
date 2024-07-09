@@ -38,7 +38,7 @@
  * @brief Paths of the mender-server APIs
  */
 #define MENDER_API_PATH_POST_AUTHENTICATION_REQUESTS "/api/devices/v1/authentication/auth_requests"
-#define MENDER_API_PATH_GET_NEXT_DEPLOYMENT          "/api/devices/v1/deployments/device/deployments/next"
+#define MENDER_API_PATH_GET_NEXT_DEPLOYMENT          "/api/devices/v2/deployments/device/deployments/next"
 #define MENDER_API_PATH_PUT_DEPLOYMENT_STATUS        "/api/devices/v1/deployments/device/deployments/%s/status"
 #define MENDER_API_PATH_GET_DEVICE_CONFIGURATION     "/api/devices/v1/deviceconfig/configuration"
 #define MENDER_API_PATH_PUT_DEVICE_CONFIGURATION     "/api/devices/v1/deviceconfig/configuration"
@@ -250,28 +250,41 @@ mender_api_check_for_deployment(char **id, char **artifact_name, char **uri) {
     assert(NULL != artifact_name);
     assert(NULL != uri);
     mender_err_t ret;
-    char *       path     = NULL;
-    char *       response = NULL;
-    int          status   = 0;
+    cJSON *      json_payload = NULL;
+    char *       payload      = NULL;
+    char *       response     = NULL;
+    int          status       = 0;
 
-    /* Compute path */
-    size_t str_length = strlen("?artifact_name=&device_type=") + strlen(MENDER_API_PATH_GET_NEXT_DEPLOYMENT) + strlen(mender_api_config.artifact_name)
-                        + strlen(mender_api_config.device_type) + 1;
-    if (NULL == (path = (char *)malloc(str_length))) {
+    /* Format payload */
+    if (NULL == (json_payload = cJSON_CreateObject())) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
     }
-    snprintf(path,
-             str_length,
-             "%s?artifact_name=%s&device_type=%s",
-             MENDER_API_PATH_GET_NEXT_DEPLOYMENT,
-             mender_api_config.artifact_name,
-             mender_api_config.device_type);
+    cJSON *json_device_provides = cJSON_AddObjectToObject(json_payload, "device_provides");
+    if (NULL == json_device_provides) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    cJSON_AddStringToObject(json_device_provides, "device_type", mender_api_config.device_type);
+    cJSON_AddStringToObject(json_device_provides, "artifact_name", mender_api_config.artifact_name);
+    if (NULL == (payload = cJSON_PrintUnformatted(json_payload))) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
 
     /* Perform HTTP request */
     if (MENDER_OK
-        != (ret = mender_http_perform(mender_api_jwt, path, MENDER_HTTP_GET, NULL, NULL, &mender_api_http_text_callback, (void *)&response, &status))) {
+        != (ret = mender_http_perform(mender_api_jwt,
+                                      MENDER_API_PATH_GET_NEXT_DEPLOYMENT,
+                                      MENDER_HTTP_POST,
+                                      payload,
+                                      NULL,
+                                      &mender_api_http_text_callback,
+                                      (void *)&response,
+                                      &status))) {
         mender_log_error("Unable to perform HTTP request");
         goto END;
     }
@@ -336,8 +349,11 @@ END:
     if (NULL != response) {
         free(response);
     }
-    if (NULL != path) {
-        free(path);
+    if (NULL != payload) {
+        free(payload);
+    }
+    if (NULL != json_payload) {
+        cJSON_Delete(json_payload);
     }
 
     return ret;
