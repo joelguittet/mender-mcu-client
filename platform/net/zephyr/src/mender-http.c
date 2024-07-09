@@ -51,7 +51,7 @@
  */
 typedef struct {
     mender_err_t (*callback)(mender_http_client_event_t, void *, size_t, void *); /**< Callback to be invoked when data are received */
-    void *       params;                                                          /**< Callback parameters */
+    void        *params;                                                          /**< Callback parameters */
     mender_err_t ret;                                                             /**< Last callback return value */
 } mender_http_request_context;
 
@@ -88,14 +88,14 @@ mender_http_init(mender_http_config_t *config) {
 }
 
 mender_err_t
-mender_http_perform(char *               jwt,
-                    char *               path,
+mender_http_perform(char                *jwt,
+                    char                *path,
                     mender_http_method_t method,
-                    char *               payload,
-                    char *               signature,
+                    char                *payload,
+                    char                *signature,
                     mender_err_t (*callback)(mender_http_client_event_t, void *, size_t, void *),
                     void *params,
-                    int * status) {
+                    int  *status) {
 
     assert(NULL != path);
     assert(NULL != callback);
@@ -103,11 +103,11 @@ mender_http_perform(char *               jwt,
     mender_err_t                ret;
     struct http_request         request;
     mender_http_request_context request_context;
-    char *                      header_fields[5] = { NULL, NULL, NULL, NULL, NULL };
+    char                       *header_fields[5] = { NULL, NULL, NULL, NULL, NULL };
     size_t                      header_index     = 0;
-    char *                      host             = NULL;
-    char *                      port             = NULL;
-    char *                      url              = NULL;
+    char                       *host             = NULL;
+    char                       *port             = NULL;
+    char                       *url              = NULL;
     int                         sock             = -1;
 
     /* Initialize request */

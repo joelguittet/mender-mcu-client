@@ -40,7 +40,7 @@ extern "C" {
 typedef struct {
     mender_err_t (*function)(void); /**< Work function */
     int32_t period;                 /**< Work period (seconds), negative or null value permits to disable periodic execution */
-    char *  name;                   /**< Work name */
+    char   *name;                   /**< Work name */
 } mender_scheduler_work_params_t;
 
 /**

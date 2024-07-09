@@ -175,7 +175,7 @@ mender_storage_set_deployment_data(char *deployment_data) {
 
     assert(NULL != deployment_data);
     size_t deployment_data_length = strlen(deployment_data);
-    FILE * f;
+    FILE  *f;
 
     /* Write deployment data */
     if (NULL == (f = fopen(MENDER_STORAGE_NVS_DEPLOYMENT_DATA, "wb"))) {
@@ -198,7 +198,7 @@ mender_storage_get_deployment_data(char **deployment_data) {
     assert(NULL != deployment_data);
     size_t deployment_data_length = 0;
     long   length;
-    FILE * f;
+    FILE  *f;
 
     /* Read deployment data */
     if (NULL == (f = fopen(MENDER_STORAGE_NVS_DEPLOYMENT_DATA, "rb"))) {
@@ -249,7 +249,7 @@ mender_storage_set_device_config(char *device_config) {
 
     assert(NULL != device_config);
     size_t device_config_length = strlen(device_config);
-    FILE * f;
+    FILE  *f;
 
     /* Write device configuration */
     if (NULL == (f = fopen(MENDER_STORAGE_NVS_DEVICE_CONFIG, "wb"))) {
@@ -272,7 +272,7 @@ mender_storage_get_device_config(char **device_config) {
     assert(NULL != device_config);
     size_t device_config_length = 0;
     long   length;
-    FILE * f;
+    FILE  *f;
 
     /* Read device configuration */
     if (NULL == (f = fopen(MENDER_STORAGE_NVS_DEVICE_CONFIG, "rb"))) {

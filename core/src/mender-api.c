@@ -130,13 +130,13 @@ mender_err_t
 mender_api_perform_authentication(void) {
 
     mender_err_t ret;
-    char *       public_key_pem   = NULL;
-    cJSON *      json_identity    = NULL;
-    char *       identity         = NULL;
-    cJSON *      json_payload     = NULL;
-    char *       payload          = NULL;
-    char *       response         = NULL;
-    char *       signature        = NULL;
+    char        *public_key_pem   = NULL;
+    cJSON       *json_identity    = NULL;
+    char        *identity         = NULL;
+    cJSON       *json_payload     = NULL;
+    char        *payload          = NULL;
+    char        *response         = NULL;
+    char        *signature        = NULL;
     size_t       signature_length = 0;
     int          status           = 0;
 
@@ -250,8 +250,8 @@ mender_api_check_for_deployment(char **id, char **artifact_name, char **uri) {
     assert(NULL != artifact_name);
     assert(NULL != uri);
     mender_err_t ret;
-    char *       path     = NULL;
-    char *       response = NULL;
+    char        *path     = NULL;
+    char        *response = NULL;
     int          status   = 0;
 
     /* Compute path */
@@ -348,11 +348,11 @@ mender_api_publish_deployment_status(char *id, mender_deployment_status_t deploy
 
     assert(NULL != id);
     mender_err_t ret;
-    char *       value        = NULL;
-    cJSON *      json_payload = NULL;
-    char *       payload      = NULL;
-    char *       path         = NULL;
-    char *       response     = NULL;
+    char        *value        = NULL;
+    cJSON       *json_payload = NULL;
+    char        *payload      = NULL;
+    char        *path         = NULL;
+    char        *response     = NULL;
     int          status       = 0;
 
     /* Deployment status to string */
@@ -455,7 +455,7 @@ mender_api_download_configuration_data(mender_keystore_t **configuration) {
 
     assert(NULL != configuration);
     mender_err_t ret;
-    char *       response = NULL;
+    char        *response = NULL;
     int          status   = 0;
 
     /* Perform HTTP request */
@@ -506,9 +506,9 @@ mender_err_t
 mender_api_publish_configuration_data(mender_keystore_t *configuration) {
 
     mender_err_t ret;
-    cJSON *      json_configuration = NULL;
-    char *       payload            = NULL;
-    char *       response           = NULL;
+    cJSON       *json_configuration = NULL;
+    char        *payload            = NULL;
+    char        *response           = NULL;
     int          status             = 0;
 
     /* Format payload */
@@ -621,8 +621,8 @@ mender_err_t
 mender_api_publish_inventory_data(mender_keystore_t *inventory) {
 
     mender_err_t ret;
-    char *       payload  = NULL;
-    char *       response = NULL;
+    char        *payload  = NULL;
+    char        *response = NULL;
     int          status   = 0;
 
     /* Format payload */
@@ -733,9 +733,9 @@ static mender_err_t
 mender_api_http_text_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params) {
 
     assert(NULL != params);
-    char **      response = (char **)params;
+    char       **response = (char **)params;
     mender_err_t ret      = MENDER_OK;
-    char *       tmp;
+    char        *tmp;
 
     /* Treatment depending of the event */
     switch (event) {

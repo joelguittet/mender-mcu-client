@@ -39,10 +39,10 @@ extern "C" {
  */
 typedef struct {
     mender_keystore_t *identity;      /**< Identity of the device */
-    char *             artifact_name; /**< Artifact name */
-    char *             device_type;   /**< Device type */
-    char *             host;          /**< URL of the mender server */
-    char *             tenant_token;  /**< Tenant token used to authenticate on the mender server (optional) */
+    char              *artifact_name; /**< Artifact name */
+    char              *device_type;   /**< Device type */
+    char              *host;          /**< URL of the mender server */
+    char              *tenant_token;  /**< Tenant token used to authenticate on the mender server (optional) */
 } mender_api_config_t;
 
 /**

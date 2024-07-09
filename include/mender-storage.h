@@ -59,9 +59,9 @@ mender_err_t mender_storage_set_authentication_keys(unsigned char *private_key, 
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_storage_get_authentication_keys(unsigned char **private_key,
-                                                    size_t *        private_key_length,
+                                                    size_t         *private_key_length,
                                                     unsigned char **public_key,
-                                                    size_t *        public_key_length);
+                                                    size_t         *public_key_length);
 
 /**
  * @brief Delete authentication keys

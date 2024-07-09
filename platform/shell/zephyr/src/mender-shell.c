@@ -106,7 +106,7 @@ K_THREAD_STACK_DEFINE(mender_shell_tx_work_queue_stack, CONFIG_MENDER_SHELL_TX_W
  */
 typedef struct {
     shell_transport_handler_t evt_handler;                                        /**< Handler function registered by shell init */
-    void *                    context;                                            /**< Context registered by shell init */
+    void                     *context;                                            /**< Context registered by shell init */
     struct ring_buf           rx_ringbuf;                                         /**< Rx ring buffer handler */
     uint8_t                   rx_buffer[CONFIG_MENDER_SHELL_RX_RING_BUFFER_SIZE]; /**< Rx ring buffer */
     struct ring_buf           tx_ringbuf;                                         /**< Tx ring buffer handler */
@@ -207,7 +207,7 @@ mender_shell_transport_api_write(const struct shell_transport *transport, const 
     assert(NULL != data);
     assert(NULL != cnt);
     mender_shell_context_t *ctx = (mender_shell_context_t *)transport->ctx;
-    uint8_t *               buffer;
+    uint8_t                *buffer;
 
     /* Cancel pending tx work */
     k_work_cancel_delayable(&ctx->tx_work_handle);

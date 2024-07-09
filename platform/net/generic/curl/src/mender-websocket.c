@@ -58,7 +58,7 @@
  * @brief Websocket handle
  */
 typedef struct {
-    CURL *             client;        /**< Websocket client handle */
+    CURL              *client;        /**< Websocket client handle */
     struct curl_slist *headers;       /**< Websocket client headers */
     pthread_t          thread_handle; /**< Websocket thread handle */
     bool               abort;         /**< Flag used to indicate connection should be terminated */
@@ -127,8 +127,8 @@ mender_websocket_connect(
     CURLcode     err_curl;
     int          err_pthread;
     mender_err_t ret    = MENDER_OK;
-    char *       url    = NULL;
-    char *       bearer = NULL;
+    char        *url    = NULL;
+    char        *bearer = NULL;
 
     /* Allocate a new handle */
     if (NULL == (*handle = malloc(sizeof(mender_websocket_handle_t)))) {

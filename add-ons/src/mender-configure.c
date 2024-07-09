@@ -61,7 +61,7 @@ static mender_configure_callbacks_t mender_configure_callbacks;
  * @brief Mender configure keystore
  */
 static mender_keystore_t *mender_configure_keystore = NULL;
-static void *             mender_configure_mutex    = NULL;
+static void              *mender_configure_mutex    = NULL;
 
 /**
  * @brief Mender configure artifact name
@@ -99,9 +99,9 @@ mender_err_t
 mender_configure_init(void *config, void *callbacks) {
 
     assert(NULL != config);
-    char *       device_config      = NULL;
-    cJSON *      json_device_config = NULL;
-    char *       artifact_name;
+    char        *device_config      = NULL;
+    cJSON       *json_device_config = NULL;
+    char        *artifact_name;
     mender_err_t ret;
 
     /* Save configuration */
@@ -243,9 +243,9 @@ END:
 mender_err_t
 mender_configure_set(mender_keystore_t *configuration) {
 
-    cJSON *      json_device_config = NULL;
-    cJSON *      json_config        = NULL;
-    char *       device_config      = NULL;
+    cJSON       *json_device_config = NULL;
+    cJSON       *json_config        = NULL;
+    char        *device_config      = NULL;
     mender_err_t ret;
 
     /* Take mutex used to protect access to the configuration key-store */
@@ -443,8 +443,8 @@ mender_configure_download_artifact_callback(
     (void)data;
     (void)index;
     (void)length;
-    cJSON *      json_device_config = NULL;
-    char *       device_config      = NULL;
+    cJSON       *json_device_config = NULL;
+    char        *device_config      = NULL;
     mender_err_t ret                = MENDER_OK;
 
     /* Check meta-data */
