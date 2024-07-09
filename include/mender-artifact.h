@@ -46,7 +46,7 @@ typedef enum {
  * @brief Artifact payloads
  */
 typedef struct {
-    char * type;      /**< Type of the payload */
+    char  *type;      /**< Type of the payload */
     cJSON *meta_data; /**< Meta-data from the header tarball, NULL if no meta-data */
 } mender_artifact_payload_t;
 
@@ -56,7 +56,7 @@ typedef struct {
 typedef struct {
     mender_artifact_stream_state_t stream_state; /**< Stream state of the artifact processing */
     struct {
-        void * data;   /**< Data received, concatenated chunk by chunk */
+        void  *data;   /**< Data received, concatenated chunk by chunk */
         size_t length; /**< Length of the data received */
     } input;           /**< Input data of the artifact */
     struct {
@@ -64,7 +64,7 @@ typedef struct {
         mender_artifact_payload_t *values; /**< Values of payloads in the artifact */
     } payloads;                            /**< Payloads of the artifact */
     struct {
-        char * name;  /**< Name of the file currently parsed */
+        char  *name;  /**< Name of the file currently parsed */
         size_t size;  /**< Size of the file currently parsed (bytes) */
         size_t index; /**< Index of the data in the file currently parsed (bytes), incremented block by block */
     } file;           /**< Information about the file currently parsed */
@@ -85,7 +85,7 @@ mender_artifact_ctx_t *mender_artifact_create_ctx(void);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_artifact_process_data(mender_artifact_ctx_t *ctx,
-                                          void *                 input_data,
+                                          void                  *input_data,
                                           size_t                 input_length,
                                           mender_err_t (*callback)(char *, cJSON *, char *, size_t, void *, size_t, size_t));
 

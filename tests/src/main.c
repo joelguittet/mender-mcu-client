@@ -235,8 +235,8 @@ str_replace(char *input, char *search, char *replace) {
 
     regex_t    regex;
     regmatch_t match;
-    char *     str                   = input;
-    char *     output                = NULL;
+    char      *str                   = input;
+    char      *output                = NULL;
     size_t     index                 = 0;
     int        previous_match_finish = 0;
 
@@ -328,7 +328,7 @@ static mender_err_t
 shell_write_cb(uint8_t *data, size_t length) {
 
     mender_err_t ret = MENDER_OK;
-    char *       buffer, *tmp;
+    char        *buffer, *tmp;
 
     /* Ensure new line is "\r\n" to have a proper display of the data in the shell */
     if (NULL == (buffer = strndup((char *)data, length))) {
@@ -479,13 +479,13 @@ main(int argc, char **argv) {
     /* Initialize mender-client */
     mender_keystore_t         identity[]              = { { .name = "mac", .value = mac_address }, { .name = NULL, .value = NULL } };
     mender_client_config_t    mender_client_config    = { .identity                     = identity,
-                                                    .artifact_name                = artifact_name,
-                                                    .device_type                  = device_type,
-                                                    .host                         = NULL,
-                                                    .tenant_token                 = tenant_token,
-                                                    .authentication_poll_interval = 0,
-                                                    .update_poll_interval         = 0,
-                                                    .recommissioning              = false };
+                                                          .artifact_name                = artifact_name,
+                                                          .device_type                  = device_type,
+                                                          .host                         = NULL,
+                                                          .tenant_token                 = tenant_token,
+                                                          .authentication_poll_interval = 0,
+                                                          .update_poll_interval         = 0,
+                                                          .recommissioning              = false };
     mender_client_callbacks_t mender_client_callbacks = { .network_connect        = network_connect_cb,
                                                           .network_release        = network_release_cb,
                                                           .authentication_success = authentication_success_cb,

@@ -89,7 +89,7 @@ static mender_client_state_t mender_client_state = MENDER_CLIENT_STATE_INITIALIZ
  * @brief Counter and mutex for the management of network connect/release callbacks
  */
 static uint8_t mender_client_network_count = 0;
-static void *  mender_client_network_mutex = NULL;
+static void   *mender_client_network_mutex = NULL;
 
 /**
  * @brief Deployment data (ID, artifact name and payload types), used to report deployment status after rebooting
@@ -112,14 +112,14 @@ typedef struct {
  */
 static mender_client_artifact_type_t **mender_client_artifact_types_list  = NULL;
 static size_t                          mender_client_artifact_types_count = 0;
-static void *                          mender_client_artifact_types_mutex = NULL;
+static void                           *mender_client_artifact_types_mutex = NULL;
 
 /**
  * @brief Mender client add-ons list and mutex
  */
 static mender_addon_instance_t **mender_client_addons_list  = NULL;
 static size_t                    mender_client_addons_count = 0;
-static void *                    mender_client_addons_mutex = NULL;
+static void                     *mender_client_addons_mutex = NULL;
 
 /**
  * @brief Mender client work handle
@@ -344,7 +344,7 @@ mender_client_register_artifact_type(char *type,
                                      char *artifact_name) {
 
     assert(NULL != type);
-    mender_client_artifact_type_t * artifact_type;
+    mender_client_artifact_type_t  *artifact_type;
     mender_client_artifact_type_t **tmp;
     mender_err_t                    ret;
 
@@ -695,7 +695,7 @@ END:
 static mender_err_t
 mender_client_initialization_work_function(void) {
 
-    char *       deployment_data = NULL;
+    char        *deployment_data = NULL;
     mender_err_t ret;
 
     /* Retrieve or generate authentication keys */
@@ -1013,7 +1013,7 @@ static mender_err_t
 mender_client_download_artifact_callback(char *type, cJSON *meta_data, char *filename, size_t size, void *data, size_t index, size_t length) {
 
     assert(NULL != type);
-    cJSON *      json_types;
+    cJSON       *json_types;
     mender_err_t ret;
 
     /* Take mutex used to protect access to the artifact types management list */

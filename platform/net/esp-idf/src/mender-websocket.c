@@ -112,8 +112,8 @@ mender_websocket_connect(
     assert(NULL != handle);
     esp_err_t    err;
     mender_err_t ret    = MENDER_OK;
-    char *       url    = NULL;
-    char *       bearer = NULL;
+    char        *url    = NULL;
+    char        *bearer = NULL;
 
     /* Allocate a new handle */
     if (NULL == (*handle = malloc(sizeof(mender_websocket_handle_t)))) {
@@ -268,7 +268,7 @@ mender_websocket_event_handler(void *handler_args, esp_event_base_t base, int32_
     assert(NULL != handler_args);
     (void)base;
     assert(NULL != event_data);
-    mender_websocket_handle_t * handle = (mender_websocket_handle_t *)handler_args;
+    mender_websocket_handle_t  *handle = (mender_websocket_handle_t *)handler_args;
     esp_websocket_event_data_t *data   = (esp_websocket_event_data_t *)event_data;
 
     /* Treatment depending of the event */

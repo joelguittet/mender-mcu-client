@@ -55,7 +55,7 @@ static mender_inventory_config_t mender_inventory_config;
  * @brief Mender inventory keystore
  */
 static mender_keystore_t *mender_inventory_keystore = NULL;
-static void *             mender_inventory_mutex    = NULL;
+static void              *mender_inventory_mutex    = NULL;
 
 /**
  * @brief Mender inventory work handle

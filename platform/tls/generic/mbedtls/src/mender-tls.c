@@ -67,9 +67,9 @@ static size_t         mender_tls_public_key_length  = 0;
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 static mender_err_t mender_tls_generate_authentication_keys(unsigned char **private_key,
-                                                            size_t *        private_key_length,
+                                                            size_t         *private_key_length,
                                                             unsigned char **public_key,
-                                                            size_t *        public_key_length);
+                                                            size_t         *public_key_length);
 
 /**
  * @brief Write a buffer of PEM information from a DER encoded buffer
@@ -177,12 +177,12 @@ mender_tls_sign_payload(char *payload, char **signature, size_t *signature_lengt
     assert(NULL != signature);
     assert(NULL != signature_length);
     int                       ret;
-    mbedtls_pk_context *      pk_context = NULL;
+    mbedtls_pk_context       *pk_context = NULL;
     mbedtls_ctr_drbg_context *ctr_drbg   = NULL;
-    mbedtls_entropy_context * entropy    = NULL;
-    unsigned char *           sig        = NULL;
+    mbedtls_entropy_context  *entropy    = NULL;
+    unsigned char            *sig        = NULL;
     size_t                    sig_length;
-    char *                    tmp;
+    char                     *tmp;
 #ifdef MBEDTLS_ERROR_C
     char err[128];
 #endif /* MBEDTLS_ERROR_C */
@@ -344,10 +344,10 @@ mender_tls_generate_authentication_keys(unsigned char **private_key, size_t *pri
     assert(NULL != public_key);
     assert(NULL != public_key_length);
     int                       ret;
-    mbedtls_pk_context *      pk_context = NULL;
+    mbedtls_pk_context       *pk_context = NULL;
     mbedtls_ctr_drbg_context *ctr_drbg   = NULL;
-    mbedtls_entropy_context * entropy    = NULL;
-    unsigned char *           tmp;
+    mbedtls_entropy_context  *entropy    = NULL;
+    unsigned char            *tmp;
 
 #ifdef MBEDTLS_ERROR_C
     char err[128];

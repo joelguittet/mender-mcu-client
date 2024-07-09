@@ -96,10 +96,10 @@ typedef enum {
  * Proto message header properties
  */
 typedef struct {
-    uint16_t *                               terminal_width;  /**< Terminal width */
-    uint16_t *                               terminal_height; /**< Terminal heigth */
-    char *                                   user_id;         /**< User ID */
-    uint32_t *                               timeout;         /**< Timeout */
+    uint16_t                                *terminal_width;  /**< Terminal width */
+    uint16_t                                *terminal_height; /**< Terminal heigth */
+    char                                    *user_id;         /**< User ID */
+    uint32_t                                *timeout;         /**< Timeout */
     mender_troubleshoot_properties_status_t *status;          /**< Status */
 } mender_troubleshoot_protohdr_properties_t;
 
@@ -108,8 +108,8 @@ typedef struct {
  */
 typedef struct {
     mender_troubleshoot_protohdr_type_t        proto;      /**< Proto type */
-    char *                                     typ;        /**< Message type */
-    char *                                     sid;        /**< Session ID */
+    char                                      *typ;        /**< Message type */
+    char                                      *sid;        /**< Session ID */
     mender_troubleshoot_protohdr_properties_t *properties; /**< Properties */
 } mender_troubleshoot_protohdr_t;
 
@@ -118,7 +118,7 @@ typedef struct {
  */
 typedef struct {
     mender_troubleshoot_protohdr_t *protohdr; /**< Header */
-    char *                          body;     /**< Body */
+    char                           *body;     /**< Body */
 } mender_troubleshoot_protomsg_t;
 
 /**
@@ -184,10 +184,10 @@ static mender_err_t mender_troubleshoot_mender_client_message_handler(mender_tro
  * @param response Response to be sent back to the server, NULL if no response to send
  * @return MENDER_OK if the function succeeds, error code if an error occured
  */
-static mender_err_t mender_troubleshoot_format_acknowledgment(mender_troubleshoot_protomsg_t *        protomsg,
-                                                              char *                                  sid,
+static mender_err_t mender_troubleshoot_format_acknowledgment(mender_troubleshoot_protomsg_t         *protomsg,
+                                                              char                                   *sid,
                                                               mender_troubleshoot_properties_status_t status,
-                                                              mender_troubleshoot_protomsg_t **       response);
+                                                              mender_troubleshoot_protomsg_t        **response);
 
 /**
  * @brief Function called to send shell ping protomsg
@@ -403,7 +403,7 @@ mender_troubleshoot_shell_print(uint8_t *data, size_t length) {
     assert(NULL != data);
     mender_troubleshoot_protomsg_t *protomsg = NULL;
     mender_err_t                    ret      = MENDER_OK;
-    void *                          payload  = NULL;
+    void                           *payload  = NULL;
 
     /* Check if a session is already opened */
     if (NULL == mender_troubleshoot_shell_sid) {
@@ -573,7 +573,7 @@ mender_troubleshoot_data_received_callback(void *data, size_t length) {
     mender_err_t                    ret = MENDER_OK;
     mender_troubleshoot_protomsg_t *protomsg;
     mender_troubleshoot_protomsg_t *response = NULL;
-    void *                          payload  = NULL;
+    void                           *payload  = NULL;
 
     /* Unpack and decode message */
     if (NULL == (protomsg = mender_troubleshoot_unpack_protomsg(data, length))) {
@@ -854,10 +854,10 @@ FAIL:
 }
 
 static mender_err_t
-mender_troubleshoot_format_acknowledgment(mender_troubleshoot_protomsg_t *        protomsg,
-                                          char *                                  sid,
+mender_troubleshoot_format_acknowledgment(mender_troubleshoot_protomsg_t         *protomsg,
+                                          char                                   *sid,
                                           mender_troubleshoot_properties_status_t status,
-                                          mender_troubleshoot_protomsg_t **       response) {
+                                          mender_troubleshoot_protomsg_t        **response) {
 
     assert(NULL != protomsg);
     assert(NULL != protomsg->protohdr);
@@ -919,7 +919,7 @@ mender_troubleshoot_send_shell_ping_protomsg(void) {
 
     mender_troubleshoot_protomsg_t *protomsg = NULL;
     mender_err_t                    ret      = MENDER_OK;
-    void *                          payload  = NULL;
+    void                           *payload  = NULL;
     size_t                          length   = 0;
 
     /* Send shell ping message */
@@ -993,7 +993,7 @@ mender_troubleshoot_send_shell_stop_protomsg(void) {
 
     mender_troubleshoot_protomsg_t *protomsg = NULL;
     mender_err_t                    ret      = MENDER_OK;
-    void *                          payload  = NULL;
+    void                           *payload  = NULL;
     size_t                          length   = 0;
 
     /* Send shell stop message */

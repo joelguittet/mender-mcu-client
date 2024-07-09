@@ -131,11 +131,11 @@ mender_websocket_connect(
     assert(NULL != handle);
     mender_err_t             ret;
     struct websocket_request request;
-    char *                   header_fields[3] = { NULL, NULL, NULL };
+    char                    *header_fields[3] = { NULL, NULL, NULL };
     size_t                   header_index     = 0;
-    char *                   host             = NULL;
-    char *                   port             = NULL;
-    char *                   url              = NULL;
+    char                    *host             = NULL;
+    char                    *port             = NULL;
+    char                    *url              = NULL;
 
     /* Initialize request */
     memset(&request, 0, sizeof(struct websocket_request));

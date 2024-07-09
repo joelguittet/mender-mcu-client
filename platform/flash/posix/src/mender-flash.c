@@ -111,7 +111,7 @@ mender_flash_close(void *handle) {
 mender_err_t
 mender_flash_set_pending_image(void *handle) {
 
-    FILE *       file;
+    FILE        *file;
     mender_err_t ret = MENDER_OK;
 
     /* Check flash handle */

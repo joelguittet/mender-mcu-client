@@ -185,7 +185,7 @@ mender_tls_sign_payload(char *payload, char **signature, size_t *signature_lengt
     uint8_t *s = &sign[32];
     uint8_t  asn1[72];
     size_t   index = 0;
-    char *   tmp;
+    char    *tmp;
 
     /* Compute digest (sha256) of the payload */
     if (ATCA_SUCCESS != atcab_hw_sha2_256(payload, strlen(payload), digest)) {

@@ -136,14 +136,14 @@ mender_artifact_create_ctx(void) {
 
 mender_err_t
 mender_artifact_process_data(mender_artifact_ctx_t *ctx,
-                             void *                 input_data,
+                             void                  *input_data,
                              size_t                 input_length,
                              mender_err_t (*callback)(char *, cJSON *, char *, size_t, void *, size_t, size_t)) {
 
     assert(NULL != ctx);
     assert(NULL != callback);
     mender_err_t ret = MENDER_OK;
-    void *       tmp;
+    void        *tmp;
 
     /* Copy data to the end of the internal buffer */
     if ((NULL != input_data) && (0 != input_length)) {
@@ -342,7 +342,7 @@ static mender_err_t
 mender_artifact_check_version(mender_artifact_ctx_t *ctx) {
 
     assert(NULL != ctx);
-    cJSON *      object = NULL;
+    cJSON       *object = NULL;
     mender_err_t ret    = MENDER_DONE;
 
     /* Check if all data have been received */
@@ -402,7 +402,7 @@ static mender_err_t
 mender_artifact_read_header_info(mender_artifact_ctx_t *ctx) {
 
     assert(NULL != ctx);
-    cJSON *      object = NULL;
+    cJSON       *object = NULL;
     mender_err_t ret    = MENDER_DONE;
 
     /* Check if all data have been received */

@@ -37,14 +37,14 @@ mender_http_init(mender_http_config_t *config) {
 }
 
 __attribute__((weak)) mender_err_t
-mender_http_perform(char *               jwt,
-                    char *               path,
+mender_http_perform(char                *jwt,
+                    char                *path,
                     mender_http_method_t method,
-                    char *               payload,
-                    char *               signature,
+                    char                *payload,
+                    char                *signature,
                     mender_err_t (*callback)(mender_http_client_event_t, void *, size_t, void *),
                     void *params,
-                    int * status) {
+                    int  *status) {
 
     (void)jwt;
     (void)path;
