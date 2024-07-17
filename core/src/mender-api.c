@@ -647,6 +647,15 @@ mender_api_publish_inventory_data(mender_keystore_t *inventory) {
         ret = MENDER_FAIL;
         goto END;
     }
+    cJSON_AddStringToObject(item, "name", "rootfs-image.version");
+    cJSON_AddStringToObject(item, "value", mender_api_config.artifact_name);
+    cJSON_AddItemToArray(object, item);
+    item = cJSON_CreateObject();
+    if (NULL == item) {
+        mender_log_error("Unable to allocate memory");
+        ret = MENDER_FAIL;
+        goto END;
+    }
     cJSON_AddStringToObject(item, "name", "device_type");
     cJSON_AddStringToObject(item, "value", mender_api_config.device_type);
     cJSON_AddItemToArray(object, item);
