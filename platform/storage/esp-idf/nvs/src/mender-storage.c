@@ -34,7 +34,7 @@
  */
 #define MENDER_STORAGE_NVS_PRIVATE_KEY     "key.der"
 #define MENDER_STORAGE_NVS_PUBLIC_KEY      "pubkey.der"
-#define MENDER_STORAGE_NVS_DEPLOYMENT_DATA "deployment_data"
+#define MENDER_STORAGE_NVS_DEPLOYMENT_DATA "deployment-data.json"
 #define MENDER_STORAGE_NVS_DEVICE_CONFIG   "config.json"
 
 /**
