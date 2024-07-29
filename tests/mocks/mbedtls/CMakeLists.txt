@@ -48,7 +48,7 @@ endif()
 
 # Add sources
 file(GLOB_RECURSE SOURCES_TEMP "${GIT_FOLDER_NAME}/library/*.c")
-target_sources(${APP_EXECUTABLE_NAME} PRIVATE ${SOURCES_TEMP})
+target_sources(${EXECUTABLE_NAME} PRIVATE ${SOURCES_TEMP})
 
 # Add include directories
 include_directories("${GIT_FOLDER_NAME}/include")

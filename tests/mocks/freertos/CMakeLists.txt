@@ -47,7 +47,7 @@ if(NOT freertos_POPULATED)
 endif()
 
 # Add sources
-target_sources(${APP_EXECUTABLE_NAME} PRIVATE
+target_sources(${EXECUTABLE_NAME} PRIVATE
     "${GIT_FOLDER_NAME}/croutine.c"
     "${GIT_FOLDER_NAME}/event_groups.c"
     "${GIT_FOLDER_NAME}/list.c"

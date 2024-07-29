@@ -47,7 +47,7 @@ if(NOT cjson_POPULATED)
 endif()
 
 # Add sources
-target_sources(${APP_EXECUTABLE_NAME} PRIVATE "${GIT_FOLDER_NAME}/cJSON.c")
+target_sources(${EXECUTABLE_NAME} PRIVATE "${GIT_FOLDER_NAME}/cJSON.c")
 
 # Add include directories
 include_directories(${GIT_FOLDER_NAME})
