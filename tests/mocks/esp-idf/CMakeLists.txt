@@ -25,7 +25,7 @@
 
 # Add sources
 file(GLOB_RECURSE SOURCES_TEMP "${CMAKE_CURRENT_LIST_DIR}/src/*.c")
-target_sources(${APP_EXECUTABLE_NAME} PRIVATE ${SOURCES_TEMP})
+target_sources(${EXECUTABLE_NAME} PRIVATE ${SOURCES_TEMP})
 
 # Add include directories
 include_directories("${CMAKE_CURRENT_LIST_DIR}/include")
