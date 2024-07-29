@@ -211,9 +211,9 @@ endif()
 target_sources(mender-mcu-client PRIVATE ${SOURCES_TEMP})
 
 # Add include directories
-target_include_directories(mender-mcu-client PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
+target_include_directories(mender-mcu-client PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
 if (CONFIG_MENDER_PLATFORM_NET_TYPE STREQUAL "zephyr")
-    target_include_directories(mender-mcu-client PRIVATE ${CMAKE_CURRENT_LIST_DIR}/platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/include)
+    target_include_directories(mender-mcu-client PRIVATE "${CMAKE_CURRENT_LIST_DIR}/platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/include")
 endif()
 
 # Define version
