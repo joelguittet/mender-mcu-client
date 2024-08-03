@@ -78,6 +78,11 @@ typedef enum {
 static mender_client_state_t mender_client_state = MENDER_CLIENT_STATE_INITIALIZATION;
 
 /**
+ * @brief Mender client authentication token
+ */
+static char *mender_client_jwt = NULL;
+
+/**
  * @brief Counter and mutex for the management of network connect/release callbacks
  */
 static uint8_t mender_client_network_count = 0;
@@ -433,6 +438,13 @@ END:
     return ret;
 }
 
+char *
+mender_client_get_jwt(void) {
+
+    /* Return authentification token provided by the mender-server */
+    return mender_client_jwt;
+}
+
 mender_err_t
 mender_client_activate(void) {
 
@@ -632,6 +644,10 @@ mender_client_exit(void) {
     mender_scheduler_mutex_give(mender_client_addons_mutex);
     mender_scheduler_mutex_delete(mender_client_addons_mutex);
     mender_client_addons_mutex = NULL;
+    if (NULL != mender_client_jwt) {
+        free(mender_client_jwt);
+        mender_client_jwt = NULL;
+    }
 
     return ret;
 }
@@ -726,7 +742,7 @@ mender_client_authentication_work_function(void) {
     mender_err_t ret;
 
     /* Perform authentication with the mender server */
-    if (MENDER_OK != (ret = mender_api_perform_authentication())) {
+    if (MENDER_OK != (ret = mender_api_perform_authentication(&mender_client_jwt))) {
 
         /* Invoke authentication error callback */
         if (NULL != mender_client_callbacks.authentication_failure) {
@@ -874,7 +890,7 @@ mender_client_update_work_function(void) {
     char *uri             = NULL;
     char *deployment_data = NULL;
     mender_log_info("Checking for deployment...");
-    if (MENDER_OK != (ret = mender_api_check_for_deployment(&id, &artifact_name, &uri))) {
+    if (MENDER_OK != (ret = mender_api_check_for_deployment(mender_client_jwt, &id, &artifact_name, &uri))) {
         mender_log_error("Unable to check for deployment");
         goto END;
     }
@@ -1149,7 +1165,7 @@ mender_client_publish_deployment_status(char *id, mender_deployment_status_t dep
     mender_err_t ret;
 
     /* Publish status to the mender server */
-    ret = mender_api_publish_deployment_status(id, deployment_status);
+    ret = mender_api_publish_deployment_status(mender_client_jwt, id, deployment_status);
 
     /* Invoke deployment status callback if defined */
     if (NULL != mender_client_callbacks.deployment_status) {

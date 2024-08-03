@@ -205,7 +205,7 @@ mender_inventory_work_function(void) {
     }
 
     /* Publish inventory */
-    if (MENDER_OK != (ret = mender_api_publish_inventory_data(mender_inventory_keystore))) {
+    if (MENDER_OK != (ret = mender_api_publish_inventory_data(mender_client_get_jwt(), mender_inventory_keystore))) {
         mender_log_error("Unable to publish inventory data");
     }
 

@@ -394,7 +394,7 @@ mender_configure_work_function(void) {
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
 
     /* Publish configuration */
-    if (MENDER_OK != (ret = mender_api_publish_configuration_data(mender_configure_keystore))) {
+    if (MENDER_OK != (ret = mender_api_publish_configuration_data(mender_client_get_jwt(), mender_configure_keystore))) {
         mender_log_error("Unable to publish configuration data");
     }
 

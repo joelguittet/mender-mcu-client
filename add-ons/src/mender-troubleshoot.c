@@ -513,7 +513,8 @@ mender_troubleshoot_healthcheck_work_function(void) {
         }
 
         /* Connect the device to the server */
-        if (MENDER_OK != (ret = mender_api_troubleshoot_connect(&mender_troubleshoot_data_received_callback, &mender_troubleshoot_handle))) {
+        if (MENDER_OK
+            != (ret = mender_api_troubleshoot_connect(mender_client_get_jwt(), &mender_troubleshoot_data_received_callback, &mender_troubleshoot_handle))) {
             mender_log_error("Unable to connect the device to the server");
             goto END;
         }

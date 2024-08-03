@@ -46,26 +46,29 @@ mender_err_t mender_api_init(mender_api_config_t *config);
 
 /**
  * @brief Perform authentication of the device, retrieve token from mender-server used for the next requests
+ * @param jwt Authentification token provided by the mender-server
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_perform_authentication(void);
+mender_err_t mender_api_perform_authentication(char **jwt);
 
 /**
  * @brief Check for deployments for the device from the mender-server
+ * @param jwt Authentification token provided by the mender-server
  * @param id ID of the deployment, if one is pending
  * @param artifact_name Artifact name of the deployment, if one is pending
  * @param uri URI of the deployment, if one is pending
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_check_for_deployment(char **id, char **artifact_name, char **uri);
+mender_err_t mender_api_check_for_deployment(char *jwt, char **id, char **artifact_name, char **uri);
 
 /**
  * @brief Publish deployment status of the device to the mender-server
+ * @param jwt Authentification token provided by the mender-server
  * @param id ID of the deployment received from mender_api_check_for_deployment function
  * @param deployment_status Deployment status
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_publish_deployment_status(char *id, mender_deployment_status_t deployment_status);
+mender_err_t mender_api_publish_deployment_status(char *jwt, char *id, mender_deployment_status_t deployment_status);
 
 /**
  * @brief Download artifact from the mender-server
@@ -80,19 +83,21 @@ mender_err_t mender_api_download_artifact(char *uri, mender_err_t (*callback)(ch
 
 /**
  * @brief Download configure data of the device from the mender-server
+ * @param jwt Authentification token provided by the mender-server
  * @param configuration Mender configuration key/value pairs table, ends with a NULL/NULL element, NULL if not defined
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_download_configuration_data(mender_keystore_t **configuration);
+mender_err_t mender_api_download_configuration_data(char *jwt, mender_keystore_t **configuration);
 
 #endif /* CONFIG_MENDER_CLIENT_CONFIGURE_STORAGE */
 
 /**
  * @brief Publish configure data of the device to the mender-server
+ * @param jwt Authentification token provided by the mender-server
  * @param configuration Mender configuration key/value pairs table, must end with a NULL/NULL element, NULL if not defined
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_publish_configuration_data(mender_keystore_t *configuration);
+mender_err_t mender_api_publish_configuration_data(char *jwt, mender_keystore_t *configuration);
 
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 
@@ -100,11 +105,12 @@ mender_err_t mender_api_publish_configuration_data(mender_keystore_t *configurat
 
 /**
  * @brief Connect the device and make it available to the server
+ * @param jwt Authentification token provided by the mender-server
  * @param callback Callback function to be invoked to perform the treatment of the data from the websocket
  * @param handle Connection handle
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_troubleshoot_connect(mender_err_t (*callback)(void *, size_t), void **handle);
+mender_err_t mender_api_troubleshoot_connect(char *jwt, mender_err_t (*callback)(void *, size_t), void **handle);
 
 /**
  * @brief Send binary data to the server
@@ -128,10 +134,11 @@ mender_err_t mender_api_troubleshoot_disconnect(void *handle);
 
 /**
  * @brief Publish inventory data of the device to the mender-server
+ * @param jwt Authentification token provided by the mender-server
  * @param inventory Mender inventory key/value pairs table, must end with a NULL/NULL element, NULL if not defined
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_api_publish_inventory_data(mender_keystore_t *inventory);
+mender_err_t mender_api_publish_inventory_data(char *jwt, mender_keystore_t *inventory);
 
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 

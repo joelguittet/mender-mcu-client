@@ -90,6 +90,12 @@ mender_err_t mender_client_register_artifact_type(char *type,
 mender_err_t mender_client_register_addon(mender_addon_instance_t *addon, void *config, void *callbacks);
 
 /**
+ * @brief Return authentification token provided by the mender-server
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+char *mender_client_get_jwt(void);
+
+/**
  * @brief Activate mender client
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
