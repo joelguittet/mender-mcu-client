@@ -59,7 +59,7 @@ jobs:
       - name: Install libcurl
         run: |
           wget -q -O - https://github.com/curl/curl/archive/refs/tags/curl-8_8_0.tar.gz | tar xz
-          cd curl-curl-8_8_0 && autoreconf -fi && ./configure --with-openssl --enable-websockets && make -j$(nproc) && sudo make install
+          cd curl-curl-8_8_0 && autoreconf -fi && ./configure --with-openssl --enable-websockets --enable-versioned-symbols && make -j$(nproc) && sudo make install
       - name: Install msgpack-c
         run: |
           wget -q -O - https://github.com/msgpack/msgpack-c/archive/refs/tags/c-6.0.0.tar.gz | tar xz
