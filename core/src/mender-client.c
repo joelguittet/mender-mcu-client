@@ -700,15 +700,15 @@ mender_client_initialization_work_function(void) {
     if (MENDER_OK != (ret = mender_storage_get_deployment_data(&deployment_data))) {
         if (MENDER_NOT_FOUND != ret) {
             mender_log_error("Unable to get deployment data");
-            goto END;
+            goto REBOOT;
         }
     }
     if (NULL != deployment_data) {
         if (NULL == (mender_client_deployment_data = cJSON_Parse(deployment_data))) {
-            mender_log_error("Unable to allocate memory");
+            mender_log_error("Unable to parse deployment data");
             free(deployment_data);
             ret = MENDER_FAIL;
-            goto END;
+            goto REBOOT;
         }
         free(deployment_data);
     }
@@ -716,6 +716,18 @@ mender_client_initialization_work_function(void) {
     return MENDER_DONE;
 
 END:
+
+    return ret;
+
+REBOOT:
+
+    /* Delete pending deployment */
+    mender_storage_delete_deployment_data();
+
+    /* Invoke restart callback, application is responsible to shutdown properly and restart the system */
+    if (NULL != mender_client_callbacks.restart) {
+        mender_client_callbacks.restart();
+    }
 
     return ret;
 }
