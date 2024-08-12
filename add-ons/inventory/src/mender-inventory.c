@@ -118,6 +118,32 @@ mender_inventory_deactivate(void) {
 }
 
 mender_err_t
+mender_inventory_get(mender_keystore_t **inventory) {
+
+    assert(NULL != inventory);
+    mender_err_t ret;
+
+    /* Take mutex used to protect access to the inventory key-store */
+    if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_inventory_mutex, -1))) {
+        mender_log_error("Unable to take mutex");
+        return ret;
+    }
+
+    /* Copy the inventory */
+    if (MENDER_OK != (ret = mender_utils_keystore_copy(inventory, mender_inventory_keystore))) {
+        mender_log_error("Unable to copy inventory");
+        goto END;
+    }
+
+END:
+
+    /* Release mutex used to protect access to the inventory key-store */
+    mender_scheduler_mutex_give(mender_inventory_mutex);
+
+    return ret;
+}
+
+mender_err_t
 mender_inventory_set(mender_keystore_t *inventory) {
 
     mender_err_t ret;
@@ -137,6 +163,39 @@ mender_inventory_set(mender_keystore_t *inventory) {
     /* Copy the new inventory */
     if (MENDER_OK != (ret = mender_utils_keystore_copy(&mender_inventory_keystore, inventory))) {
         mender_log_error("Unable to copy inventory");
+        goto END;
+    }
+
+END:
+
+    /* Release mutex used to protect access to the inventory key-store */
+    mender_scheduler_mutex_give(mender_inventory_mutex);
+
+    return ret;
+}
+
+mender_err_t
+mender_inventory_set_item(char *name, char *value) {
+
+    mender_err_t ret;
+    int index;
+
+    /* Take mutex used to protect access to the inventory key-store */
+    if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_inventory_mutex, -1))) {
+        mender_log_error("Unable to take mutex");
+        return ret;
+    }
+
+    /* Get item index in inventory key-store */
+    if (0 > (index = mender_utils_keystore_get_item_index(mender_inventory_keystore, name))) {
+        mender_log_error("Unable to find item index in key-store");
+        ret = MENDER_NOT_FOUND;
+        goto END;
+    }
+
+    /* Set item value in inventory key-store */
+    if (MENDER_OK != (ret = mender_utils_keystore_set_item(mender_inventory_keystore, index, name, value))) {
+        mender_log_error("Unable to allocate memory");
         goto END;
     }
 
