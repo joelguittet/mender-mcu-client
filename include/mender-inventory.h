@@ -63,11 +63,26 @@ mender_err_t mender_inventory_activate(void);
 mender_err_t mender_inventory_deactivate(void);
 
 /**
+ * @brief Get mender inventory
+ * @param inventory Mender inventory key/value pairs table, ends with a NULL/NULL element, NULL if not defined
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_inventory_get(mender_keystore_t **inventory);
+
+/**
  * @brief Set mender inventory
  * @param inventory Mender inventory key/value pairs table, must end with a NULL/NULL element, NULL if not defined
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_inventory_set(mender_keystore_t *inventory);
+
+/**
+ * @brief Set mender inventory item
+ * @param name Name of the item
+ * @param value Value of the item
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+mender_err_t mender_inventory_set_item(char *name, char *value);
 
 /**
  * @brief Function used to trigger execution of the inventory work
