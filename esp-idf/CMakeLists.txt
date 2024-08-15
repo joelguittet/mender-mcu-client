@@ -36,7 +36,8 @@ if(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE)
 endif()
 if(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
     list(APPEND srcs
-        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-inventory.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/inventory/src/mender-inventory.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/inventory/src/mender-inventory-api.c"
     )
 endif()
 if(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
@@ -53,6 +54,11 @@ list(APPEND incs
 if(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE)
     list(APPEND incs
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/configure/include"
+    )
+endif()
+if(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
+    list(APPEND incs
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/inventory/include"
     )
 endif()
 
