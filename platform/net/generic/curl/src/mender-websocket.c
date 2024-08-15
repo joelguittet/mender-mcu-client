@@ -152,6 +152,14 @@ mender_websocket_connect(
                 goto FAIL;
             }
             snprintf(url, str_length, "wss://%s%s", mender_websocket_config.host + strlen("https://"), path);
+        } else {
+            size_t str_length = strlen(mender_websocket_config.host) + strlen(path) + 1;
+            if (NULL == (url = (char *)malloc(str_length))) {
+                mender_log_error("Unable to allocate memory");
+                ret = MENDER_FAIL;
+                goto FAIL;
+            }
+            snprintf(url, str_length, "%s%s", mender_websocket_config.host, path);
         }
     }
 
