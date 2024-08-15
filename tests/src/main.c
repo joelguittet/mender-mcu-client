@@ -22,6 +22,7 @@
 #include <regex.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include "mender-client.h"
 #include "mender-configure.h"
 #include "mender-flash.h"
@@ -180,36 +181,132 @@ config_updated_cb(mender_keystore_t *configuration) {
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE */
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER
 
-/**
- * @brief Shell begin callback
- * @param terminal_width Terminal width
- * @param terminal_height Terminal height
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
 static mender_err_t
-shell_begin_cb(uint16_t terminal_width, uint16_t terminal_height) {
+file_transfer_stat_cb(char *path, size_t **size, uint32_t **uid, uint32_t **gid, uint32_t **mode, time_t **time) {
 
-    /* Just print terminal size */
-    mender_log_info("Shell connected with width=%d and height=%d", terminal_width, terminal_height);
+    assert(NULL != path);
+    struct stat  stats;
+    mender_err_t ret = MENDER_OK;
+
+    /* Get statistics of file */
+    if (0 != stat(path, &stats)) {
+        mender_log_error("Unable to get statistics of file '%s'", path);
+        ret = MENDER_FAIL;
+        goto FAIL;
+    }
+    /* Size is optional */
+    if (NULL != size) {
+        if (NULL == (*size = (size_t *)malloc(sizeof(size_t)))) {
+            mender_log_error("Unable to allocate memory");
+            ret = MENDER_FAIL;
+            goto FAIL;
+        }
+        **size = stats.st_size;
+    }
+    /* UID and GID are optional */
+    if (NULL != uid) {
+        if (NULL == (*uid = (uint32_t *)malloc(sizeof(uint32_t)))) {
+            mender_log_error("Unable to allocate memory");
+            ret = MENDER_FAIL;
+            goto FAIL;
+        }
+        **uid = stats.st_uid;
+    }
+    if (NULL != gid) {
+        if (NULL == (*gid = (uint32_t *)malloc(sizeof(uint32_t)))) {
+            mender_log_error("Unable to allocate memory");
+            ret = MENDER_FAIL;
+            goto FAIL;
+        }
+        **gid = stats.st_gid;
+    }
+    /* Mode is not optional and file must be a regular file to be downloaded by the server */
+    if (NULL != mode) {
+        if (NULL == (*mode = (uint32_t *)malloc(sizeof(uint32_t)))) {
+            mender_log_error("Unable to allocate memory");
+            ret = MENDER_FAIL;
+            goto FAIL;
+        }
+        **mode = stats.st_mode;
+    }
+    /* Last modification time is optional, format seconds since epoch */
+    if (NULL != time) {
+        if (NULL == (*time = (time_t *)malloc(sizeof(time_t)))) {
+            mender_log_error("Unable to allocate memory");
+            ret = MENDER_FAIL;
+            goto FAIL;
+        }
+        **time = stats.st_mtim.tv_sec;
+    }
+
+FAIL:
+
+    return ret;
+}
+
+static mender_err_t
+file_transfer_open_cb(char *path, char *mode, void **handle) {
+
+    assert(NULL != path);
+    assert(NULL != mode);
+
+    /* Open file */
+    mender_log_info("Opening file '%s' with mode '%s'", path, mode);
+    if (NULL == (*handle = (void *)fopen(path, mode))) {
+        mender_log_error("Unable to open file '%s'", path);
+        return MENDER_FAIL;
+    }
 
     return MENDER_OK;
 }
 
-/**
- * @brief Shell resize callback
- * @param terminal_width Terminal width
- * @param terminal_height Terminal height
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
 static mender_err_t
-shell_resize_cb(uint16_t terminal_width, uint16_t terminal_height) {
+file_transfer_read_cb(void *handle, void *data, size_t *length) {
 
-    /* Just print terminal size */
-    mender_log_info("Shell resized with width=%d and height=%d", terminal_width, terminal_height);
+    assert(NULL != handle);
+    assert(NULL != data);
+    assert(NULL != length);
+
+    /* Read file */
+    if ((*length = fread(data, sizeof(uint8_t), *length, (FILE *)handle)) < 0) {
+        mender_log_error("Unable to read data from the file");
+        return MENDER_FAIL;
+    }
 
     return MENDER_OK;
 }
+
+static mender_err_t
+file_transfer_write_cb(void *handle, void *data, size_t length) {
+
+    assert(NULL != handle);
+    assert(NULL != data);
+
+    /* Write file */
+    if (length != fwrite(data, sizeof(uint8_t), length, (FILE *)handle)) {
+        mender_log_error("Unable to write data to the file");
+        return MENDER_FAIL;
+    }
+
+    return MENDER_OK;
+}
+
+static mender_err_t
+file_transfer_close_cb(void *handle) {
+
+    assert(NULL != handle);
+
+    /* Close file */
+    mender_log_info("Closing file");
+    fclose((FILE *)handle);
+
+    return MENDER_OK;
+}
+
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
 
 /**
  * @brief Function used to replace a string in the input buffer
@@ -311,33 +408,66 @@ str_replace(char *input, char *search, char *replace) {
 }
 
 /**
+ * @brief Shell open callback
+ * @param terminal_width Terminal width
+ * @param terminal_height Terminal height
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t
+shell_open_cb(uint16_t terminal_width, uint16_t terminal_height) {
+
+    /* Just print terminal size */
+    mender_log_info("Shell connected with width=%d and height=%d", terminal_width, terminal_height);
+
+    return MENDER_OK;
+}
+
+/**
+ * @brief Shell resize callback
+ * @param terminal_width Terminal width
+ * @param terminal_height Terminal height
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t
+shell_resize_cb(uint16_t terminal_width, uint16_t terminal_height) {
+
+    /* Just print terminal size */
+    mender_log_info("Shell resized with width=%d and height=%d", terminal_width, terminal_height);
+
+    return MENDER_OK;
+}
+
+/**
  * @brief Shell write data callback
  * @param data Shell data received
  * @param length Length of the data received
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 static mender_err_t
-shell_write_cb(uint8_t *data, size_t length) {
+shell_write_cb(void *data, size_t length) {
 
     mender_err_t ret = MENDER_OK;
     char        *buffer, *tmp;
 
     /* Ensure new line is "\r\n" to have a proper display of the data in the shell */
-    if (NULL == (buffer = strndup((char *)data, length))) {
+    if (NULL == (buffer = (char *)malloc(length + 1))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
     }
+    memcpy(buffer, data, length);
+    buffer[length] = '\0';
     if (NULL == (tmp = str_replace(buffer, "\r|\n", "\r\n"))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto END;
     }
+    free(buffer);
     buffer = tmp;
 
     /* Send back the data received */
-    if (MENDER_OK != (ret = mender_troubleshoot_shell_print((uint8_t *)buffer, strlen(buffer)))) {
-        mender_log_error("Unable to print data to the sehll");
+    if (MENDER_OK != (ret = mender_troubleshoot_shell_print((void *)buffer, strlen(buffer)))) {
+        mender_log_error("Unable to print data to the shell");
         ret = MENDER_FAIL;
         goto END;
     }
@@ -353,11 +483,11 @@ END:
 }
 
 /**
- * @brief Shell end callback
+ * @brief Shell close callback
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 static mender_err_t
-shell_end_cb(void) {
+shell_close_cb(void) {
 
     /* Just print disconnected */
     mender_log_info("Shell disconnected");
@@ -365,6 +495,7 @@ shell_end_cb(void) {
     return MENDER_OK;
 }
 
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL */
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
 /**
@@ -515,9 +646,19 @@ main(int argc, char **argv) {
     }
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-    mender_troubleshoot_config_t    mender_troubleshoot_config = { .healthcheck_interval = 0 };
-    mender_troubleshoot_callbacks_t mender_troubleshoot_callbacks
-        = { .shell_begin = shell_begin_cb, .shell_resize = shell_resize_cb, .shell_write = shell_write_cb, .shell_end = shell_end_cb };
+    mender_troubleshoot_config_t    mender_troubleshoot_config    = { .host = NULL, .healthcheck_interval = 0 };
+    mender_troubleshoot_callbacks_t mender_troubleshoot_callbacks = {
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER
+        .file_transfer = { .stat  = file_transfer_stat_cb,
+                           .open  = file_transfer_open_cb,
+                           .read  = file_transfer_read_cb,
+                           .write = file_transfer_write_cb,
+                           .close = file_transfer_close_cb },
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
+        .shell = { .open = shell_open_cb, .resize = shell_resize_cb, .write = shell_write_cb, .close = shell_close_cb }
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL */
+    };
     if (MENDER_OK
         != mender_client_register_addon(
             (mender_addon_instance_t *)&mender_troubleshoot_addon_instance, (void *)&mender_troubleshoot_config, (void *)&mender_troubleshoot_callbacks)) {

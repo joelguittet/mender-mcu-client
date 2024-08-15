@@ -74,6 +74,14 @@ if (CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
     else()
         message(STATUS "Using custom '${CONFIG_MENDER_CLIENT_TROUBLESHOOT_HEALTHCHECK_INTERVAL}' troubleshoot healthcheck interval")
     endif()
+    option(CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL "Mender client Troubleshoot Shell" ON)
+    if (CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL)
+        message(STATUS "Using mender-troubleshoot add-on shell feature")
+    endif()
+    option(CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER "Mender client Troubleshoot File Transfer" OFF)
+    if (CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER)
+        message(STATUS "Using mender-troubleshoot add-on file transfer feature")
+    endif()
 endif()
 if (NOT CONFIG_MENDER_LOG_LEVEL)
     message(STATUS "Using default log level")
@@ -165,6 +173,12 @@ if (CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
     if (CONFIG_MENDER_CLIENT_TROUBLESHOOT_HEALTHCHECK_INTERVAL)
         target_compile_definitions(mender-mcu-client PRIVATE CONFIG_MENDER_CLIENT_TROUBLESHOOT_HEALTHCHECK_INTERVAL=${CONFIG_MENDER_CLIENT_TROUBLESHOOT_HEALTHCHECK_INTERVAL})
     endif()
+    if (CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL)
+        target_compile_definitions(mender-mcu-client PUBLIC CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL)
+    endif()
+    if (CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER)
+        target_compile_definitions(mender-mcu-client PUBLIC CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER)
+    endif()
 endif()
 if (CONFIG_MENDER_LOG_LEVEL)
     target_compile_definitions(mender-mcu-client PUBLIC CONFIG_MENDER_LOG_LEVEL=${CONFIG_MENDER_LOG_LEVEL})
@@ -202,9 +216,24 @@ if (CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
 endif()
 if (CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
     list(APPEND SOURCES_TEMP
-        "${CMAKE_CURRENT_LIST_DIR}/add-ons/src/mender-troubleshoot.c"
+        "${CMAKE_CURRENT_LIST_DIR}/add-ons/troubleshoot/src/mender-troubleshoot.c"
+        "${CMAKE_CURRENT_LIST_DIR}/add-ons/troubleshoot/src/mender-troubleshoot-api.c"
+        "${CMAKE_CURRENT_LIST_DIR}/add-ons/troubleshoot/src/mender-troubleshoot-control.c"
+        "${CMAKE_CURRENT_LIST_DIR}/add-ons/troubleshoot/src/mender-troubleshoot-mender-client.c"
+        "${CMAKE_CURRENT_LIST_DIR}/add-ons/troubleshoot/src/mender-troubleshoot-msgpack.c"
+        "${CMAKE_CURRENT_LIST_DIR}/add-ons/troubleshoot/src/mender-troubleshoot-protomsg.c"
         "${CMAKE_CURRENT_LIST_DIR}/platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/src/mender-websocket.c"
     )
+    if (CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL)
+        list(APPEND SOURCES_TEMP
+            "${CMAKE_CURRENT_LIST_DIR}/add-ons/troubleshoot/src/mender-troubleshoot-shell.c"
+        )
+    endif()
+    if (CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER)
+        list(APPEND SOURCES_TEMP
+            "${CMAKE_CURRENT_LIST_DIR}/add-ons/troubleshoot/src/mender-troubleshoot-file-transfer.c"
+        )
+    endif()
 endif()
 target_sources(mender-mcu-client PRIVATE ${SOURCES_TEMP})
 
@@ -218,6 +247,9 @@ if (CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE)
 endif()
 if (CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
     target_include_directories(mender-mcu-client PUBLIC "${CMAKE_CURRENT_LIST_DIR}/add-ons/inventory/include")
+endif()
+if (CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
+    target_include_directories(mender-mcu-client PUBLIC "${CMAKE_CURRENT_LIST_DIR}/add-ons/troubleshoot/include")
 endif()
 
 # Define version

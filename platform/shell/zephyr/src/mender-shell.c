@@ -317,7 +317,7 @@ mender_shell_resize(uint16_t terminal_width, uint16_t terminal_height) {
 }
 
 mender_err_t
-mender_shell_write(uint8_t *data, size_t length) {
+mender_shell_write(void *data, size_t length) {
 
     mender_err_t ret = MENDER_OK;
 
