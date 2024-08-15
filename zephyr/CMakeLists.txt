@@ -31,7 +31,8 @@ if(CONFIG_MENDER_MCU_CLIENT)
         "${CMAKE_CURRENT_LIST_DIR}/../platform/tls/${CONFIG_MENDER_PLATFORM_TLS_TYPE}/src/mender-tls.c"
     )
     zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
-        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-configure.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/configure/src/mender-configure.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/configure/src/mender-configure-api.c"
     )
     zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-inventory.c"
@@ -43,6 +44,9 @@ if(CONFIG_MENDER_MCU_CLIENT)
     )
     zephyr_include_directories("${CMAKE_CURRENT_LIST_DIR}/../include")
     zephyr_include_directories("${CMAKE_CURRENT_LIST_DIR}/../platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/include")
+    zephyr_include_directories_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/configure/include"
+    )
     file (STRINGS "${CMAKE_CURRENT_LIST_DIR}/../VERSION" MENDER_CLIENT_VERSION)
     zephyr_library_compile_definitions(-DMENDER_CLIENT_VERSION=\"${MENDER_CLIENT_VERSION}\")
     zephyr_library_compile_definitions(-D_POSIX_C_SOURCE=200809L)  # Required for strdup and strtok_r support
