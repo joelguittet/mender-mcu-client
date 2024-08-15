@@ -329,6 +329,20 @@ END:
     return ret;
 }
 
+char *
+mender_client_get_artifact_name(void) {
+
+    /* Return artifact name */
+    return mender_client_config.artifact_name;
+}
+
+char *
+mender_client_get_device_type(void) {
+
+    /* Return device type */
+    return mender_client_config.device_type;
+}
+
 mender_err_t
 mender_client_register_artifact_type(char *type,
                                      mender_err_t (*callback)(char *, char *, char *, cJSON *, char *, size_t, void *, size_t, size_t),
