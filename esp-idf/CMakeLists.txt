@@ -30,7 +30,8 @@ list(APPEND srcs
 )
 if(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE)
     list(APPEND srcs
-        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-configure.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/configure/src/mender-configure.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/configure/src/mender-configure-api.c"
     )
 endif()
 if(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
@@ -45,10 +46,20 @@ if(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
     )
 endif()
 
+# List of includes
+list(APPEND incs
+    "${CMAKE_CURRENT_LIST_DIR}/../include"
+)
+if(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE)
+    list(APPEND incs
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/configure/include"
+    )
+endif()
+
 # Register mender-mcu-client component
 idf_component_register(
     SRCS ${srcs}
-    INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/../include"
+    INCLUDE_DIRS ${incs}
     REQUIRES app_update esp_http_client json mbedtls nvs_flash
 )
 if (CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
