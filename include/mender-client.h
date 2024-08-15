@@ -68,6 +68,18 @@ char *mender_client_version(void);
 mender_err_t mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *callbacks);
 
 /**
+ * @brief Retrieve artifact name from the configuration
+ * @return Artifact name if the function succeeds, NULL otherwise
+ */
+char *mender_client_get_artifact_name(void);
+
+/**
+ * @brief Retrieve device type from the configuration
+ * @return Device type if the function succeeds, NULL otherwise
+ */
+char *mender_client_get_device_type(void);
+
+/**
  * @brief Register artifact type
  * @param type Artifact type
  * @param callback Artifact type callback
