@@ -22,9 +22,6 @@
 #include "mender-http.h"
 #include "mender-log.h"
 #include "mender-tls.h"
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-#include "mender-websocket.h"
-#endif
 
 /**
  * @brief Paths of the mender-server APIs
@@ -46,47 +43,6 @@ static mender_api_config_t mender_api_config;
  * @brief Authentication token
  */
 static char *mender_api_jwt = NULL;
-
-/**
- * @brief HTTP callback used to handle text content
- * @param event HTTP client event
- * @param data Data received
- * @param data_length Data length
- * @param params Callback parameters
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_api_http_text_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params);
-
-/**
- * @brief HTTP callback used to handle artifact content
- * @param event HTTP client event
- * @param data Data received
- * @param data_length Data length
- * @param params Callback parameters
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_api_http_artifact_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params);
-
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-
-/**
- * @brief Websocket callback used to handle websocket data
- * @param event Websocket client event
- * @param data Data received
- * @param data_length Data length
- * @param params Callback parameters
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-static mender_err_t mender_api_websocket_callback(mender_websocket_client_event_t event, void *data, size_t data_length, void *params);
-
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
-
-/**
- * @brief Print response error
- * @param response HTTP response, NULL if not available
- * @param status HTTP status
- */
-static void mender_api_print_response_error(char *response, int status);
 
 mender_err_t
 mender_api_init(mender_api_config_t *config) {
@@ -233,6 +189,13 @@ END:
     }
 
     return ret;
+}
+
+char *
+mender_api_get_authentication_token(void) {
+
+    /* Return authentication token */
+    return mender_api_jwt;
 }
 
 mender_err_t
@@ -713,24 +676,6 @@ END:
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 
 mender_err_t
-mender_api_exit(void) {
-
-    /* Release all modules */
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-    mender_websocket_exit();
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
-    mender_http_exit();
-
-    /* Release memory */
-    if (NULL != mender_api_jwt) {
-        free(mender_api_jwt);
-        mender_api_jwt = NULL;
-    }
-
-    return MENDER_OK;
-}
-
-static mender_err_t
 mender_api_http_text_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params) {
 
     assert(NULL != params);
@@ -778,7 +723,7 @@ mender_api_http_text_callback(mender_http_client_event_t event, void *data, size
     return ret;
 }
 
-static mender_err_t
+mender_err_t
 mender_api_http_artifact_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params) {
 
     assert(NULL != params);
@@ -886,7 +831,7 @@ mender_api_websocket_callback(mender_websocket_client_event_t event, void *data,
 
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
-static void
+void
 mender_api_print_response_error(char *response, int status) {
 
     char *desc;
@@ -912,4 +857,22 @@ mender_api_print_response_error(char *response, int status) {
     } else {
         mender_log_error("Unknown error occurred, status=%d", status);
     }
+}
+
+mender_err_t
+mender_api_exit(void) {
+
+    /* Release all modules */
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+    mender_websocket_exit();
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
+    mender_http_exit();
+
+    /* Release memory */
+    if (NULL != mender_api_jwt) {
+        free(mender_api_jwt);
+        mender_api_jwt = NULL;
+    }
+
+    return MENDER_OK;
 }
