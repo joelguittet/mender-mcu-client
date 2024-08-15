@@ -33,14 +33,14 @@
 #endif
 
 /**
- * @brief Default websocket thread stack size (kB)
+ * @brief Websocket thread stack size (kB)
  */
 #ifndef CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE
 #define CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE (4)
-#endif
+#endif /* CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE */
 
 /**
- * @brief Default websocket thread priority
+ * @brief Websocket thread priority
  */
 #ifndef CONFIG_MENDER_WEBSOCKET_THREAD_PRIORITY
 #define CONFIG_MENDER_WEBSOCKET_THREAD_PRIORITY (5)
