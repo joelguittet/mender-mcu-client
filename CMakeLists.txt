@@ -196,7 +196,8 @@ if (CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE)
 endif()
 if (CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
     list(APPEND SOURCES_TEMP
-        "${CMAKE_CURRENT_LIST_DIR}/add-ons/src/mender-inventory.c"
+        "${CMAKE_CURRENT_LIST_DIR}/add-ons/inventory/src/mender-inventory.c"
+        "${CMAKE_CURRENT_LIST_DIR}/add-ons/inventory/src/mender-inventory-api.c"
     )
 endif()
 if (CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
@@ -214,6 +215,9 @@ if (CONFIG_MENDER_PLATFORM_NET_TYPE STREQUAL "zephyr")
 endif()
 if (CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE)
     target_include_directories(mender-mcu-client PUBLIC "${CMAKE_CURRENT_LIST_DIR}/add-ons/configure/include")
+endif()
+if (CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
+    target_include_directories(mender-mcu-client PUBLIC "${CMAKE_CURRENT_LIST_DIR}/add-ons/inventory/include")
 endif()
 
 # Define version

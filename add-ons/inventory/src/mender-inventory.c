@@ -20,6 +20,7 @@
 #include "mender-api.h"
 #include "mender-client.h"
 #include "mender-inventory.h"
+#include "mender-inventory-api.h"
 #include "mender-log.h"
 #include "mender-scheduler.h"
 
@@ -205,7 +206,8 @@ mender_inventory_work_function(void) {
     }
 
     /* Publish inventory */
-    if (MENDER_OK != (ret = mender_api_publish_inventory_data(mender_inventory_keystore))) {
+    if (MENDER_OK
+        != (ret = mender_inventory_api_publish_inventory_data(mender_client_get_artifact_name(), mender_client_get_device_type(), mender_inventory_keystore))) {
         mender_log_error("Unable to publish inventory data");
     }
 
