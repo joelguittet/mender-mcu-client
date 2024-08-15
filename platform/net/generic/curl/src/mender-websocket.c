@@ -24,18 +24,25 @@
 #include "mender-websocket.h"
 
 /**
- * @brief Default websocket thread stack size (kB)
+ * @brief Websocket thread stack size (kB)
  */
 #ifndef CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE
 #define CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE (64)
 #endif /* CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE */
 
 /**
- * @brief Default websocket thread priority
+ * @brief Websocket thread priority
  */
 #ifndef CONFIG_MENDER_WEBSOCKET_THREAD_PRIORITY
 #define CONFIG_MENDER_WEBSOCKET_THREAD_PRIORITY (0)
 #endif /* CONFIG_MENDER_WEBSOCKET_THREAD_PRIORITY */
+
+/**
+ * @brief Websocket buffer size (kB)
+ */
+#ifndef CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE
+#define CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE (64)
+#endif /* CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE */
 
 /**
  * @brief WebSocket User-Agent
@@ -193,6 +200,12 @@ mender_websocket_connect(
     }
     if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_PREREQDATA, *handle))) {
         mender_log_error("Unable to set websocket PREREQ data: %s", curl_easy_strerror(err_curl));
+        ret = MENDER_FAIL;
+        goto FAIL;
+    }
+    if (CURLE_OK
+        != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_BUFFERSIZE, CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE * 1024))) {
+        mender_log_error("Unable to set websocket receive buffer size: %s", curl_easy_strerror(err_curl));
         ret = MENDER_FAIL;
         goto FAIL;
     }
