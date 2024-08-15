@@ -39,9 +39,20 @@ if(CONFIG_MENDER_MCU_CLIENT)
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/inventory/src/mender-inventory-api.c"
     )
     zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-troubleshoot.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-api.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-control.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-mender-client.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-msgpack.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-protomsg.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/src/mender-websocket.c"
+    )
+    zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-shell.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/shell/zephyr/src/mender-shell.c"
+    )
+    zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-file-transfer.c"
     )
     zephyr_include_directories("${CMAKE_CURRENT_LIST_DIR}/../include")
     zephyr_include_directories("${CMAKE_CURRENT_LIST_DIR}/../platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/include")
@@ -50,6 +61,9 @@ if(CONFIG_MENDER_MCU_CLIENT)
     )
     zephyr_include_directories_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/inventory/include"
+    )
+    zephyr_include_directories_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/include"
     )
     file (STRINGS "${CMAKE_CURRENT_LIST_DIR}/../VERSION" MENDER_CLIENT_VERSION)
     zephyr_library_compile_definitions(-DMENDER_CLIENT_VERSION=\"${MENDER_CLIENT_VERSION}\")

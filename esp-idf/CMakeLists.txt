@@ -42,9 +42,24 @@ if(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
 endif()
 if(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
     list(APPEND srcs
-        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/src/mender-troubleshoot.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-api.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-control.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-mender-client.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-msgpack.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-protomsg.c"
         "${CMAKE_CURRENT_LIST_DIR}/../platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/src/mender-websocket.c"
     )
+    if(CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL)
+        list(APPEND srcs
+            "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-shell.c"
+        )
+    endif()
+    if(CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER)
+        list(APPEND srcs
+            "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-file-transfer.c"
+        )
+    endif()
 endif()
 
 # List of includes
@@ -59,6 +74,11 @@ endif()
 if(CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY)
     list(APPEND incs
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/inventory/include"
+    )
+endif()
+if(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
+    list(APPEND incs
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/include"
     )
 endif()
 

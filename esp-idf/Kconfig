@@ -145,6 +145,18 @@ menu "Mender Firmware Over-the-Air support"
                     help
                         Interval used to periodically perform healthcheck with the Mender server.
 
+                config MENDER_CLIENT_TROUBLESHOOT_SHELL
+                    bool "Mender client Troubleshoot Shell"
+                    default y
+                    help
+                        Troubleshoot shell permits to display a remote shell interface on the Mender server.
+
+                config MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER
+                    bool "Mender client Troubleshoot File Transfer"
+                    default n
+                    help
+                        Troubleshoot file transfer permits to upload/download files to/from the device on the Mender server.
+
             endif
 
         endmenu

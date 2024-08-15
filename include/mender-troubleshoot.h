@@ -29,6 +29,9 @@ extern "C" {
 
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
+#include "mender-troubleshoot-file-transfer.h"
+#include "mender-troubleshoot-shell.h"
+
 /**
  * @brief Mender troubleshoot instance
  */
@@ -38,6 +41,7 @@ extern const mender_addon_instance_t mender_troubleshoot_addon_instance;
  * @brief Mender troubleshoot configuration
  */
 typedef struct {
+    char   *host;                 /**< URL of the mender server */
     int32_t healthcheck_interval; /**< Troubleshoot healthcheck interval, default is 30 seconds, -1 permits to disable periodic execution */
 } mender_troubleshoot_config_t;
 
@@ -45,10 +49,12 @@ typedef struct {
  * @brief Mender troubleshoot callbacks
  */
 typedef struct {
-    mender_err_t (*shell_begin)(uint16_t, uint16_t);  /**< Invoked when shell is connected */
-    mender_err_t (*shell_resize)(uint16_t, uint16_t); /**< Invoked when shell is resized */
-    mender_err_t (*shell_write)(uint8_t *, size_t);   /**< Invoked when shell data is received */
-    mender_err_t (*shell_end)(void);                  /**< Invoked when shell is disconnected */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER
+    mender_troubleshoot_file_transfer_callbacks_t file_transfer; /**< File transfer callbacks */
+#endif                                                           /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
+    mender_troubleshoot_shell_callbacks_t shell; /**< Shell callbacks */
+#endif                                           /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL */
 } mender_troubleshoot_callbacks_t;
 
 /**
@@ -72,14 +78,6 @@ mender_err_t mender_troubleshoot_activate(void);
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_troubleshoot_deactivate(void);
-
-/**
- * @brief Send shell data to the server
- * @param data Data to send to the server for printing in the console
- * @param length Length of data to send to the server
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_troubleshoot_shell_print(uint8_t *data, size_t length);
 
 /**
  * @brief Release mender troubleshoot add-on

@@ -26,9 +26,6 @@ extern "C" {
 
 #include "mender-http.h"
 #include "mender-utils.h"
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-#include "mender-websocket.h"
-#endif
 
 /**
  * @brief Mender API configuration
@@ -85,34 +82,6 @@ mender_err_t mender_api_publish_deployment_status(char *id, mender_deployment_st
  */
 mender_err_t mender_api_download_artifact(char *uri, mender_err_t (*callback)(char *, cJSON *, char *, size_t, void *, size_t, size_t));
 
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-
-/**
- * @brief Connect the device and make it available to the server
- * @param callback Callback function to be invoked to perform the treatment of the data from the websocket
- * @param handle Connection handle
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_api_troubleshoot_connect(mender_err_t (*callback)(void *, size_t), void **handle);
-
-/**
- * @brief Send binary data to the server
- * @param handle Connection handle
- * @param payload Payload to send
- * @param length Length of the payload
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_api_troubleshoot_send(void *handle, void *payload, size_t length);
-
-/**
- * @brief Disconnect the device
- * @param handle Connection handle
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_api_troubleshoot_disconnect(void *handle);
-
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
-
 /**
  * @brief HTTP callback used to handle text content
  * @param event HTTP client event
@@ -132,20 +101,6 @@ mender_err_t mender_api_http_text_callback(mender_http_client_event_t event, voi
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 mender_err_t mender_api_http_artifact_callback(mender_http_client_event_t event, void *data, size_t data_length, void *params);
-
-#ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
-
-/**
- * @brief Websocket callback used to handle websocket data
- * @param event Websocket client event
- * @param data Data received
- * @param data_length Data length
- * @param params Callback parameters
- * @return MENDER_OK if the function succeeds, error code otherwise
- */
-mender_err_t mender_api_websocket_callback(mender_websocket_client_event_t event, void *data, size_t data_length, void *params);
-
-#endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
 
 /**
  * @brief Print response error
