@@ -82,7 +82,9 @@
  * @brief Websocket handle
  */
 typedef struct {
-    esp_websocket_client_handle_t client; /**< Websocket client handle */
+    esp_websocket_client_handle_t client;   /**< Websocket client handle */
+    void                         *data;     /**< Websocket data received from the server */
+    size_t                        data_len; /**< Websocket data length received from the server */
     mender_err_t (*callback)(mender_websocket_client_event_t,
                              void *,
                              size_t,
@@ -275,6 +277,9 @@ mender_websocket_disconnect(void *handle) {
 
     /* Release memory */
     esp_websocket_client_destroy(((mender_websocket_handle_t *)handle)->client);
+    if (NULL != ((mender_websocket_handle_t *)handle)->data) {
+        free(((mender_websocket_handle_t *)handle)->data);
+    }
     free(handle);
 
     return MENDER_OK;
@@ -289,6 +294,7 @@ mender_websocket_exit(void) {
 
 static void
 mender_websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
+
     assert(NULL != handler_args);
     (void)base;
     assert(NULL != event_data);
@@ -319,9 +325,44 @@ mender_websocket_event_handler(void *handler_args, esp_event_base_t base, int32_
 
             } else if (WS_TRANSPORT_OPCODES_BINARY == data->op_code) {
 
-                /* Invoke callback */
-                if (MENDER_OK != handle->callback(MENDER_WEBSOCKET_EVENT_DATA_RECEIVED, (void *)data->data_ptr, (size_t)data->data_len, handle->params)) {
-                    mender_log_error("An error occurred");
+                /* Check if the whole packet is received once */
+                if ((NULL == handle->data) && (data->data_len >= data->payload_len)) {
+
+                    /* Invoke callback */
+                    if (MENDER_OK != handle->callback(MENDER_WEBSOCKET_EVENT_DATA_RECEIVED, (void *)data->data_ptr, data->data_len, handle->params)) {
+                        mender_log_error("An error occurred");
+                    }
+
+                } else {
+
+                    /* Concatenate data */
+                    void *tmp = realloc(handle->data, handle->data_len + data->data_len);
+                    if (NULL == tmp) {
+                        mender_log_error("Unable to allocate memory");
+                        if (NULL != handle->data) {
+                            free(handle->data);
+                            handle->data     = NULL;
+                            handle->data_len = 0;
+                        }
+                        break;
+                    }
+                    handle->data = tmp;
+                    memcpy(handle->data + handle->data_len, data->data_ptr, data->data_len);
+                    handle->data_len += data->data_len;
+
+                    /* Check if the whole packet has been received */
+                    if (handle->data_len >= data->payload_len) {
+
+                        /* Invoke callback */
+                        if (MENDER_OK != handle->callback(MENDER_WEBSOCKET_EVENT_DATA_RECEIVED, handle->data, handle->data_len, handle->params)) {
+                            mender_log_error("An error occurred");
+                        }
+
+                        /* Release memory */
+                        free(handle->data);
+                        handle->data     = NULL;
+                        handle->data_len = 0;
+                    }
                 }
             }
             break;
