@@ -27,12 +27,12 @@ extern "C" {
 #include "mender-utils.h"
 
 /**
- * @brief Begin new shell
+ * @brief Open a new shell
  * @param terminal_width Terminal width
  * @param terminal_height Terminal height
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_shell_begin(uint16_t terminal_width, uint16_t terminal_height);
+mender_err_t mender_shell_open(uint16_t terminal_width, uint16_t terminal_height);
 
 /**
  * @brief Resize the shell
@@ -51,10 +51,10 @@ mender_err_t mender_shell_resize(uint16_t terminal_width, uint16_t terminal_heig
 mender_err_t mender_shell_write(uint8_t *data, size_t length);
 
 /**
- * @brief End shell
+ * @brief Close shell
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_shell_end(void);
+mender_err_t mender_shell_close(void);
 
 #ifdef __cplusplus
 }

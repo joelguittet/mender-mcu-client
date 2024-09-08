@@ -292,7 +292,7 @@ mender_shell_init(void) {
 SYS_INIT(mender_shell_init, POST_KERNEL, 0);
 
 mender_err_t
-mender_shell_begin(uint16_t terminal_width, uint16_t terminal_height) {
+mender_shell_open(uint16_t terminal_width, uint16_t terminal_height) {
 
     (void)terminal_height;
     (void)terminal_width;
@@ -344,7 +344,7 @@ END:
 }
 
 mender_err_t
-mender_shell_end(void) {
+mender_shell_close(void) {
 
     /* Stop shell */
     if (!IS_ENABLED(CONFIG_SHELL_AUTOSTART)) {
