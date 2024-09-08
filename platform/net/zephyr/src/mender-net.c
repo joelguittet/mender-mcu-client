@@ -173,7 +173,6 @@ mender_net_connect(const char *host, const char *port, int *sock) {
     /* Connect to the host */
     if (0 != (result = zsock_connect(*sock, addr->ai_addr, addr->ai_addrlen))) {
         mender_log_error("Unable to connect to the host '%s:%s', result = %d, errno = %d", host, port, result, errno);
-        mender_log_error("result = %d, errno = %d", result, errno);
         zsock_close(*sock);
         *sock = -1;
         ret   = MENDER_FAIL;
