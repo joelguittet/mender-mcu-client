@@ -56,6 +56,7 @@ typedef enum {
 typedef struct {
     uint16_t                                             *terminal_width;  /**< Terminal width */
     uint16_t                                             *terminal_height; /**< Terminal heigth */
+    char                                                 *connection_id;   /**< Connection ID */
     char                                                 *user_id;         /**< User ID */
     uint32_t                                             *timeout;         /**< Timeout */
     mender_troubleshoot_protomsg_hdr_properties_status_t *status;          /**< Status */
