@@ -54,6 +54,9 @@ if(CONFIG_MENDER_MCU_CLIENT)
     zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER
         "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-file-transfer.c"
     )
+    zephyr_library_sources_ifdef(CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING
+        "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-port-forwarding.c"
+    )
     zephyr_include_directories("${CMAKE_CURRENT_LIST_DIR}/../include")
     zephyr_include_directories("${CMAKE_CURRENT_LIST_DIR}/../platform/net/${CONFIG_MENDER_PLATFORM_NET_TYPE}/include")
     zephyr_include_directories_ifdef(CONFIG_MENDER_CLIENT_ADD_ON_CONFIGURE

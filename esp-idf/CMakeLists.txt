@@ -60,6 +60,11 @@ if(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
             "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-file-transfer.c"
         )
     endif()
+    if(CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING)
+        list(APPEND srcs
+            "${CMAKE_CURRENT_LIST_DIR}/../add-ons/troubleshoot/src/mender-troubleshoot-port-forwarding.c"
+        )
+    endif()
 endif()
 
 # List of includes
