@@ -157,6 +157,12 @@ menu "Mender Firmware Over-the-Air support"
                     help
                         Troubleshoot file transfer permits to upload/download files to/from the device on the Mender server.
 
+                config MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING
+                    bool "Mender client Troubleshoot Port Forwarding"
+                    default n
+                    help
+                        Troubleshoot port forwarding permits to remotly connect to a local service from the Mender server.
+
             endif
 
         endmenu

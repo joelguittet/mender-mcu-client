@@ -350,6 +350,9 @@ mender_troubleshoot_control_encode_accept_data(msgpack_object *object) {
 #ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER
         1 +
 #endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING
+        1 +
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING */
 #if CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
         1 +
 #endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL */
@@ -364,6 +367,11 @@ mender_troubleshoot_control_encode_accept_data(msgpack_object *object) {
     p->val.via.array.ptr[proto_index].via.u64 = MENDER_TROUBLESHOOT_PROTOMSG_HDR_PROTO_FILE_TRANSFER;
     proto_index++;
 #endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING
+    p->val.via.array.ptr[proto_index].type    = MSGPACK_OBJECT_POSITIVE_INTEGER;
+    p->val.via.array.ptr[proto_index].via.u64 = MENDER_TROUBLESHOOT_PROTOMSG_HDR_PROTO_PORT_FORWARD;
+    proto_index++;
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING */
 #if CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
     p->val.via.array.ptr[proto_index].type    = MSGPACK_OBJECT_POSITIVE_INTEGER;
     p->val.via.array.ptr[proto_index].via.u64 = MENDER_TROUBLESHOOT_PROTOMSG_HDR_PROTO_SHELL;

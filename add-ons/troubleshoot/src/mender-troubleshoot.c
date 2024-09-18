@@ -25,6 +25,7 @@
 #include "mender-troubleshoot-control.h"
 #include "mender-troubleshoot-file-transfer.h"
 #include "mender-troubleshoot-mender-client.h"
+#include "mender-troubleshoot-port-forwarding.h"
 #include "mender-troubleshoot-protomsg.h"
 #include "mender-troubleshoot-shell.h"
 
@@ -112,6 +113,12 @@ mender_troubleshoot_init(void *config, void *callbacks) {
         mender_log_error("Unable to initialize mender client handler");
         goto END;
     }
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING
+    if (MENDER_OK != (ret = mender_troubleshoot_port_forwarding_init(&((mender_troubleshoot_callbacks_t *)callbacks)->port_forwarding))) {
+        mender_log_error("Unable to initialize port forwarding handler");
+        goto END;
+    }
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING */
 #ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
     mender_troubleshoot_shell_config_t mender_troubleshoot_shell_config = { .healthcheck_interval = mender_troubleshoot_config.healthcheck_interval };
     if (MENDER_OK != (ret = mender_troubleshoot_shell_init(&mender_troubleshoot_shell_config, &((mender_troubleshoot_callbacks_t *)callbacks)->shell))) {
@@ -192,6 +199,9 @@ mender_troubleshoot_exit(void) {
 #ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
     mender_troubleshoot_shell_exit();
 #endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING
+    mender_troubleshoot_port_forwarding_exit();
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING */
     mender_troubleshoot_mender_client_exit();
 #ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER
     mender_troubleshoot_file_transfer_exit();
@@ -319,10 +329,11 @@ mender_troubleshoot_data_received_callback(void *data, size_t length) {
             ret = mender_troubleshoot_file_transfer_message_handler(protomsg, &response);
             break;
 #endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING
         case MENDER_TROUBLESHOOT_PROTOMSG_HDR_PROTO_PORT_FORWARD:
-            mender_log_error("Port Forwarding is not supported");
-            ret = MENDER_FAIL;
+            ret = mender_troubleshoot_port_forwarding_message_handler(protomsg, &response);
             break;
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING */
         default:
             mender_log_error("Unsupported message received with proto type 0x%04x", protomsg->hdr->proto);
             ret = MENDER_FAIL;

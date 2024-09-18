@@ -17,12 +17,16 @@
  * limitations under the License.
  */
 
+#include <arpa/inet.h>
+#include <errno.h>
 #include <getopt.h>
 #include <pthread.h>
 #include <regex.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "mender-client.h"
 #include "mender-configure.h"
 #include "mender-flash.h"
@@ -306,6 +310,117 @@ file_transfer_close_cb(void *handle) {
 }
 
 #endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING
+
+/**
+ * Port forwarding handle
+ */
+typedef struct {
+    int       socket;        /**< Socket */
+    pthread_t thread_handle; /**< Read thread */
+} port_forwarding_handle_t;
+
+static void *
+port_forwarding_client_thread(void *arg) {
+
+    assert(NULL != arg);
+    port_forwarding_handle_t *handle = (port_forwarding_handle_t *)arg;
+    uint8_t                   data[64];
+    ssize_t                   ret;
+
+    /* Read data from remote host */
+    while ((ret = read(handle->socket, data, sizeof(data))) > 0) {
+        mender_troubleshoot_port_forwarding_forward(data, ret);
+    }
+
+    return NULL;
+}
+
+static mender_err_t
+port_forwarding_connect_cb(char *remote_host, uint16_t remote_port, char *protocol, void **handle) {
+
+    assert(NULL != remote_host);
+    assert(0 != remote_port);
+    assert(NULL != protocol);
+    assert(NULL != handle);
+
+    /* Allocate handle */
+    if (NULL == (*handle = malloc(sizeof(port_forwarding_handle_t)))) {
+        mender_log_error("Unable to allocate memory");
+        return MENDER_FAIL;
+    }
+    memset(*handle, 0, sizeof(port_forwarding_handle_t));
+
+    /* Create socket */
+    ((port_forwarding_handle_t *)(*handle))->socket = socket(AF_INET, (!strcmp(protocol, "tcp")) ? SOCK_STREAM : SOCK_DGRAM, 0);
+    if (((port_forwarding_handle_t *)(*handle))->socket < 0) {
+        mender_log_error("Unable to create socket (errno=%d)", errno);
+        free(*handle);
+        *handle = NULL;
+        return MENDER_FAIL;
+    }
+
+    /* Connect */
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family      = AF_INET;
+    serv_addr.sin_addr.s_addr = inet_addr(remote_host);
+    serv_addr.sin_port        = htons(remote_port);
+    if (connect(((port_forwarding_handle_t *)(*handle))->socket, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        mender_log_error("Unable to connect to '%s:%d' (errno=%d)", remote_host, remote_port, errno);
+        close(((port_forwarding_handle_t *)(*handle))->socket);
+        free(*handle);
+        *handle = NULL;
+        return MENDER_FAIL;
+    }
+    mender_log_info("Connection to remote host '%s:%d' with protocol '%s' opened", remote_host, remote_port, protocol);
+
+    /* Create client thread to read data from the remote host */
+    if (0 != pthread_create(&((port_forwarding_handle_t *)(*handle))->thread_handle, NULL, &port_forwarding_client_thread, *handle)) {
+        mender_log_error("Unable to create read thread");
+        close(((port_forwarding_handle_t *)(*handle))->socket);
+        free(*handle);
+        *handle = NULL;
+        return MENDER_FAIL;
+    }
+
+    return MENDER_OK;
+}
+
+static mender_err_t
+port_forwarding_send_cb(void *handle, void *data, size_t length) {
+
+    assert(NULL != handle);
+    assert(NULL != data);
+
+    /* Send data */
+    if (send(((port_forwarding_handle_t *)handle)->socket, data, length, 0) < 0) {
+        mender_log_error("Unable to send data");
+        return MENDER_FAIL;
+    }
+
+    return MENDER_OK;
+}
+
+static mender_err_t
+port_forwarding_close_cb(void *handle) {
+
+    assert(NULL != handle);
+
+    /* Close socket */
+    close(((port_forwarding_handle_t *)handle)->socket);
+    mender_log_info("Connection to remote host closed");
+
+    /* Wait end of execution of the client thread */
+    pthread_join(((port_forwarding_handle_t *)handle)->thread_handle, NULL);
+
+    /* Release memory */
+    free(handle);
+
+    return MENDER_OK;
+}
+
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING */
 #ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
 
 /**
@@ -655,6 +770,9 @@ main(int argc, char **argv) {
                            .write = file_transfer_write_cb,
                            .close = file_transfer_close_cb },
 #endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING
+        .port_forwarding = { .connect = port_forwarding_connect_cb, .send = port_forwarding_send_cb, .close = port_forwarding_close_cb },
+#endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING */
 #ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
         .shell = { .open = shell_open_cb, .resize = shell_resize_cb, .write = shell_write_cb, .close = shell_close_cb }
 #endif /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL */

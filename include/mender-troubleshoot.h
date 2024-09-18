@@ -30,6 +30,7 @@ extern "C" {
 #ifdef CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
 #include "mender-troubleshoot-file-transfer.h"
+#include "mender-troubleshoot-port-forwarding.h"
 #include "mender-troubleshoot-shell.h"
 
 /**
@@ -52,6 +53,9 @@ typedef struct {
 #ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER
     mender_troubleshoot_file_transfer_callbacks_t file_transfer; /**< File transfer callbacks */
 #endif                                                           /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_FILE_TRANSFER */
+#ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING
+    mender_troubleshoot_port_forwarding_callbacks_t port_forwarding; /**< Port forwarding callbacks */
+#endif                                                               /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_PORT_FORWARDING */
 #ifdef CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL
     mender_troubleshoot_shell_callbacks_t shell; /**< Shell callbacks */
 #endif                                           /* CONFIG_MENDER_CLIENT_TROUBLESHOOT_SHELL */
