@@ -282,7 +282,8 @@ mender_troubleshoot_protomsg_hdr_properties_encode(mender_troubleshoot_protomsg_
     p->val.type         = MSGPACK_OBJECT_MAP;
     if (0
         == (p->val.via.map.size = ((NULL != properties->terminal_width) ? 1 : 0) + ((NULL != properties->terminal_height) ? 1 : 0)
-                                  + ((NULL != properties->user_id) ? 1 : 0) + ((NULL != properties->timeout) ? 1 : 0) + ((NULL != properties->status) ? 1 : 0)
+                                  + ((NULL != properties->connection_id) ? 1 : 0) + ((NULL != properties->user_id) ? 1 : 0)
+                                  + ((NULL != properties->timeout) ? 1 : 0) + ((NULL != properties->status) ? 1 : 0)
                                   + ((NULL != properties->offset) ? 1 : 0))) {
         goto END;
     }
@@ -316,6 +317,24 @@ mender_troubleshoot_protomsg_hdr_properties_encode(mender_troubleshoot_protomsg_
         p->key.via.str.size = (uint32_t)strlen("terminal_height");
         p->val.type         = MSGPACK_OBJECT_POSITIVE_INTEGER;
         p->val.via.u64      = *properties->terminal_height;
+        ++p;
+    }
+    if (NULL != properties->connection_id) {
+        p->key.type = MSGPACK_OBJECT_STR;
+        if (NULL == (p->key.via.str.ptr = strdup("connection_id"))) {
+            mender_log_error("Unable to allocate memory");
+            ret = MENDER_FAIL;
+            goto FAIL;
+        }
+        p->key.via.str.size = (uint32_t)strlen("connection_id");
+        p->val.type         = MSGPACK_OBJECT_STR;
+        p->val.via.str.size = (uint32_t)strlen(properties->connection_id);
+        if (NULL == (p->val.via.str.ptr = (char *)malloc(p->val.via.str.size))) {
+            mender_log_error("Unable to allocate memory");
+            ret = MENDER_FAIL;
+            goto FAIL;
+        }
+        memcpy((void *)p->val.via.str.ptr, properties->connection_id, p->val.via.str.size);
         ++p;
     }
     if (NULL != properties->user_id) {
@@ -567,6 +586,14 @@ mender_troubleshoot_protomsg_hdr_properties_decode(msgpack_object *object) {
                 goto FAIL;
             }
             *properties->terminal_height = (uint16_t)p->val.via.u64;
+        } else if ((MSGPACK_OBJECT_STR == p->key.type) && (!strncmp(p->key.via.str.ptr, "connection_id", p->key.via.str.size))
+                   && (MSGPACK_OBJECT_STR == p->val.type)) {
+            if (NULL == (properties->connection_id = (char *)malloc(p->val.via.str.size + 1))) {
+                mender_log_error("Unable to allocate memory");
+                goto FAIL;
+            }
+            memcpy(properties->connection_id, p->val.via.str.ptr, p->val.via.str.size);
+            properties->connection_id[p->val.via.str.size] = '\0';
         } else if ((MSGPACK_OBJECT_STR == p->key.type) && (!strncmp(p->key.via.str.ptr, "user_id", p->key.via.str.size))
                    && (MSGPACK_OBJECT_STR == p->val.type)) {
             if (NULL == (properties->user_id = (char *)malloc(p->val.via.str.size + 1))) {
@@ -678,6 +705,9 @@ mender_troubleshoot_protomsg_hdr_properties_release(mender_troubleshoot_protomsg
         }
         if (NULL != properties->terminal_height) {
             free(properties->terminal_height);
+        }
+        if (NULL != properties->connection_id) {
+            free(properties->connection_id);
         }
         if (NULL != properties->user_id) {
             free(properties->user_id);
