@@ -366,7 +366,7 @@ FAIL:
 mender_err_t
 mender_troubleshoot_file_transfer_exit(void) {
 
-    /* Nothign to do */
+    /* Nothing to do */
     return MENDER_OK;
 }
 
