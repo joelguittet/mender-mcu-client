@@ -108,7 +108,7 @@ FAIL:
 mender_err_t
 mender_troubleshoot_mender_client_exit(void) {
 
-    /* Nothign to do */
+    /* Nothing to do */
     return MENDER_OK;
 }
 
