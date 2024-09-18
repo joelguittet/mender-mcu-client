@@ -20,7 +20,7 @@ This repository is not a fork of [mender](https://github.com/mendersoftware/mend
 
 Robustness is ensured with *atomic* image-based deployments using a dual A/B partition layout on the MCU. This makes it always possible to roll back to a working state, even when losing power at any time during the update process.
 
-The project currently support firmware upgrade which is the main interest, Device Inventory, Device Configure and Device Troubleshoot (remote console and file transfer) add-ons. It will also provide in a near future some other Mender features that could make sense on MCU.
+The project currently support firmware upgrade which is the main interest, Device Inventory, Device Configure and Device Troubleshoot (remote console, file transfer and port forwarding) add-ons. It will also provide in a near future some other Mender features that could make sense on MCU.
 
 ![Mender logo](https://github.com/mendersoftware/mender/raw/master/mender_logo.png)
 
@@ -151,11 +151,11 @@ The final code size of the mender-mcu-client library depends of your configurati
 | mender-client (core) | 20KB        | 17KB                    |
 | mender-inventory     | 2KB         | 2KB                     |
 | mender-configure     | 3KB         | 3KB                     |
-| mender-troubleshoot  | 29KB        | 11KB                    |
+| mender-troubleshoot  | 35KB        | 25KB                    |
 
 Note this is not including dependencies such as mbedTLS or HTTP client, etc. I suppose this kind of libraries is already available and used in your project.
 
-The Troubleshoot add-on is configurable to integrate Shell and/or File Transfer features. Default configuration is Shell integrated only. Code size estimation provided in the above table includes all features activated.
+The Troubleshoot add-on is configurable to integrate shell, file transfer and port forwarding features. Default configuration is shell integrated only. Code size estimation provided in the above table includes all features activated.
 
 It is possible to reduce even more the footprint of the mender-mcu-client library by customizing the default log level at build time using `CONFIG_MENDER_LOG_LEVEL` configuration key. Default is `MENDER_LOG_LEVEL_INF` which means information, warning and error messages are included. In production, it is highly possible you don't have a logging interface and as a consequence you can disable all logs. This permits to reduce the total size of the application (down to 12kB only with the default configuration including mender-client and mender-inventory add-on).
 
@@ -164,7 +164,6 @@ It is possible to reduce even more the footprint of the mender-mcu-client librar
 
 The following features are currently in the pipeline. Please note that I haven't set dates in this road-map because I develop this in my free time, but you can contribute with Pull Requests:
 
-* Integration of other nice to have Mender features: Device Troubleshoot port forwarding, ...
 * Support new boards and prove it is cross-platform and that it is able to work on small MCU too: STM32F7, ATSAMD51...
 * Support other RTOS (particularly Azure RTOS is in progress actually) and bare metal platforms.
 * ...
