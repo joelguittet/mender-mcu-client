@@ -23,10 +23,12 @@
 
 /**
  * @brief NVS keys
+ * @note According to the ESP-IDF documentation the NVS keys are limited to 15 characters
+ * @note https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#keys-and-values
  */
 #define MENDER_STORAGE_NVS_PRIVATE_KEY     "key.der"
 #define MENDER_STORAGE_NVS_PUBLIC_KEY      "pubkey.der"
-#define MENDER_STORAGE_NVS_DEPLOYMENT_DATA "deployment-data.json"
+#define MENDER_STORAGE_NVS_DEPLOYMENT_DATA "deployment.json"
 #define MENDER_STORAGE_NVS_DEVICE_CONFIG   "config.json"
 
 /**
