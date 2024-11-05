@@ -286,11 +286,18 @@ if MENDER_MCU_CLIENT
 
         menu "Network options (ADVANCED)"
 
-            config MENDER_NET_CA_CERTIFICATE_TAG
-                int "CA certificate tag"
+            config MENDER_NET_CA_CERTIFICATE_TAG_PRIMARY
+                int "Primary CA certificate tag"
                 default 1
                 help
                     A security tag that ROOT CA server credential will be referenced with, see tls_credential_add.
+
+            config MENDER_NET_CA_CERTIFICATE_TAG_SECONDARY
+                int "Secondary CA certificate tag"
+                default 0
+                help
+                    A secondary security tag that ROOT CA server credential will be referenced with, see tls_credential_add.
+                    Setting this value to 0 permits to disable the secondary CA certificate tag.
 
             config MENDER_NET_TLS_PEER_VERIFY
                 int "TLS_PEER_VERIFY option"
