@@ -149,6 +149,14 @@ mender_err_t mender_utils_keystore_to_json(mender_keystore_t *keystore, cJSON **
 mender_err_t mender_utils_keystore_set_item(mender_keystore_t *keystore, size_t index, char *name, char *value);
 
 /**
+ * @brief Function used to get index of item in key-store
+ * @param keystore Key-store
+ * @param name Name of the item
+ * @return Index of the item found in the key-store, -1 otherwise
+ */
+int mender_utils_keystore_get_item_index(mender_keystore_t *keystore, char *name);
+
+/**
  * @brief Function used to get length of key-store
  * @param keystore Key-store
  * @return Length of the key-store
