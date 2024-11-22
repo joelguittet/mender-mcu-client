@@ -298,6 +298,27 @@ mender_utils_keystore_set_item(mender_keystore_t *keystore, size_t index, char *
     return MENDER_OK;
 }
 
+int
+mender_utils_keystore_get_item_index(mender_keystore_t *keystore, char *name) {
+
+    /* Find item index */
+    int index = 0;
+    if ((NULL != keystore) && (NULL != name)) {
+        while ((NULL != keystore[index].name) && (NULL != keystore[index].value)) {
+
+            /* Compare name strings */
+            if (0 != strcmp(keystore[index].name, name)) {
+                index++;
+                continue;
+            }
+            return index;
+        }
+    }
+
+    /* Index not found */
+    return -1;
+}
+
 size_t
 mender_utils_keystore_length(mender_keystore_t *keystore) {
 

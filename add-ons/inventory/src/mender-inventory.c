@@ -178,7 +178,7 @@ mender_err_t
 mender_inventory_set_item(char *name, char *value) {
 
     mender_err_t ret;
-    int index;
+    int          index;
 
     /* Take mutex used to protect access to the inventory key-store */
     if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_inventory_mutex, -1))) {
