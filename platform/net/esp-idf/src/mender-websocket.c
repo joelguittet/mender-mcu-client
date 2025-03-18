@@ -303,9 +303,6 @@ mender_websocket_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     /* Treatment depending of the event */
     switch (event_id) {
-        case WEBSOCKET_EVENT_BEFORE_CONNECT:
-            /* Nothing to do */
-            break;
         case WEBSOCKET_EVENT_CONNECTED:
             /* Connection has been established */
             if (MENDER_OK != handle->callback(MENDER_WEBSOCKET_EVENT_CONNECTED, NULL, 0, handle->params)) {
@@ -367,7 +364,6 @@ mender_websocket_event_handler(void *handler_args, esp_event_base_t base, int32_
             }
             break;
         case WEBSOCKET_EVENT_DISCONNECTED:
-        case WEBSOCKET_EVENT_CLOSED:
             /* Connection has been closed */
             if (MENDER_OK != handle->callback(MENDER_WEBSOCKET_EVENT_DISCONNECTED, NULL, 0, handle->params)) {
                 mender_log_error("An error occurred");
@@ -379,8 +375,7 @@ mender_websocket_event_handler(void *handler_args, esp_event_base_t base, int32_
             handle->callback(MENDER_WEBSOCKET_EVENT_ERROR, NULL, 0, handle->params);
             break;
         default:
-            /* Should not occur */
-            mender_log_error("Unknown event occurred (event_id=%d)", event_id);
+            /* Nothing to do */
             break;
     }
 }
