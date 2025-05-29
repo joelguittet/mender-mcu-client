@@ -58,7 +58,11 @@ static mender_http_config_t mender_http_config;
  * @param final_call Indicate final call
  * @param user_data User data, used to retrieve request context data
  */
+#if (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 1, 0))
+static int mender_http_response_cb(struct http_response *response, enum http_final_call final_call, void *user_data);
+#else
 static void mender_http_response_cb(struct http_response *response, enum http_final_call final_call, void *user_data);
+#endif /* (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 1, 0)) */
 
 /**
  * @brief Convert mender HTTP method to Zephyr HTTP client method
@@ -123,7 +127,7 @@ mender_http_perform(char                *jwt,
     request.protocol    = "HTTP/1.1";
     request.payload     = payload;
     request.payload_len = (NULL != payload) ? strlen(payload) : 0;
-    request.response    = mender_http_response_cb;
+    request.response    = &mender_http_response_cb;
     if (NULL == (request.recv_buf = (uint8_t *)malloc(MENDER_HTTP_RECV_BUF_LENGTH))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
@@ -237,8 +241,13 @@ mender_http_exit(void) {
     return MENDER_OK;
 }
 
+#if (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 1, 0))
+static int
+mender_http_response_cb(struct http_response *response, enum http_final_call final_call, void *user_data) {
+#else
 static void
 mender_http_response_cb(struct http_response *response, enum http_final_call final_call, void *user_data) {
+#endif /* (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 1, 0)) */
 
     assert(NULL != response);
     (void)final_call;
@@ -257,6 +266,10 @@ mender_http_response_cb(struct http_response *response, enum http_final_call fin
             mender_log_error("An error occurred, stop reading data");
         }
     }
+
+#if (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 1, 0))
+    return 0;
+#endif /* (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 1, 0)) */
 }
 
 static enum http_method
