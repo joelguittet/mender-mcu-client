@@ -854,13 +854,6 @@ mender_troubleshoot_file_transfer_chunk_message_handler(mender_troubleshoot_prot
 
 FAIL:
 
-    /* Close file */
-    if (NULL != mender_troubleshoot_file_transfer_callbacks.close) {
-        if (MENDER_OK != mender_troubleshoot_file_transfer_callbacks.close(mender_troubleshoot_file_transfer_handle)) {
-            mender_log_error("Unable to close the file");
-        }
-    }
-
     /* Format error */
     if (MENDER_OK != mender_troubleshoot_file_transfer_format_error(protomsg, &error, response)) {
         mender_log_error("Unable to format response");
