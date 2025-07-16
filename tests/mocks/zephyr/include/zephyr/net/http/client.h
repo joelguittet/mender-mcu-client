@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <version.h>
 
 enum http_method {
     HTTP_DELETE      = 0,  /**< DELETE */
@@ -56,7 +57,11 @@ struct http_client_internal_data {
     struct http_response response;
 };
 
+#if (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 1, 0))
+typedef int (*http_response_cb_t)(struct http_response *rsp, enum http_final_call final_data, void *user_data);
+#else
 typedef void (*http_response_cb_t)(struct http_response *rsp, enum http_final_call final_data, void *user_data);
+#endif /* (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 1, 0)) */
 
 struct http_request {
     struct http_client_internal_data internal;
