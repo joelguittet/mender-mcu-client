@@ -18,7 +18,6 @@
 menuconfig MENDER_MCU_CLIENT
     bool "Mender Firmware Over-the-Air support"
     select BOOTLOADER_MCUBOOT
-    select CJSON
     select DNS_RESOLVER
     select FLASH
     select FLASH_MAP
@@ -27,7 +26,6 @@ menuconfig MENDER_MCU_CLIENT
     select IMG_ERASE_PROGRESSIVELY
     select IMG_MANAGER
     select MPU_ALLOW_FLASH_WRITE
-    select MSGPACK_C if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
     select NETWORKING
     select NET_TCP
     select NET_SOCKETS
