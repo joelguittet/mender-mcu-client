@@ -19,7 +19,6 @@
 
 #include <zephyr/dfu/flash_img.h>
 #include <zephyr/dfu/mcuboot.h>
-#include <zephyr/sys/reboot.h>
 #include "mender-flash.h"
 #include "mender-log.h"
 

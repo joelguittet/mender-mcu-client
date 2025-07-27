@@ -172,19 +172,24 @@ if MENDER_MCU_CLIENT
 
         choice MENDER_PLATFORM_FLASH_TYPE
             prompt "Mender platform flash implementation type"
-            default MENDER_PLATFORM_FLASH_TYPE_DEFAULT
+            default MENDER_PLATFORM_FLASH_TYPE_FLASH_IMG
             help
                 Specify platform flash implementation type, select 'weak' to use you own implementation.
 
-            config MENDER_PLATFORM_FLASH_TYPE_DEFAULT
-                bool "default"
+            config MENDER_PLATFORM_FLASH_TYPE_DFU_TARGET
+                bool "DFU target"
+                select DFU_TARGET
+                select DFU_TARGET_MCUBOOT
+            config MENDER_PLATFORM_FLASH_TYPE_FLASH_IMG
+                bool "Flash IMG"
             config MENDER_PLATFORM_FLASH_TYPE_WEAK
                 bool "weak"
         endchoice
 
         config MENDER_PLATFORM_FLASH_TYPE
             string
-            default "zephyr" if MENDER_PLATFORM_FLASH_TYPE_DEFAULT
+            default "zephyr/dfu_target" if MENDER_PLATFORM_FLASH_TYPE_DFU_TARGET
+            default "zephyr/flash_img" if MENDER_PLATFORM_FLASH_TYPE_FLASH_IMG
             default "generic/weak" if MENDER_PLATFORM_FLASH_TYPE_WEAK
 
         choice MENDER_PLATFORM_LOG_TYPE
@@ -279,6 +284,26 @@ if MENDER_MCU_CLIENT
             default "generic/weak" if MENDER_PLATFORM_TLS_TYPE_WEAK
 
     endmenu
+
+    if MENDER_PLATFORM_FLASH_TYPE_DFU_TARGET
+
+        menu "Flash options (ADVANCED)"
+
+            config MENDER_FLASH_MCUBOOT_BUFFER_SIZE
+                int "DFU target MCUboot buffer size"
+                default 512
+                help
+                    DFU target MCUboot buffer size, see 'dfu_target_mcuboot_set_buf'.
+
+            config MENDER_FLASH_MCUBOOT_IMAGE_NUMBER
+                int "DFU target MCUboot image number"
+                default 0
+                help
+                    DFU target MCUboot image number, see 'dfu_target_init'.
+
+        endmenu
+
+    endif
 
     if MENDER_PLATFORM_NET_TYPE_DEFAULT
 
