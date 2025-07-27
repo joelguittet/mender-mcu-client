@@ -19,6 +19,10 @@ tests/mocks/esp-idf/src/esp_ota_ops.c
 tests/mocks/esp-idf/src/esp_websocket_client.c
 tests/mocks/esp-idf/src/nvs.c
 tests/mocks/freertos/include/FreeRTOSConfig.h
+tests/mocks/ncs/include/dfu/dfu_target.h
+tests/mocks/ncs/include/dfu/dfu_target_mcuboot.h
+tests/mocks/ncs/src/dfu_target.c
+tests/mocks/ncs/src/dfu_target_mcuboot.c
 tests/mocks/zephyr/include/zephyr/device.h
 tests/mocks/zephyr/include/zephyr/dfu/flash_img.h
 tests/mocks/zephyr/include/zephyr/dfu/mcuboot.h
