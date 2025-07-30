@@ -386,6 +386,20 @@ if MENDER_MCU_CLIENT
 
     endif
 
+    if MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
+
+        menu "TLS options (ADVANCED)"
+
+            config MENDER_TLS_PRIVATE_KEY_ID
+                int "Mender TLS PSA Crypto private key ID"
+                default 0
+                help
+                    PSA Crypto private key ID.
+
+        endmenu
+
+    endif
+
     if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
         menu "Shell options (ADVANCED)"
