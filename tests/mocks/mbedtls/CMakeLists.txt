@@ -17,7 +17,7 @@
 
 # Fetch repository
 set(GIT_REPO_URL "https://github.com/Mbed-TLS/mbedtls")
-set(GIT_TAG_NAME "v2.25.0")
+set(GIT_TAG_NAME "v3.6.0")
 
 # Fetch destination
 set(GIT_FOLDER_NAME "${CMAKE_CURRENT_LIST_DIR}/mbedtls")
@@ -26,17 +26,14 @@ set(GIT_FOLDER_NAME "${CMAKE_CURRENT_LIST_DIR}/mbedtls")
 include(FetchContent)
 FetchContent_Declare(
     mbedtls
-    URL                        "${GIT_REPO_URL}/archive/refs/tags/${GIT_TAG_NAME}.zip"
-    SOURCE_DIR                 "${GIT_FOLDER_NAME}"
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    URL             "${GIT_REPO_URL}/archive/refs/tags/${GIT_TAG_NAME}.zip"
+    SOURCE_DIR      "${GIT_FOLDER_NAME}"
+    SOURCE_SUBDIR   "none" # Allow to not include automatically the repository CMakeLists.txt file
 )
 
 # Fetch if not already done
-FetchContent_GetProperties(mbedtls)
-if(NOT mbedtls_POPULATED)
-    message("Populating ${GIT_FOLDER_NAME}, please wait...")
-    FetchContent_Populate(mbedtls)
-endif()
+message("Populating ${GIT_FOLDER_NAME}, please wait...")
+FetchContent_MakeAvailable(mbedtls)
 
 # Add sources
 file(GLOB_RECURSE SOURCES_TEMP "${GIT_FOLDER_NAME}/library/*.c")
