@@ -272,7 +272,6 @@ if MENDER_MCU_CLIENT
                 select MBEDTLS
             config MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
                 bool "cryptoauthlib"
-                select CRYPTOAUTHLIB
             config MENDER_PLATFORM_TLS_TYPE_WEAK
                 bool "weak"
         endchoice
