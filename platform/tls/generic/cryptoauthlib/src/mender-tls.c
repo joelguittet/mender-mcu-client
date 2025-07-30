@@ -176,7 +176,7 @@ mender_tls_sign_payload(char *payload, char **signature, size_t *signature_lengt
     uint8_t *r = &sign[0];
     uint8_t *s = &sign[32];
     uint8_t  asn1[72];
-    size_t   index = 0;
+    size_t   asn1_len = 0;
     char    *tmp;
 
     /* Compute digest (sha256) of the payload */
@@ -192,39 +192,39 @@ mender_tls_sign_payload(char *payload, char **signature, size_t *signature_lengt
     }
 
     /* Convert signature to ASN.1 format */
-    asn1[index] = 0x30;
-    index++;
-    asn1[index] = 4 + ((0x00 != (r[0] & 0x80)) ? 1 : 0) + 32 + ((0x00 != (s[0] & 0x80)) ? 1 : 0) + 32;
-    index++;
-    asn1[index] = 0x02;
-    index++;
-    asn1[index] = ((0x00 != (r[0] & 0x80)) ? 1 : 0) + 32;
-    index++;
+    asn1[asn1_len] = 0x30;
+    asn1_len++;
+    asn1[asn1_len] = 4 + ((0x00 != (r[0] & 0x80)) ? 1 : 0) + 32 + ((0x00 != (s[0] & 0x80)) ? 1 : 0) + 32;
+    asn1_len++;
+    asn1[asn1_len] = 0x02;
+    asn1_len++;
+    asn1[asn1_len] = ((0x00 != (r[0] & 0x80)) ? 1 : 0) + 32;
+    asn1_len++;
     if (0x00 != (r[0] & 0x80)) {
-        asn1[index] = 0x00;
-        index++;
+        asn1[asn1_len] = 0x00;
+        asn1_len++;
     }
-    memcpy(&asn1[index], r, 32);
-    index += 32;
-    asn1[index] = 0x02;
-    index++;
-    asn1[index] = ((0x00 != (s[0] & 0x80)) ? 1 : 0) + 32;
-    index++;
+    memcpy(&asn1[asn1_len], r, 32);
+    asn1_len += 32;
+    asn1[asn1_len] = 0x02;
+    asn1_len++;
+    asn1[asn1_len] = ((0x00 != (s[0] & 0x80)) ? 1 : 0) + 32;
+    asn1_len++;
     if (0x00 != (s[0] & 0x80)) {
-        asn1[index] = 0x00;
-        index++;
+        asn1[asn1_len] = 0x00;
+        asn1_len++;
     }
-    memcpy(&asn1[index], s, 32);
-    index += 32;
+    memcpy(&asn1[asn1_len], s, 32);
+    asn1_len += 32;
 
     /* Encode signature to base64 */
-    if (NULL == (*signature = malloc(2 * index + 1))) {
+    if (NULL == (*signature = malloc(2 * asn1_len + 1))) {
         mender_log_error("Unable to allocate memory");
         return MENDER_FAIL;
     }
-    memset(*signature, 0, 2 * index + 1);
-    *signature_length = 2 * index;
-    if (ATCA_SUCCESS != atcab_base64encode_(asn1, index, *signature, signature_length, mender_tls_atcab_b64rules)) {
+    memset(*signature, 0, 2 * asn1_len + 1);
+    *signature_length = 2 * asn1_len;
+    if (ATCA_SUCCESS != atcab_base64encode_(asn1, asn1_len, *signature, signature_length, mender_tls_atcab_b64rules)) {
         mender_log_error("Unable to convert signature to base64 format");
         free(*signature);
         *signature = NULL;
