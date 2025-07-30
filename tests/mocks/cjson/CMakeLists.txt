@@ -26,17 +26,14 @@ set(GIT_FOLDER_NAME "${CMAKE_CURRENT_LIST_DIR}/cjson")
 include(FetchContent)
 FetchContent_Declare(
     cjson
-    URL                        "${GIT_REPO_URL}/archive/refs/tags/${GIT_TAG_NAME}.zip"
-    SOURCE_DIR                 "${GIT_FOLDER_NAME}"
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    URL             "${GIT_REPO_URL}/archive/refs/tags/${GIT_TAG_NAME}.zip"
+    SOURCE_DIR      "${GIT_FOLDER_NAME}"
+    SOURCE_SUBDIR   "none" # Allow to not include automatically the repository CMakeLists.txt file
 )
 
 # Fetch if not already done
-FetchContent_GetProperties(cjson)
-if(NOT cjson_POPULATED)
-    message("Populating ${GIT_FOLDER_NAME}, please wait...")
-    FetchContent_Populate(cjson)
-endif()
+message("Populating ${GIT_FOLDER_NAME}, please wait...")
+FetchContent_MakeAvailable(cjson)
 
 # Add sources
 target_sources(${EXECUTABLE_NAME} PRIVATE "${GIT_FOLDER_NAME}/cJSON.c")
