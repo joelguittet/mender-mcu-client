@@ -34,3 +34,7 @@ endif()
 if(CONFIG_MENDER_PLATFORM_TLS_TYPE MATCHES "generic/cryptoauthlib")
     include("${CMAKE_CURRENT_LIST_DIR}/cryptoauthlib/CMakeLists.txt")
 endif()
+if(CONFIG_MENDER_PLATFORM_STORAGE_TYPE MATCHES "generic/psa_its" OR CONFIG_MENDER_PLATFORM_STORAGE_TYPE MATCHES "generic/psa_ps" OR
+   CONFIG_MENDER_PLATFORM_TLS_TYPE MATCHES "generic/psa_crypto")
+    include("${CMAKE_CURRENT_LIST_DIR}/tf-m/CMakeLists.txt")
+endif()
