@@ -252,6 +252,12 @@ if MENDER_MCU_CLIENT
             config MENDER_PLATFORM_STORAGE_TYPE_NVS
                 bool "nvs"
                 select NVS
+            config MENDER_PLATFORM_STORAGE_TYPE_PSA_ITS
+                bool "PSA Internal Trusted Storage"
+                depends on BUILD_WITH_TFM
+            config MENDER_PLATFORM_STORAGE_TYPE_PSA_PS
+                bool "PSA Protected Storage"
+                depends on BUILD_WITH_TFM
             config MENDER_PLATFORM_STORAGE_TYPE_WEAK
                 bool "weak"
         endchoice
@@ -259,6 +265,8 @@ if MENDER_MCU_CLIENT
         config MENDER_PLATFORM_STORAGE_TYPE
             string
             default "zephyr/nvs" if MENDER_PLATFORM_STORAGE_TYPE_NVS
+            default "generic/psa_its" if MENDER_PLATFORM_STORAGE_TYPE_PSA_ITS
+            default "generic/psa_ps" if MENDER_PLATFORM_STORAGE_TYPE_PSA_PS
             default "generic/weak" if MENDER_PLATFORM_STORAGE_TYPE_WEAK
 
         choice MENDER_PLATFORM_TLS_TYPE
@@ -272,6 +280,9 @@ if MENDER_MCU_CLIENT
                 select MBEDTLS
             config MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
                 bool "cryptoauthlib"
+            config MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
+                bool "PSA Crypto"
+                depends on BUILD_WITH_TFM
             config MENDER_PLATFORM_TLS_TYPE_WEAK
                 bool "weak"
         endchoice
@@ -280,6 +291,7 @@ if MENDER_MCU_CLIENT
             string
             default "generic/mbedtls" if MENDER_PLATFORM_TLS_TYPE_MBEDTLS
             default "generic/cryptoauthlib" if MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
+            default "generic/psa_crypto" if MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
             default "generic/weak" if MENDER_PLATFORM_TLS_TYPE_WEAK
 
     endmenu
@@ -400,6 +412,20 @@ if MENDER_MCU_CLIENT
 
     endif
 
+    if MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
+
+        menu "TLS options (ADVANCED)"
+
+            config MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID
+                int "Mender TLS PSA Crypto signature key ID"
+                default 1
+                help
+                    PSA Crypto signature key ID.
+
+        endmenu
+
+    endif
+
     if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
         menu "Shell options (ADVANCED)"
@@ -504,6 +530,46 @@ if MENDER_MCU_CLIENT
                 default 4
                 help
                     NVS Storage device configuration ID.
+
+        endmenu
+
+    endif
+
+    if MENDER_PLATFORM_STORAGE_TYPE_PSA_ITS
+
+        menu "Storage options"
+
+            config MENDER_STORAGE_PSA_STORAGE_UID_DEPLOYMENT_DATA
+                int "PSA Internal Trusted Storage deployment data UID"
+                default 1
+                help
+                    PSA Internal Trusted Storage deployment data UID.
+
+            config MENDER_STORAGE_PSA_STORAGE_UID_DEVICE_CONFIG
+                int "PSA Internal Trusted Storage device configuration UID"
+                default 2
+                help
+                    PSA Internal Trusted Storage device configuration UID.
+
+        endmenu
+
+    endif
+
+    if MENDER_PLATFORM_STORAGE_TYPE_PSA_PS
+
+        menu "Storage options"
+
+            config MENDER_STORAGE_PSA_STORAGE_UID_DEPLOYMENT_DATA
+                int "PSA Protected Storage deployment data UID"
+                default 1
+                help
+                    PSA Protected Storage deployment data UID.
+
+            config MENDER_STORAGE_PSA_STORAGE_UID_DEVICE_CONFIG
+                int "PSA Protected Storage device configuration UID"
+                default 2
+                help
+                    PSA Protected Storage device configuration UID.
 
         endmenu
 
