@@ -83,9 +83,6 @@ endif()
 if(CONFIG_MENDER_PLATFORM_SCHEDULER_TYPE MATCHES "posix")
     target_link_libraries(mender-mcu-client rt)
 endif()
-if(CONFIG_MENDER_PLATFORM_TLS_TYPE MATCHES "generic/cryptoauthlib")
-    target_link_libraries(mender-mcu-client cryptoauth)
-endif()
 
 # Link the executable with the mender-mcu-client library
 target_link_libraries(${EXECUTABLE_NAME} mender-mcu-client pthread)
