@@ -19,6 +19,13 @@ tests/mocks/esp-idf/src/esp_ota_ops.c
 tests/mocks/esp-idf/src/esp_websocket_client.c
 tests/mocks/esp-idf/src/nvs.c
 tests/mocks/freertos/include/FreeRTOSConfig.h
+tests/mocks/cryptoauthlib/include/atca_basic.h
+tests/mocks/cryptoauthlib/include/atca_helpers.h
+tests/mocks/cryptoauthlib/include/atca_status.h
+tests/mocks/cryptoauthlib/include/calib/calib_command.h
+tests/mocks/cryptoauthlib/include/cryptoauthlib.h
+tests/mocks/cryptoauthlib/src/atca_basic.c
+tests/mocks/cryptoauthlib/src/atca_helpers.c
 tests/mocks/ncs/include/dfu/dfu_target.h
 tests/mocks/ncs/include/dfu/dfu_target_mcuboot.h
 tests/mocks/ncs/src/dfu_target.c
