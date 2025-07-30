@@ -481,6 +481,30 @@ if MENDER_MCU_CLIENT
                 help
                     Number of sectors of the mender_storage partition, must match the configuration of the partition.
 
+            config MENDER_STORAGE_NVS_PRIVATE_KEY
+                int "NVS Storage private key ID"
+                default 1
+                help
+                    NVS Storage private key ID.
+
+            config MENDER_STORAGE_NVS_PUBLIC_KEY
+                int "NVS Storage public key ID"
+                default 2
+                help
+                    NVS Storage public key ID.
+
+            config MENDER_STORAGE_NVS_DEPLOYMENT_DATA
+                int "NVS Storage deployment data ID"
+                default 3
+                help
+                    NVS Storage deployment data ID.
+
+            config MENDER_STORAGE_NVS_DEVICE_CONFIG
+                int "NVS Storage device configuration ID"
+                default 4
+                help
+                    NVS Storage device configuration ID.
+
         endmenu
 
     endif

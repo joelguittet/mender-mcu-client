@@ -33,10 +33,18 @@
 /**
  * @brief NVS keys
  */
-#define MENDER_STORAGE_NVS_PRIVATE_KEY     1
-#define MENDER_STORAGE_NVS_PUBLIC_KEY      2
-#define MENDER_STORAGE_NVS_DEPLOYMENT_DATA 3
-#define MENDER_STORAGE_NVS_DEVICE_CONFIG   4
+#ifndef CONFIG_MENDER_STORAGE_NVS_PRIVATE_KEY
+#define CONFIG_MENDER_STORAGE_NVS_PRIVATE_KEY (1)
+#endif /* CONFIG_MENDER_STORAGE_NVS_PRIVATE_KEY */
+#ifndef CONFIG_MENDER_STORAGE_NVS_PUBLIC_KEY
+#define CONFIG_MENDER_STORAGE_NVS_PUBLIC_KEY (2)
+#endif /* CONFIG_MENDER_STORAGE_NVS_PUBLIC_KEY */
+#ifndef CONFIG_MENDER_STORAGE_NVS_DEPLOYMENT_DATA
+#define CONFIG_MENDER_STORAGE_NVS_DEPLOYMENT_DATA (3)
+#endif /* CONFIG_MENDER_STORAGE_NVS_DEPLOYMENT_DATA */
+#ifndef CONFIG_MENDER_STORAGE_NVS_DEVICE_CONFIG
+#define CONFIG_MENDER_STORAGE_NVS_DEVICE_CONFIG (4)
+#endif /* CONFIG_MENDER_STORAGE_NVS_DEVICE_CONFIG */
 
 /**
  * @brief NVS storage handle
@@ -79,8 +87,8 @@ mender_storage_set_authentication_keys(unsigned char *private_key, size_t privat
     assert(NULL != public_key);
 
     /* Write keys */
-    if ((nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, private_key, private_key_length) < 0)
-        || (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, public_key, public_key_length) < 0)) {
+    if ((nvs_write(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_PRIVATE_KEY, private_key, private_key_length) < 0)
+        || (nvs_write(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_PUBLIC_KEY, public_key, public_key_length) < 0)) {
         mender_log_error("Unable to write authentication keys");
         return MENDER_FAIL;
     }
@@ -98,12 +106,12 @@ mender_storage_get_authentication_keys(unsigned char **private_key, size_t *priv
     ssize_t ret;
 
     /* Retrieve length of the keys */
-    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, NULL, 0)) <= 0) {
+    if ((ret = nvs_read(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_PRIVATE_KEY, NULL, 0)) <= 0) {
         mender_log_info("Authentication keys are not available");
         return MENDER_NOT_FOUND;
     }
     *private_key_length = (size_t)ret;
-    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, NULL, 0)) <= 0) {
+    if ((ret = nvs_read(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_PUBLIC_KEY, NULL, 0)) <= 0) {
         mender_log_info("Authentication keys are not available");
         return MENDER_NOT_FOUND;
     }
@@ -122,8 +130,8 @@ mender_storage_get_authentication_keys(unsigned char **private_key, size_t *priv
     }
 
     /* Read keys */
-    if ((nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY, *private_key, *private_key_length) < 0)
-        || (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY, *public_key, *public_key_length) < 0)) {
+    if ((nvs_read(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_PRIVATE_KEY, *private_key, *private_key_length) < 0)
+        || (nvs_read(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_PUBLIC_KEY, *public_key, *public_key_length) < 0)) {
         mender_log_error("Unable to read authentication keys");
         free(*private_key);
         *private_key = NULL;
@@ -139,8 +147,8 @@ mender_err_t
 mender_storage_delete_authentication_keys(void) {
 
     /* Erase keys */
-    if ((0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PRIVATE_KEY))
-        || (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_PUBLIC_KEY))) {
+    if ((0 != nvs_delete(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_PRIVATE_KEY))
+        || (0 != nvs_delete(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_PUBLIC_KEY))) {
         mender_log_error("Unable to erase authentication keys");
         return MENDER_FAIL;
     }
@@ -154,7 +162,7 @@ mender_storage_set_deployment_data(char *deployment_data) {
     assert(NULL != deployment_data);
 
     /* Write deployment data */
-    if (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_DATA, deployment_data, strlen(deployment_data) + 1) < 0) {
+    if (nvs_write(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_DEPLOYMENT_DATA, deployment_data, strlen(deployment_data) + 1) < 0) {
         mender_log_error("Unable to write deployment data");
         return MENDER_FAIL;
     }
@@ -170,7 +178,7 @@ mender_storage_get_deployment_data(char **deployment_data) {
     ssize_t ret;
 
     /* Retrieve length of the deployment data */
-    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_DATA, NULL, 0)) <= 0) {
+    if ((ret = nvs_read(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_DEPLOYMENT_DATA, NULL, 0)) <= 0) {
         mender_log_info("Deployment data not available");
         return MENDER_NOT_FOUND;
     }
@@ -183,7 +191,7 @@ mender_storage_get_deployment_data(char **deployment_data) {
     }
 
     /* Read deployment data */
-    if (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_DATA, *deployment_data, deployment_data_length) < 0) {
+    if (nvs_read(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_DEPLOYMENT_DATA, *deployment_data, deployment_data_length) < 0) {
         mender_log_error("Unable to read deployment data");
         free(*deployment_data);
         *deployment_data = NULL;
@@ -197,7 +205,7 @@ mender_err_t
 mender_storage_delete_deployment_data(void) {
 
     /* Delete deployment data */
-    if (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEPLOYMENT_DATA)) {
+    if (0 != nvs_delete(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_DEPLOYMENT_DATA)) {
         mender_log_error("Unable to delete deployment data");
         return MENDER_FAIL;
     }
@@ -214,7 +222,7 @@ mender_storage_set_device_config(char *device_config) {
     assert(NULL != device_config);
 
     /* Write device configuration */
-    if (nvs_write(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEVICE_CONFIG, device_config, strlen(device_config) + 1) < 0) {
+    if (nvs_write(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_DEVICE_CONFIG, device_config, strlen(device_config) + 1) < 0) {
         mender_log_error("Unable to write device configuration");
         return MENDER_FAIL;
     }
@@ -230,7 +238,7 @@ mender_storage_get_device_config(char **device_config) {
     ssize_t ret;
 
     /* Retrieve length of the device configuration */
-    if ((ret = nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEVICE_CONFIG, NULL, 0)) <= 0) {
+    if ((ret = nvs_read(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_DEVICE_CONFIG, NULL, 0)) <= 0) {
         mender_log_info("Device configuration not available");
         return MENDER_NOT_FOUND;
     }
@@ -242,8 +250,8 @@ mender_storage_get_device_config(char **device_config) {
         return MENDER_FAIL;
     }
 
-    /* Read device_configuration */
-    if (nvs_read(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEVICE_CONFIG, *device_config, device_config_length) < 0) {
+    /* Read device configuration */
+    if (nvs_read(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_DEVICE_CONFIG, *device_config, device_config_length) < 0) {
         mender_log_error("Unable to read device configuration");
         free(*device_config);
         *device_config = NULL;
@@ -257,7 +265,7 @@ mender_err_t
 mender_storage_delete_device_config(void) {
 
     /* Delete device configuration */
-    if (0 != nvs_delete(&mender_storage_nvs_handle, MENDER_STORAGE_NVS_DEVICE_CONFIG)) {
+    if (0 != nvs_delete(&mender_storage_nvs_handle, CONFIG_MENDER_STORAGE_NVS_DEVICE_CONFIG)) {
         mender_log_error("Unable to delete device configuration");
         return MENDER_FAIL;
     }
