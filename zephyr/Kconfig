@@ -500,13 +500,6 @@ if MENDER_MCU_CLIENT
 
         menu "Storage options"
 
-            config MENDER_STORAGE_NVS_SECTOR_COUNT
-                int "Number of sectors of the mender_storage partition"
-                default 2
-                range 2 8
-                help
-                    Number of sectors of the mender_storage partition, must match the configuration of the partition.
-
             config MENDER_STORAGE_NVS_PRIVATE_KEY
                 int "NVS Storage private key ID"
                 default 1

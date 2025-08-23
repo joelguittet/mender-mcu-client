@@ -74,9 +74,6 @@ if(CONFIG_MENDER_PLATFORM_NET_TYPE MATCHES "zephyr")
     target_compile_definitions(mender-mcu-client PRIVATE CONFIG_MENDER_NET_CA_CERTIFICATE_TAG_PRIMARY=1)
     target_compile_definitions(mender-mcu-client PRIVATE CONFIG_MENDER_NET_CA_CERTIFICATE_TAG_SECONDARY=2)
 endif()
-if(CONFIG_MENDER_PLATFORM_STORAGE_TYPE MATCHES "zephyr/nvs")
-    target_compile_definitions(mender-mcu-client PRIVATE CONFIG_MENDER_STORAGE_NVS_SECTOR_COUNT=4)
-endif()
 
 # Link the mender-mcu-client library
 if(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)

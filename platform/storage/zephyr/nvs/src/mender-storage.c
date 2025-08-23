@@ -29,6 +29,7 @@
 #define MENDER_STORAGE_LABEL  storage_partition
 #define MENDER_STORAGE_DEVICE FIXED_PARTITION_DEVICE(MENDER_STORAGE_LABEL)
 #define MENDER_STORAGE_OFFSET FIXED_PARTITION_OFFSET(MENDER_STORAGE_LABEL)
+#define MENDER_STORAGE_SIZE   FIXED_PARTITION_SIZE(MENDER_STORAGE_LABEL)
 
 /**
  * @brief NVS keys
@@ -69,7 +70,7 @@ mender_storage_init(void) {
         return MENDER_FAIL;
     }
     mender_storage_nvs_handle.sector_size  = (uint16_t)info.size;
-    mender_storage_nvs_handle.sector_count = CONFIG_MENDER_STORAGE_NVS_SECTOR_COUNT;
+    mender_storage_nvs_handle.sector_count = MENDER_STORAGE_SIZE / info.size;
 
     /* Mount NVS */
     if (0 != (result = nvs_mount(&mender_storage_nvs_handle))) {
