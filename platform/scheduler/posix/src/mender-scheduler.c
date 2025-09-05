@@ -28,10 +28,10 @@
 #include "mender-scheduler.h"
 
 /**
- * @brief Default work queue stack size (kB)
+ * @brief Default work queue stack size
  */
 #ifndef CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE
-#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE (64)
+#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE (65536)
 #endif /* CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE */
 
 /**
@@ -109,8 +109,8 @@ mender_scheduler_init(void) {
         return MENDER_FAIL;
     }
     if (0
-        != (ret = pthread_attr_setstacksize(
-                &pthread_attr, ((CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE > 16) ? CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE : 16) * 1024))) {
+        != (ret = pthread_attr_setstacksize(&pthread_attr,
+                                            (CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE > 16384) ? CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE : 16384))) {
         mender_log_error("Unable to set work queue thread stack size (ret=%d)", ret);
         return MENDER_FAIL;
     }

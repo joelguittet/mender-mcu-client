@@ -285,9 +285,9 @@ menu "Mender Firmware Over-the-Air support"
             if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
                 config MENDER_WEBSOCKET_THREAD_STACK_SIZE
-                    int "Mender WebSocket client Thread Stack Size (kB)"
-                    range 0 64
-                    default 4
+                    int "Mender WebSocket client Thread Stack Size"
+                    range 0 65536
+                    default 4096
                     help
                         Mender WebSocket client thread stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
@@ -299,9 +299,9 @@ menu "Mender Firmware Over-the-Air support"
                         Mender WebSocket client thread priority, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
                 config MENDER_WEBSOCKET_BUFFER_SIZE
-                    int "Mender WebSocket Buffer Size (kB)"
-                    range 0 64
-                    default 1
+                    int "Mender WebSocket Buffer Size"
+                    range 0 65536
+                    default 1024
                     help
                         Mender WebSocket buffer size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
@@ -344,9 +344,9 @@ menu "Mender Firmware Over-the-Air support"
         menu "Scheduler options (ADVANCED)"
 
             config MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE
-                int "Mender Scheduler Work Queue Stack Size (kB)"
-                range 0 64
-                default 20
+                int "Mender Scheduler Work Queue Stack Size"
+                range 0 65536
+                default 20480
                 help
                     Mender scheduler work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
                     The default TLS configuration of ESP-IDF v4.4.x allows to decrease the stack size down to 12kB.

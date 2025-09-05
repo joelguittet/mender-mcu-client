@@ -32,10 +32,10 @@
 #include "mender-scheduler.h"
 
 /**
- * @brief Default work queue stack size (kB)
+ * @brief Default work queue stack size
  */
 #ifndef CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE
-#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE (20)
+#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE (20480)
 #endif /* CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE */
 
 /**
@@ -90,7 +90,7 @@ mender_scheduler_init(void) {
     if (pdPASS
         != xTaskCreate(mender_scheduler_work_queue_thread,
                        "mender_scheduler_work_queue",
-                       (configSTACK_DEPTH_TYPE)(CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE * 1024 / sizeof(configSTACK_DEPTH_TYPE)),
+                       (configSTACK_DEPTH_TYPE)(CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE / sizeof(configSTACK_DEPTH_TYPE)),
                        NULL,
                        CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY,
                        NULL)) {

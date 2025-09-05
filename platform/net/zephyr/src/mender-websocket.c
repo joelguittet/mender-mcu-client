@@ -33,10 +33,10 @@
 #endif
 
 /**
- * @brief Websocket thread stack size (kB)
+ * @brief Websocket thread stack size
  */
 #ifndef CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE
-#define CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE (4)
+#define CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE (4096)
 #endif /* CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE */
 
 /**
@@ -47,10 +47,10 @@
 #endif /* CONFIG_MENDER_WEBSOCKET_THREAD_PRIORITY */
 
 /**
- * @brief Websocket buffer size (kB)
+ * @brief Websocket buffer size
  */
 #ifndef CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE
-#define CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE (1)
+#define CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE (1024)
 #endif /* CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE */
 
 /**
@@ -102,7 +102,7 @@ static mender_websocket_config_t mender_websocket_config;
 /**
  * @brief Mender websocket thread stack
  */
-K_THREAD_STACK_DEFINE(mender_websocket_thread_stack, CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE * 1024);
+K_THREAD_STACK_DEFINE(mender_websocket_thread_stack, CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE);
 
 /**
  * @brief Thread used to perform reception of data
@@ -161,12 +161,12 @@ mender_websocket_connect(
     ((mender_websocket_handle_t *)*handle)->request.url  = ((mender_websocket_handle_t *)*handle)->url;
     ((mender_websocket_handle_t *)*handle)->request.host = ((mender_websocket_handle_t *)*handle)->host;
     /* We need to allocate bigger buffer for the websocket data we receive so that the websocket header fits into it */
-    if (NULL == (((mender_websocket_handle_t *)*handle)->request.tmp_buf = (uint8_t *)malloc((CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE * 1024) + 32))) {
+    if (NULL == (((mender_websocket_handle_t *)*handle)->request.tmp_buf = (uint8_t *)malloc(CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE + 32))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
         goto FAIL;
     }
-    ((mender_websocket_handle_t *)*handle)->request.tmp_buf_len = (CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE * 1024) + 32;
+    ((mender_websocket_handle_t *)*handle)->request.tmp_buf_len = CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE + 32;
     if (NULL == (((mender_websocket_handle_t *)*handle)->headers = malloc(3 * sizeof(char *)))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
@@ -218,7 +218,7 @@ mender_websocket_connect(
     /* Create and start websocket thread */
     k_thread_create(&((mender_websocket_handle_t *)*handle)->thread_handle,
                     mender_websocket_thread_stack,
-                    CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE * 1024,
+                    CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE,
                     mender_websocket_thread,
                     *handle,
                     NULL,
@@ -350,7 +350,7 @@ mender_websocket_thread(void *p1, void *p2, void *p3) {
     uint64_t remaining    = 0;
 
     /* Allocate payload */
-    if (NULL == (payload = (uint8_t *)malloc(CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE * 1024))) {
+    if (NULL == (payload = (uint8_t *)malloc(CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE))) {
         mender_log_error("Unable to allocate memory");
         goto END;
     }
@@ -358,7 +358,7 @@ mender_websocket_thread(void *p1, void *p2, void *p3) {
     /* Perform reception of data from the websocket connection */
     while (false == handle->abort) {
 
-        received = websocket_recv_msg(handle->client, payload, CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE * 1024, &message_type, &remaining, SYS_FOREVER_MS);
+        received = websocket_recv_msg(handle->client, payload, CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE, &message_type, &remaining, SYS_FOREVER_MS);
         if (received < 0) {
             if (-ENOTCONN == received) {
                 mender_log_error("Connection has been closed");
