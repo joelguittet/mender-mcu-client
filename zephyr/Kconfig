@@ -343,9 +343,9 @@ if MENDER_MCU_CLIENT
             if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
                 config MENDER_WEBSOCKET_THREAD_STACK_SIZE
-                    int "Mender WebSocket client Thread Stack Size (kB)"
-                    range 0 64
-                    default 4
+                    int "Mender WebSocket client Thread Stack Size"
+                    range 0 65536
+                    default 4096
                     help
                         Mender WebSocket client thread stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
@@ -381,9 +381,9 @@ if MENDER_MCU_CLIENT
         menu "Scheduler options (ADVANCED)"
 
             config MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE
-                int "Mender Scheduler Work Queue Stack Size (kB)"
-                range 0 64
-                default 12
+                int "Mender Scheduler Work Queue Stack Size"
+                range 0 65536
+                default 12288
                 help
                     Mender scheduler work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
@@ -451,9 +451,9 @@ if MENDER_MCU_CLIENT
                     Mender Shell TX ring buffer size. Default value is suitable for most applications.
 
             config MENDER_SHELL_TX_WORK_QUEUE_STACK_SIZE
-                int "Mender Shell TX Work Queue Stack Size (kB)"
-                range 0 64
-                default 2
+                int "Mender Shell TX Work Queue Stack Size"
+                range 0 65536
+                default 2048
                 help
                     Mender Shell TX work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 

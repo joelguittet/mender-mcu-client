@@ -25,10 +25,10 @@
 #include "mender-websocket.h"
 
 /**
- * @brief Websocket thread stack size (kB)
+ * @brief Websocket thread stack size
  */
 #ifndef CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE
-#define CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE (4)
+#define CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE (4096)
 #endif /* CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE */
 
 /**
@@ -39,10 +39,10 @@
 #endif /* CONFIG_MENDER_WEBSOCKET_THREAD_PRIORITY */
 
 /**
- * @brief Websocket buffer size (kB)
+ * @brief Websocket buffer size
  */
 #ifndef CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE
-#define CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE (1)
+#define CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE (1024)
 #endif /* CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE */
 
 /**
@@ -173,9 +173,9 @@ mender_websocket_connect(
 
     /* Configuration of the client */
     esp_websocket_client_config_t config = { .uri                  = (NULL != url) ? url : path,
-                                             .task_stack           = CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE * 1024,
+                                             .task_stack           = CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE,
                                              .task_prio            = CONFIG_MENDER_WEBSOCKET_THREAD_PRIORITY,
-                                             .buffer_size          = CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE * 1024,
+                                             .buffer_size          = CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE,
                                              .user_agent           = MENDER_WEBSOCKET_USER_AGENT,
                                              .crt_bundle_attach    = esp_crt_bundle_attach,
                                              .reconnect_timeout_ms = CONFIG_MENDER_WEBSOCKET_RECONNECT_TIMEOUT,

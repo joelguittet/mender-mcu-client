@@ -47,10 +47,10 @@
 #endif /* CONFIG_MENDER_SHELL_TX_RING_BUFFER_SIZE */
 
 /**
- * @brief Default tx work queue stack size (kB)
+ * @brief Default tx work queue stack size
  */
 #ifndef CONFIG_MENDER_SHELL_TX_WORK_QUEUE_STACK_SIZE
-#define CONFIG_MENDER_SHELL_TX_WORK_QUEUE_STACK_SIZE (2)
+#define CONFIG_MENDER_SHELL_TX_WORK_QUEUE_STACK_SIZE (2048)
 #endif /* CONFIG_MENDER_SHELL_TX_WORK_QUEUE_STACK_SIZE */
 
 /**
@@ -91,7 +91,7 @@
 /**
  * @brief Mender RTOS work queue stack
  */
-K_THREAD_STACK_DEFINE(mender_shell_tx_work_queue_stack, CONFIG_MENDER_SHELL_TX_WORK_QUEUE_STACK_SIZE * 1024);
+K_THREAD_STACK_DEFINE(mender_shell_tx_work_queue_stack, CONFIG_MENDER_SHELL_TX_WORK_QUEUE_STACK_SIZE);
 
 /**
  * @brief Mender shell context
@@ -150,7 +150,7 @@ mender_shell_transport_api_init(const struct shell_transport *transport, const v
     k_work_queue_init(&ctx->tx_work_queue_handle);
     k_work_queue_start(&ctx->tx_work_queue_handle,
                        mender_shell_tx_work_queue_stack,
-                       CONFIG_MENDER_SHELL_TX_WORK_QUEUE_STACK_SIZE * 1024,
+                       CONFIG_MENDER_SHELL_TX_WORK_QUEUE_STACK_SIZE,
                        CONFIG_MENDER_SHELL_TX_WORK_QUEUE_PRIORITY,
                        NULL);
     k_thread_name_set(k_work_queue_thread_get(&ctx->tx_work_queue_handle), "mender_shell_tx_work_queue");

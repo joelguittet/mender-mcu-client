@@ -22,10 +22,10 @@
 #include "mender-scheduler.h"
 
 /**
- * @brief Default work queue stack size (kB)
+ * @brief Default work queue stack size
  */
 #ifndef CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE
-#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE (12)
+#define CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE (12288)
 #endif /* CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE */
 
 /**
@@ -49,7 +49,7 @@ typedef struct {
 /**
  * @brief Mender scheduler work queue stack
  */
-K_THREAD_STACK_DEFINE(mender_scheduler_work_queue_stack, CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE * 1024);
+K_THREAD_STACK_DEFINE(mender_scheduler_work_queue_stack, CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE);
 
 /**
  * @brief Function used to handle work context timer when it expires
@@ -75,7 +75,7 @@ mender_scheduler_init(void) {
     k_work_queue_init(&mender_scheduler_work_queue_handle);
     k_work_queue_start(&mender_scheduler_work_queue_handle,
                        mender_scheduler_work_queue_stack,
-                       CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE * 1024,
+                       CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE,
                        CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY,
                        NULL);
     k_thread_name_set(k_work_queue_thread_get(&mender_scheduler_work_queue_handle), "mender_scheduler_work_queue");
