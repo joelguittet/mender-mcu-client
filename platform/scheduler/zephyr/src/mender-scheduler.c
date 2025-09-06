@@ -187,7 +187,7 @@ mender_scheduler_work_set_period(void *handle, uint32_t period) {
     /* Set timer period */
     work_context->params.period = period;
     if (work_context->params.period > 0) {
-        k_timer_start(&work_context->timer_handle, K_FOREVER, K_MSEC(1000 * work_context->params.period));
+        k_timer_start(&work_context->timer_handle, K_NO_WAIT, K_MSEC(1000 * work_context->params.period));
     } else {
         k_timer_stop(&work_context->timer_handle);
     }
