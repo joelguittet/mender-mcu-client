@@ -933,6 +933,7 @@ mender_client_update_work_function(void) {
         mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
         if (true == mender_client_deployment_needs_set_pending_image) {
             mender_flash_abort_deployment(mender_client_flash_handle);
+            mender_client_flash_handle = NULL;
         }
         goto END;
     }
@@ -945,6 +946,8 @@ mender_client_update_work_function(void) {
             mender_log_error("Unable to set boot partition");
             mender_client_publish_deployment_status(id, MENDER_DEPLOYMENT_STATUS_FAILURE);
             goto END;
+        } else {
+            mender_client_flash_handle = NULL;
         }
     }
 
