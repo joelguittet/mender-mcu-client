@@ -336,7 +336,7 @@ mender_client_get_artifact_name(void) {
     return mender_client_config.artifact_name;
 }
 
-char *
+char const *
 mender_client_get_device_type(void) {
 
     /* Return device type */

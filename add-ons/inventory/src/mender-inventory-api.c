@@ -31,7 +31,7 @@
 #define MENDER_API_PATH_PUT_DEVICE_ATTRIBUTES "/api/devices/v1/inventory/device/attributes"
 
 mender_err_t
-mender_inventory_api_publish_inventory_data(char *artifact_name, char *device_type, mender_keystore_t *inventory) {
+mender_inventory_api_publish_inventory_data(char *artifact_name, char const *device_type, mender_keystore_t *inventory) {
 
     mender_err_t ret;
     cJSON       *item;

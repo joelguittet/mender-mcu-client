@@ -33,7 +33,7 @@ extern "C" {
 typedef struct {
     mender_keystore_t *identity;                     /**< Identity of the device */
     char              *artifact_name;                /**< Artifact name */
-    char              *device_type;                  /**< Device type */
+    char const        *device_type;                  /**< Device type */
     char              *host;                         /**< URL of the mender server */
     char              *tenant_token;                 /**< Tenant token used to authenticate on the mender server (optional) */
     int32_t            authentication_poll_interval; /**< Authentication poll interval, default is 60 seconds, -1 permits to disable periodic execution */
@@ -77,7 +77,7 @@ char *mender_client_get_artifact_name(void);
  * @brief Retrieve device type from the configuration
  * @return Device type if the function succeeds, NULL otherwise
  */
-char *mender_client_get_device_type(void);
+char const *mender_client_get_device_type(void);
 
 /**
  * @brief Register artifact type
