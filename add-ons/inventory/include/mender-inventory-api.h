@@ -35,7 +35,7 @@ extern "C" {
  * @param inventory Mender inventory key/value pairs table, must end with a NULL/NULL element, NULL if not defined
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-mender_err_t mender_inventory_api_publish_inventory_data(char *artifact_name, char *device_type, mender_keystore_t *inventory);
+mender_err_t mender_inventory_api_publish_inventory_data(char *artifact_name, char const *device_type, mender_keystore_t *inventory);
 
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 
