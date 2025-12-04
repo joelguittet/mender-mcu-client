@@ -1,6 +1,7 @@
 # mender-mcu-client
 
-[![CI Badge](https://github.com/joelguittet/mender-mcu-client/workflows/ci/badge.svg)](https://github.com/joelguittet/mender-mcu-client/actions)
+[![Workflow check-code-format Badge](https://github.com/joelguittet/mender-mcu-client/workflows/check-code-format/badge.svg)](https://github.com/joelguittet/mender-mcu-client/actions)
+[![Workflow build Badge](https://github.com/joelguittet/mender-mcu-client/workflows/build/badge.svg)](https://github.com/joelguittet/mender-mcu-client/actions)
 [![Issues Badge](https://img.shields.io/github/issues/joelguittet/mender-mcu-client)](https://github.com/joelguittet/mender-mcu-client/issues)
 [![License Badge](https://img.shields.io/github/license/joelguittet/mender-mcu-client)](https://github.com/joelguittet/mender-mcu-client/blob/master/LICENSE)
 
