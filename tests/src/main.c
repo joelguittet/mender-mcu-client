@@ -136,6 +136,8 @@ authentication_failure_cb(void) {
 static mender_err_t
 deployment_status_cb(mender_deployment_status_t status, char *desc) {
 
+    (void)status;
+
     /* We can do something else if required */
     mender_log_info("Deployment status is '%s'", desc);
 
@@ -562,7 +564,8 @@ static mender_err_t
 shell_write_cb(void *data, size_t length) {
 
     mender_err_t ret = MENDER_OK;
-    char        *buffer, *tmp;
+    char        *buffer;
+    char        *tmp;
 
     /* Ensure new line is "\r\n" to have a proper display of the data in the shell */
     if (NULL == (buffer = (char *)malloc(length + 1))) {
@@ -649,14 +652,6 @@ main(int argc, char **argv) {
     char *device_type   = NULL;
     char *tenant_token  = NULL;
 
-    /* Initialize sig handler */
-    struct sigaction action;
-    memset(&action, 0, sizeof(struct sigaction));
-    action.sa_sigaction = sig_handler;
-    action.sa_flags     = SA_SIGINFO;
-    sigaction(SIGINT, &action, NULL);
-    sigaction(SIGTERM, &action, NULL);
-
     /* Parse options */
     int opt;
     while (-1 != (opt = getopt_long(argc, argv, "hm:a:d:t:", mender_client_options, NULL))) {
@@ -713,6 +708,14 @@ main(int argc, char **argv) {
         ret = EXIT_FAILURE;
         goto END;
     }
+
+    /* Initialize sig handler */
+    struct sigaction action;
+    memset(&action, 0, sizeof(struct sigaction));
+    action.sa_sigaction = sig_handler;
+    action.sa_flags     = SA_SIGINFO;
+    sigaction(SIGINT, &action, NULL);
+    sigaction(SIGTERM, &action, NULL);
 
     /* Initialize mender-client */
     mender_keystore_t         identity[]              = { { .name = "mac", .value = mac_address }, { .name = NULL, .value = NULL } };
