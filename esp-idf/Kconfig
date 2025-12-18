@@ -370,6 +370,26 @@ menu "Mender Firmware Over-the-Air support"
 
     endif
 
+    if MENDER_PLATFORM_TLS_TYPE_MBEDTLS
+
+        menu "TLS options (ADVANCED)"
+
+            choice MENDER_PLATFORM_TLS_KEY_TYPE
+                prompt "Mender platform TLS key type"
+                default MENDER_PLATFORM_TLS_KEY_TYPE_ECDSA
+                help
+                    Specify platform TLS key type.
+
+                config MENDER_PLATFORM_TLS_KEY_TYPE_ECDSA
+                    bool "ECDSA-P256"
+                config MENDER_PLATFORM_TLS_KEY_TYPE_RSA
+                    bool "RSA-3072"
+            endchoice
+
+        endmenu
+
+    endif
+
     if MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
 
         menu "TLS options (ADVANCED)"
