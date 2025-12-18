@@ -20,6 +20,7 @@
 #include <mbedtls/base64.h>
 #include <mbedtls/bignum.h>
 #include <mbedtls/ctr_drbg.h>
+#include <mbedtls/ecp.h>
 #include <mbedtls/entropy.h>
 #ifdef MBEDTLS_ERROR_C
 #include <mbedtls/error.h>
@@ -32,13 +33,28 @@
 #include "mender-tls.h"
 
 /**
- * @brief Keys buffer length
+ * @brief Check type of the key
  */
-#define MENDER_TLS_PRIVATE_KEY_LENGTH (2048)
-#define MENDER_TLS_PUBLIC_KEY_LENGTH  (768)
+#ifndef CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_ECDSA
+#ifndef CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_RSA
+#error "mbedTLS key type is not defined"
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_RSA */
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_ECDSA */
 
 /**
- * @brief Signature buffer length (base64 encoded)
+ * @brief Keys buffer length
+ */
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_ECDSA
+#define MENDER_TLS_PRIVATE_KEY_LENGTH (256)
+#define MENDER_TLS_PUBLIC_KEY_LENGTH  (128)
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_ECDSA */
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_RSA
+#define MENDER_TLS_PRIVATE_KEY_LENGTH (2048)
+#define MENDER_TLS_PUBLIC_KEY_LENGTH  (768)
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_RSA */
+
+/**
+ * @brief Signature buffer length
  */
 #define MENDER_TLS_SIGNATURE_LENGTH (512)
 
@@ -258,13 +274,20 @@ mender_tls_sign_payload(char *payload, char **signature, size_t *signature_lengt
         goto END;
     }
 
+    /* Compute length required to encode signature to base64 */
+    mbedtls_base64_encode(NULL, 0, signature_length, sig, sig_length);
+    if (0 == *signature_length) {
+        mender_log_error("Unable to compute length");
+        ret = MENDER_FAIL;
+        goto END;
+    }
+
     /* Encode signature to base64 */
-    if (NULL == (*signature = (char *)malloc(MENDER_TLS_SIGNATURE_LENGTH + 1))) {
+    if (NULL == (*signature = (char *)malloc(*signature_length))) {
         mender_log_error("Unable to allocate memory");
         ret = -1;
         goto END;
     }
-    *signature_length = MENDER_TLS_SIGNATURE_LENGTH + 1;
     if (0 != (ret = mbedtls_base64_encode((unsigned char *)*signature, *signature_length, signature_length, sig, sig_length))) {
 #ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
@@ -377,6 +400,18 @@ mender_tls_generate_authentication_keys(unsigned char **private_key, size_t *pri
     }
 
     /* PK setup */
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_ECDSA
+    if (0 != (ret = mbedtls_pk_setup(pk_context, mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY)))) {
+#ifdef MBEDTLS_ERROR_C
+        mbedtls_strerror(ret, err, sizeof(err));
+        mender_log_error("Unable to setup pk (-0x%04x: %s)", -ret, err);
+#else
+        mender_log_error("Unable to setup pk (-0x%04x)", -ret);
+#endif /* MBEDTLS_ERROR_C */
+        goto END;
+    }
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_ECDSA */
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_RSA
     if (0 != (ret = mbedtls_pk_setup(pk_context, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)))) {
 #ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
@@ -386,17 +421,31 @@ mender_tls_generate_authentication_keys(unsigned char **private_key, size_t *pri
 #endif /* MBEDTLS_ERROR_C */
         goto END;
     }
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_RSA */
 
     /* Generate key pair */
-    if (0 != (ret = mbedtls_rsa_gen_key(mbedtls_pk_rsa(*pk_context), mbedtls_ctr_drbg_random, ctr_drbg, 3072, 65537))) {
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_ECDSA
+    if (0 != (ret = mbedtls_ecp_gen_key(MBEDTLS_ECP_DP_SECP256R1, mbedtls_pk_ec(*pk_context), mbedtls_ctr_drbg_random, ctr_drbg))) {
 #ifdef MBEDTLS_ERROR_C
         mbedtls_strerror(ret, err, sizeof(err));
-        mender_log_error("Unable to setup pk (-0x%04x: %s)", -ret, err);
+        mender_log_error("Unable to generate key (-0x%04x: %s)", -ret, err);
 #else
-        mender_log_error("Unable to setup pk (-0x%04x)", -ret);
+        mender_log_error("Unable to generate key (-0x%04x)", -ret);
 #endif /* MBEDTLS_ERROR_C */
         goto END;
     }
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_ECDSA */
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_RSA
+    if (0 != (ret = mbedtls_rsa_gen_key(mbedtls_pk_rsa(*pk_context), mbedtls_ctr_drbg_random, ctr_drbg, 3072, 65537))) {
+#ifdef MBEDTLS_ERROR_C
+        mbedtls_strerror(ret, err, sizeof(err));
+        mender_log_error("Unable to generate key (-0x%04x: %s)", -ret, err);
+#else
+        mender_log_error("Unable to generate key (-0x%04x)", -ret);
+#endif /* MBEDTLS_ERROR_C */
+        goto END;
+    }
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_TYPE_RSA */
 
     /* Export private key */
     if (NULL == (*private_key = (unsigned char *)malloc(MENDER_TLS_PRIVATE_KEY_LENGTH))) {
