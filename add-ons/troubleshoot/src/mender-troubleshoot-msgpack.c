@@ -202,7 +202,7 @@ msgpack_pack_object_with_fixint(msgpack_packer *pk, msgpack_object d) {
 }
 
 mender_err_t
-mender_troubleshoot_msgpack_unpack_object(void *data, size_t length, msgpack_zone *zone, msgpack_object *object) {
+mender_troubleshoot_msgpack_unpack_object(void *data, size_t length, msgpack_zone **zone, msgpack_object *object) {
 
     assert(NULL != data);
     assert(NULL != object);
@@ -210,14 +210,14 @@ mender_troubleshoot_msgpack_unpack_object(void *data, size_t length, msgpack_zon
     mender_err_t          ret = MENDER_OK;
 
     /* Initialize msgpack zone */
-    if (true != msgpack_zone_init(zone, MENDER_TROUBLESHOOT_PROTOMSG_ZONE_CHUNK_INIT_SIZE)) {
+    if (NULL == (*zone = msgpack_zone_new(MENDER_TROUBLESHOOT_PROTOMSG_ZONE_CHUNK_INIT_SIZE))) {
         mender_log_error("Unable to initialize msgpack zone");
         ret = MENDER_FAIL;
         goto FAIL;
     }
 
     /* Unpack the message */
-    if (MSGPACK_UNPACK_SUCCESS != (res = msgpack_unpack((const char *)data, length, NULL, zone, object))) {
+    if (MSGPACK_UNPACK_SUCCESS != (res = msgpack_unpack((const char *)data, length, NULL, *zone, object))) {
         mender_log_error("Unable to unpack object (res=%d)", res);
         ret = MENDER_FAIL;
         goto FAIL;

@@ -713,7 +713,7 @@ static mender_troubleshoot_port_forwarding_connect_t *
 mender_troubleshoot_port_forwarding_connect_unpack(void *data, size_t length) {
 
     assert(NULL != data);
-    msgpack_zone                                   zone;
+    msgpack_zone                                  *zone = NULL;
     msgpack_object                                 object;
     mender_troubleshoot_port_forwarding_connect_t *connect = NULL;
 
@@ -738,7 +738,7 @@ mender_troubleshoot_port_forwarding_connect_unpack(void *data, size_t length) {
 END:
 
     /* Release memory */
-    msgpack_zone_destroy(&zone);
+    msgpack_zone_free(zone);
 
     return connect;
 }

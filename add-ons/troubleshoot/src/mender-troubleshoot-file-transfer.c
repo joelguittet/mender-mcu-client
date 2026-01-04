@@ -888,7 +888,7 @@ static mender_troubleshoot_file_transfer_get_file_t *
 mender_troubleshoot_file_transfer_get_file_unpack(void *data, size_t length) {
 
     assert(NULL != data);
-    msgpack_zone                                  zone;
+    msgpack_zone                                 *zone = NULL;
     msgpack_object                                object;
     mender_troubleshoot_file_transfer_get_file_t *get_file = NULL;
 
@@ -913,7 +913,7 @@ mender_troubleshoot_file_transfer_get_file_unpack(void *data, size_t length) {
 END:
 
     /* Release memory */
-    msgpack_zone_destroy(&zone);
+    msgpack_zone_free(zone);
 
     return get_file;
 }
@@ -971,7 +971,7 @@ static mender_troubleshoot_file_transfer_upload_request_t *
 mender_troubleshoot_file_transfer_upload_request_unpack(void *data, size_t length) {
 
     assert(NULL != data);
-    msgpack_zone                                        zone;
+    msgpack_zone                                       *zone = NULL;
     msgpack_object                                      object;
     mender_troubleshoot_file_transfer_upload_request_t *upload_request = NULL;
 
@@ -996,7 +996,7 @@ mender_troubleshoot_file_transfer_upload_request_unpack(void *data, size_t lengt
 END:
 
     /* Release memory */
-    msgpack_zone_destroy(&zone);
+    msgpack_zone_free(zone);
 
     return upload_request;
 }
@@ -1064,7 +1064,7 @@ static mender_troubleshoot_file_transfer_stat_file_t *
 mender_troubleshoot_file_transfer_stat_file_unpack(void *data, size_t length) {
 
     assert(NULL != data);
-    msgpack_zone                                   zone;
+    msgpack_zone                                  *zone = NULL;
     msgpack_object                                 object;
     mender_troubleshoot_file_transfer_stat_file_t *stat_file = NULL;
 
@@ -1089,7 +1089,7 @@ mender_troubleshoot_file_transfer_stat_file_unpack(void *data, size_t length) {
 END:
 
     /* Release memory */
-    msgpack_zone_destroy(&zone);
+    msgpack_zone_free(zone);
 
     return stat_file;
 }
