@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/utsname.h>
 #include <unistd.h>
 #include "mender-client.h"
 #include "mender-configure.h"
@@ -788,6 +789,25 @@ main(int argc, char **argv) {
         goto RELEASE;
     }
 #endif /* CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT */
+
+#ifdef CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY
+    /* Set mender inventory (this is just an example to illustrate the API) */
+    struct utsname utsname;
+    if (0 != uname(&utsname)) {
+        mender_log_error("Unable to read system information");
+        ret = EXIT_FAILURE;
+        goto RELEASE;
+    }
+    mender_keystore_t inventory[] = { { .name = utsname.sysname, .value = utsname.release },
+                                      { .name = "mender-mcu-client", .value = mender_client_version() },
+                                      { .name = "latitude", .value = "45.8325" },
+                                      { .name = "longitude", .value = "6.864722" },
+                                      { .name = NULL, .value = NULL } };
+    if (MENDER_OK != mender_inventory_set(inventory)) {
+        mender_log_error("Unable to set mender inventory");
+        goto RELEASE;
+    }
+#endif /* CONFIG_MENDER_CLIENT_ADD_ON_INVENTORY */
 
     /* Finally activate mender client */
     if (MENDER_OK != mender_client_activate()) {
