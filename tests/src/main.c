@@ -277,8 +277,12 @@ file_transfer_read_cb(void *handle, void *data, size_t *length) {
     assert(NULL != length);
 
     /* Read file */
-    if ((*length = fread(data, sizeof(uint8_t), *length, (FILE *)handle)) < 0) {
+    *length = fread(data, sizeof(uint8_t), *length, (FILE *)handle);
+
+    /* Check if an error occured */
+    if (0 != ferror((FILE *)handle)) {
         mender_log_error("Unable to read data from the file");
+        clearerr((FILE *)handle);
         return MENDER_FAIL;
     }
 
