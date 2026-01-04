@@ -261,6 +261,7 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     memcpy(&mender_client_callbacks, callbacks, sizeof(mender_client_callbacks_t));
 
     /* Initializations */
+    mender_client_state = MENDER_CLIENT_STATE_INITIALIZATION;
     if (MENDER_OK != (ret = mender_scheduler_init())) {
         mender_log_error("Unable to initialize scheduler");
         goto END;
