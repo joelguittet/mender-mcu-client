@@ -59,7 +59,7 @@ mender_err_t mender_troubleshoot_msgpack_pack_object(msgpack_object *object, voi
  * @param object msgpack object
  * @param MENDER_OK if the function succeeds, error code if an error occured
  */
-mender_err_t mender_troubleshoot_msgpack_unpack_object(void *data, size_t length, msgpack_zone *zone, msgpack_object *object);
+mender_err_t mender_troubleshoot_msgpack_unpack_object(void *data, size_t length, msgpack_zone **zone, msgpack_object *object);
 
 /**
  * @brief Release msgpack object

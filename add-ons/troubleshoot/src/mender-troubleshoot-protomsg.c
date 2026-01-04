@@ -431,7 +431,7 @@ mender_troubleshoot_protomsg_t *
 mender_troubleshoot_protomsg_unpack(void *data, size_t length) {
 
     assert(NULL != data);
-    msgpack_zone                    zone;
+    msgpack_zone                   *zone = NULL;
     msgpack_object                  object;
     mender_troubleshoot_protomsg_t *protomsg = NULL;
 
@@ -456,7 +456,7 @@ mender_troubleshoot_protomsg_unpack(void *data, size_t length) {
 FAIL:
 
     /* Release memory */
-    msgpack_zone_destroy(&zone);
+    msgpack_zone_free(zone);
 
     return protomsg;
 }
