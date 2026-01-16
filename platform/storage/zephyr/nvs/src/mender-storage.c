@@ -74,7 +74,7 @@ mender_storage_init(void) {
 
     /* Mount NVS */
     if (0 != (result = nvs_mount(&mender_storage_nvs_handle))) {
-        mender_log_error("Unable to mount NVS storage, result = %d", result);
+        mender_log_error("Unable to mount NVS storage (%d)", result);
         return MENDER_FAIL;
     }
 

@@ -100,26 +100,26 @@ mender_scheduler_init(void) {
     mq_attr.mq_msgsize = sizeof(mender_scheduler_work_context_t *);
     mq_unlink(MENDER_SCHEDULER_WORK_QUEUE_NAME);
     if ((mender_scheduler_work_queue_handle = mq_open(MENDER_SCHEDULER_WORK_QUEUE_NAME, O_CREAT | O_RDWR, MENDER_SCHEDULER_WORK_QUEUE_PERMS, &mq_attr)) < 0) {
-        mender_log_error("Unable to create work queue (errno=%d)", errno);
+        mender_log_error("Unable to create work queue (%d) (errno=%d)", mender_scheduler_work_queue_handle, errno);
         return MENDER_FAIL;
     }
     pthread_attr_t pthread_attr;
     if (0 != (ret = pthread_attr_init(&pthread_attr))) {
-        mender_log_error("Unable to initialize work queue thread attributes (ret=%d)", ret);
+        mender_log_error("Unable to initialize work queue thread attributes (%d)", ret);
         return MENDER_FAIL;
     }
     if (0
         != (ret = pthread_attr_setstacksize(&pthread_attr,
                                             (CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE > 16384) ? CONFIG_MENDER_SCHEDULER_WORK_QUEUE_STACK_SIZE : 16384))) {
-        mender_log_error("Unable to set work queue thread stack size (ret=%d)", ret);
+        mender_log_error("Unable to set work queue thread stack size (%d)", ret);
         return MENDER_FAIL;
     }
     if (0 != (ret = pthread_create(&mender_scheduler_work_queue_thread_handle, &pthread_attr, mender_scheduler_work_queue_thread, NULL))) {
-        mender_log_error("Unable to create work queue thread (ret=%d)", ret);
+        mender_log_error("Unable to create work queue thread (%d)", ret);
         return MENDER_FAIL;
     }
     if (0 != (ret = pthread_setschedprio(mender_scheduler_work_queue_thread_handle, CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY))) {
-        mender_log_error("Unable to set work queue thread priority (ret=%d)", ret);
+        mender_log_error("Unable to set work queue thread priority (%d)", ret);
         return MENDER_FAIL;
     }
 

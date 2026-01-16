@@ -523,7 +523,7 @@ mender_api_print_response_error(char *response, int status) {
             mender_log_error("[%d] %s: unknown error", status, desc);
         }
     } else {
-        mender_log_error("Unknown error occurred, status=%d", status);
+        mender_log_error("[%d] Unknown error", status);
     }
 }
 

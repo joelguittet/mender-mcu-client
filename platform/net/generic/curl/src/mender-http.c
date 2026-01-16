@@ -121,38 +121,38 @@ mender_http_perform(char                *jwt,
 
     /* Configuration of the client */
     if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_URL, (NULL != url) ? url : path))) {
-        mender_log_error("Unable to set HTTP URL: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to set HTTP URL (%s)", curl_easy_strerror(err));
         ret = MENDER_FAIL;
         goto END;
     }
     if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_USERAGENT, MENDER_HTTP_USER_AGENT))) {
-        mender_log_error("Unable to set HTTP User-Agent: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to set HTTP User-Agent (%s)", curl_easy_strerror(err));
         ret = MENDER_FAIL;
         goto END;
     }
     if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2))) {
-        mender_log_error("Unable to set TLSv1.2: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to set TLSv1.2 (%s)", curl_easy_strerror(err));
         ret = MENDER_FAIL;
         goto END;
     }
     mender_http_curl_user_data_t user_data = { .callback = callback, .params = params };
     if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_PREREQFUNCTION, &mender_http_prereq_callback))) {
-        mender_log_error("Unable to set HTTP PREREQ function: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to set HTTP PREREQ function (%s)", curl_easy_strerror(err));
         ret = MENDER_FAIL;
         goto END;
     }
     if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_PREREQDATA, &user_data))) {
-        mender_log_error("Unable to set HTTP PREREQ data: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to set HTTP PREREQ data (%s)", curl_easy_strerror(err));
         ret = MENDER_FAIL;
         goto END;
     }
     if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &mender_http_write_callback))) {
-        mender_log_error("Unable to set HTTP write function: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to set HTTP write function (%s)", curl_easy_strerror(err));
         ret = MENDER_FAIL;
         goto END;
     }
     if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &user_data))) {
-        mender_log_error("Unable to set HTTP write data: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to set HTTP write data (%s)", curl_easy_strerror(err));
         ret = MENDER_FAIL;
         goto END;
     }
@@ -193,7 +193,7 @@ mender_http_perform(char                *jwt,
 
     /* Perform request */
     if (CURLE_OK != (err = curl_easy_perform(curl))) {
-        mender_log_error("Unable to perform HTTP request: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to perform HTTP request (%s)", curl_easy_strerror(err));
         callback(MENDER_HTTP_EVENT_ERROR, NULL, 0, params);
         ret = MENDER_FAIL;
         goto END;
@@ -202,7 +202,7 @@ mender_http_perform(char                *jwt,
     /* Read HTTP status code */
     long response_code;
     if (CURLE_OK != (err = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code))) {
-        mender_log_error("Unable to read HTTP response code: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to read HTTP response code (%s)", curl_easy_strerror(err));
         ret = MENDER_FAIL;
         goto END;
     }

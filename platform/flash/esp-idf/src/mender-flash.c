@@ -120,7 +120,7 @@ mender_flash_close(void *handle) {
         if (ESP_ERR_OTA_VALIDATE_FAILED == err) {
             mender_log_error("Image validation failed, image is corrupted");
         } else {
-            mender_log_error("esp_ota_end failed (%s)!", esp_err_to_name(err));
+            mender_log_error("esp_ota_end failed (%s)", esp_err_to_name(err));
         }
         return MENDER_FAIL;
     }
@@ -138,7 +138,7 @@ mender_flash_set_pending_image(void *handle) {
 
         /* Set new boot partition */
         if (ESP_OK != (err = esp_ota_set_boot_partition(((mender_flash_handle_t *)handle)->partition))) {
-            mender_log_error("esp_ota_set_boot_partition failed (%s)!", esp_err_to_name(err));
+            mender_log_error("esp_ota_set_boot_partition failed (%s)", esp_err_to_name(err));
             return MENDER_FAIL;
         }
 

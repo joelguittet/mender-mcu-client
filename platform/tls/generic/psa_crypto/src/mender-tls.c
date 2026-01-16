@@ -90,7 +90,7 @@ mender_tls_init(void) {
 
     /* Initialize PSA Crypto */
     if (PSA_SUCCESS != (status = psa_crypto_init())) {
-        mender_log_error("Unable to initialize PSA Crypto (status=%d)", status);
+        mender_log_error("Unable to initialize PSA Crypto (%d)", status);
         return MENDER_FAIL;
     }
 
@@ -199,14 +199,14 @@ mender_tls_sign_payload(char *payload, char **signature, size_t *signature_lengt
 
     /* Open key */
     if (PSA_SUCCESS != (status = psa_open_key(CONFIG_MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID, &key_handle))) {
-        mender_log_error("Unable to open key (status=%d)", status);
+        mender_log_error("Unable to open key (%d)", status);
         return MENDER_FAIL;
     }
 
     /* Compute signature of the payload */
     if (PSA_SUCCESS
         != (status = psa_sign_message(key_handle, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), payload, strlen(payload), sig, sizeof(sig), &sig_len))) {
-        mender_log_error("Unable to compute signature of the hash (status=%d)", status);
+        mender_log_error("Unable to compute signature of the hash (%d)", status);
         psa_close_key(key_handle);
         return MENDER_FAIL;
     }
@@ -302,7 +302,7 @@ mender_tls_generate_authentication_keys(unsigned char **public_key, size_t *publ
 
     /* Generate the private key, creating the persistent key on success */
     if (PSA_SUCCESS != (status = psa_generate_key(&key_attributes, &key_handle))) {
-        mender_log_error("Unable to generate key (status=%d)", status);
+        mender_log_error("Unable to generate key (%d)", status);
         return MENDER_FAIL;
     }
 
@@ -323,7 +323,7 @@ mender_tls_get_authentication_keys(unsigned char **public_key, size_t *public_ke
 
     /* Open key */
     if (PSA_SUCCESS != (status = psa_open_key(CONFIG_MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID, &key_handle))) {
-        mender_log_error("Unable to open key (status=%d)", status);
+        mender_log_error("Unable to open key (%d)", status);
         return MENDER_FAIL;
     }
 
@@ -334,7 +334,7 @@ mender_tls_get_authentication_keys(unsigned char **public_key, size_t *public_ke
         return MENDER_FAIL;
     }
     if (PSA_SUCCESS != (status = psa_export_public_key(key_handle, *public_key, MENDER_TLS_PUBLIC_KEY_LENGTH, public_key_length))) {
-        mender_log_error("Unable to export public key (status=%d)", status);
+        mender_log_error("Unable to export public key (%d)", status);
         psa_close_key(key_handle);
         return MENDER_FAIL;
     }
@@ -352,7 +352,7 @@ mender_tls_delete_authentication_keys(void) {
 
     /* Destroy the authentification keys */
     if (PSA_SUCCESS != (status = psa_destroy_key(CONFIG_MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID))) {
-        mender_log_error("Unable to delete authentification keys (status=%d)", status);
+        mender_log_error("Unable to delete authentification keys (%d)", status);
         return MENDER_FAIL;
     }
 

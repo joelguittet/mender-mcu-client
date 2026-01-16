@@ -208,14 +208,14 @@ mender_websocket_connect(
     if (ESP_OK
         != (err
             = esp_websocket_register_events(((mender_websocket_handle_t *)*handle)->client, WEBSOCKET_EVENT_ANY, mender_websocket_event_handler, *handle))) {
-        mender_log_error("Unable to register websocket callback event handler: %s", esp_err_to_name(err));
+        mender_log_error("Unable to register websocket callback event handler (%s)", esp_err_to_name(err));
         ret = MENDER_FAIL;
         goto END;
     }
 
     /* Open websocket client connection */
     if (ESP_OK != (err = esp_websocket_client_start(((mender_websocket_handle_t *)*handle)->client))) {
-        mender_log_error("Unable to open websocket client connection: %s", esp_err_to_name(err));
+        mender_log_error("Unable to open websocket client connection (%s)", esp_err_to_name(err));
         ret = MENDER_FAIL;
         goto FAIL;
     }
@@ -271,7 +271,7 @@ mender_websocket_disconnect(void *handle) {
 
     /* Close websocket connection */
     if (ESP_OK != (err = esp_websocket_client_close(((mender_websocket_handle_t *)handle)->client, pdMS_TO_TICKS(CONFIG_MENDER_WEBSOCKET_REQUEST_TIMEOUT)))) {
-        mender_log_error("Unable to close websocket connection: %s", esp_err_to_name(err));
+        mender_log_error("Unable to close websocket connection (%s)", esp_err_to_name(err));
         return MENDER_FAIL;
     }
 
