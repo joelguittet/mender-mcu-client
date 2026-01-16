@@ -205,8 +205,7 @@ mender_websocket_connect(
     if ((((mender_websocket_handle_t *)*handle)->client = websocket_connect(
              ((mender_websocket_handle_t *)*handle)->sock, &(((mender_websocket_handle_t *)*handle)->request), CONFIG_MENDER_WEBSOCKET_CONNECT_TIMEOUT, NULL))
         < 0) {
-        mender_log_error("Unable to upgrade to websocket connection");
-        mender_log_error("errno %d", errno);
+        mender_log_error("Unable to upgrade to websocket connection (%d) (errno=%d)", ((mender_websocket_handle_t *)*handle)->client, errno);
         ret = MENDER_FAIL;
         goto FAIL;
     }
@@ -283,7 +282,7 @@ mender_websocket_send(void *handle, void *payload, size_t length) {
                                       true,
                                       true,
                                       CONFIG_MENDER_WEBSOCKET_REQUEST_TIMEOUT))) {
-        mender_log_error("Unable to send data over websocket connection: %d", sent);
+        mender_log_error("Unable to send data over websocket connection (%d)", sent);
         return MENDER_FAIL;
     }
 
@@ -364,7 +363,7 @@ mender_websocket_thread(void *p1, void *p2, void *p3) {
                 mender_log_error("Connection has been closed");
                 goto END;
             }
-            mender_log_error("Unable to receive websocket message: errno=%d", errno);
+            mender_log_error("Unable to receive websocket message (%d) (errno=%d)", received, errno);
 
         } else if (received > 0) {
 

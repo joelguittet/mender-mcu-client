@@ -118,7 +118,7 @@ mender_http_perform(char                *jwt,
 
     /* Open HTTP client connection */
     if (ESP_OK != (err = esp_http_client_open(client, (NULL != payload) ? (int)strlen(payload) : 0))) {
-        mender_log_error("Unable to open HTTP client connection: %s", esp_err_to_name(err));
+        mender_log_error("Unable to open HTTP client connection (%s)", esp_err_to_name(err));
         ret = MENDER_FAIL;
         goto END;
     }
@@ -161,7 +161,7 @@ mender_http_perform(char                *jwt,
             }
         } else {
             if ((ECONNRESET == errno) || (ENOTCONN == errno)) {
-                mender_log_error("An error occurred, connection has been closed, errno = %d", errno);
+                mender_log_error("An error occurred, connection has been closed (errno=%d)", errno);
                 callback(MENDER_HTTP_EVENT_ERROR, NULL, 0, params);
                 ret = MENDER_FAIL;
                 goto END;

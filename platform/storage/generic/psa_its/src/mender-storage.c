@@ -78,7 +78,7 @@ mender_storage_set_deployment_data(char *deployment_data) {
     /* Write deployment data */
     if (PSA_SUCCESS
         != (status = psa_its_set(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_DEPLOYMENT_DATA, strlen(deployment_data) + 1, deployment_data, PSA_STORAGE_FLAG_NONE))) {
-        mender_log_error("Unable to write deployment data (status=%d)", status);
+        mender_log_error("Unable to write deployment data (%d)", status);
         return MENDER_FAIL;
     }
 
@@ -95,7 +95,7 @@ mender_storage_get_deployment_data(char **deployment_data) {
 
     /* Retrieve length of the deployment data */
     if (PSA_SUCCESS != (status = psa_its_get_info(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_DEPLOYMENT_DATA, &info))) {
-        mender_log_info("Deployment data not available (status=%d)", status);
+        mender_log_info("Deployment data not available (%d)", status);
         return MENDER_NOT_FOUND;
     }
     deployment_data_length = info.size;
@@ -110,7 +110,7 @@ mender_storage_get_deployment_data(char **deployment_data) {
     if (PSA_SUCCESS
         != (status
             = psa_its_get(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_DEPLOYMENT_DATA, 0, deployment_data_length, *deployment_data, &deployment_data_length))) {
-        mender_log_error("Unable to read deployment data (status=%d)", status);
+        mender_log_error("Unable to read deployment data (%d)", status);
         free(*deployment_data);
         *deployment_data = NULL;
         return MENDER_FAIL;
@@ -126,7 +126,7 @@ mender_storage_delete_deployment_data(void) {
 
     /* Delete deployment data */
     if (PSA_SUCCESS != (status = psa_its_remove(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_DEPLOYMENT_DATA))) {
-        mender_log_error("Unable to delete deployment data (status=%d)", status);
+        mender_log_error("Unable to delete deployment data (%d)", status);
         return MENDER_FAIL;
     }
 
@@ -145,7 +145,7 @@ mender_storage_set_device_config(char *device_config) {
     /* Write device configuration */
     if (PSA_SUCCESS
         != (status = psa_its_set(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_DEVICE_CONFIG, strlen(device_config) + 1, device_config, PSA_STORAGE_FLAG_NONE))) {
-        mender_log_error("Unable to write device configuration (status=%d)", status);
+        mender_log_error("Unable to write device configuration (%d)", status);
         return MENDER_FAIL;
     }
 
@@ -162,7 +162,7 @@ mender_storage_get_device_config(char **device_config) {
 
     /* Retrieve length of the device configuration */
     if (PSA_SUCCESS != (status = psa_its_get_info(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_DEVICE_CONFIG, &info))) {
-        mender_log_info("Device configuration not available (status=%d)", status);
+        mender_log_info("Device configuration not available (%d)", status);
         return MENDER_NOT_FOUND;
     }
     device_config_length = info.size;
@@ -176,7 +176,7 @@ mender_storage_get_device_config(char **device_config) {
     /* Read device configuration */
     if (PSA_SUCCESS
         != (status = psa_its_get(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_DEVICE_CONFIG, 0, device_config_length, *device_config, &device_config_length))) {
-        mender_log_error("Unable to read device configuration (status=%d)", status);
+        mender_log_error("Unable to read device configuration (%d)", status);
         free(*device_config);
         *device_config = NULL;
         return MENDER_FAIL;
@@ -192,7 +192,7 @@ mender_storage_delete_device_config(void) {
 
     /* Delete device configuration */
     if (PSA_SUCCESS != (status = psa_its_remove(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_DEVICE_CONFIG))) {
-        mender_log_error("Unable to delete device configuration (status=%d)", status);
+        mender_log_error("Unable to delete device configuration (%d)", status);
         return MENDER_FAIL;
     }
 

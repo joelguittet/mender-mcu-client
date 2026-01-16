@@ -181,42 +181,42 @@ mender_websocket_connect(
 
     /* Configuration of the client */
     if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_URL, (NULL != url) ? url : path))) {
-        mender_log_error("Unable to set websocket URL: %s", curl_easy_strerror(err_curl));
+        mender_log_error("Unable to set websocket URL (%s)", curl_easy_strerror(err_curl));
         ret = MENDER_FAIL;
         goto FAIL;
     }
     if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_USERAGENT, MENDER_WEBSOCKET_USER_AGENT))) {
-        mender_log_error("Unable to set HTTP User-Agent: %s", curl_easy_strerror(err_curl));
+        mender_log_error("Unable to set HTTP User-Agent (%s)", curl_easy_strerror(err_curl));
         ret = MENDER_FAIL;
         goto END;
     }
     if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2))) {
-        mender_log_error("Unable to set TLSv1.2: %s", curl_easy_strerror(err_curl));
+        mender_log_error("Unable to set TLSv1.2 (%s)", curl_easy_strerror(err_curl));
         ret = MENDER_FAIL;
         goto FAIL;
     }
     if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_PREREQFUNCTION, &mender_websocket_prereq_callback))) {
-        mender_log_error("Unable to set websocket PREREQ function: %s", curl_easy_strerror(err_curl));
+        mender_log_error("Unable to set websocket PREREQ function (%s)", curl_easy_strerror(err_curl));
         ret = MENDER_FAIL;
         goto FAIL;
     }
     if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_PREREQDATA, *handle))) {
-        mender_log_error("Unable to set websocket PREREQ data: %s", curl_easy_strerror(err_curl));
+        mender_log_error("Unable to set websocket PREREQ data (%s)", curl_easy_strerror(err_curl));
         ret = MENDER_FAIL;
         goto FAIL;
     }
     if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_BUFFERSIZE, CONFIG_MENDER_WEBSOCKET_BUFFER_SIZE))) {
-        mender_log_error("Unable to set websocket receive buffer size: %s", curl_easy_strerror(err_curl));
+        mender_log_error("Unable to set websocket receive buffer size (%s)", curl_easy_strerror(err_curl));
         ret = MENDER_FAIL;
         goto FAIL;
     }
     if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_WRITEFUNCTION, &mender_websocket_write_callback))) {
-        mender_log_error("Unable to set websocket write function: %s", curl_easy_strerror(err_curl));
+        mender_log_error("Unable to set websocket write function (%s)", curl_easy_strerror(err_curl));
         ret = MENDER_FAIL;
         goto FAIL;
     }
     if (CURLE_OK != (err_curl = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_WRITEDATA, *handle))) {
-        mender_log_error("Unable to set websocket write data: %s", curl_easy_strerror(err_curl));
+        mender_log_error("Unable to set websocket write data (%s)", curl_easy_strerror(err_curl));
         ret = MENDER_FAIL;
         goto FAIL;
     }
@@ -234,7 +234,7 @@ mender_websocket_connect(
         if (CURLE_OK
             != (err_curl
                 = curl_easy_setopt(((mender_websocket_handle_t *)*handle)->client, CURLOPT_HTTPHEADER, ((mender_websocket_handle_t *)*handle)->headers))) {
-            mender_log_error("Unable to set websocket HTTP headers: %s", curl_easy_strerror(err_curl));
+            mender_log_error("Unable to set websocket HTTP headers (%s)", curl_easy_strerror(err_curl));
             ret = MENDER_FAIL;
             goto FAIL;
         }
@@ -243,24 +243,24 @@ mender_websocket_connect(
     /* Create and start websocket thread */
     pthread_attr_t pthread_attr;
     if (0 != (err_pthread = pthread_attr_init(&pthread_attr))) {
-        mender_log_error("Unable to initialize websocket thread attributes (ret=%d)", err_pthread);
+        mender_log_error("Unable to initialize websocket thread attributes (%d)", err_pthread);
         ret = MENDER_FAIL;
         goto FAIL;
     }
     if (0
         != (err_pthread = pthread_attr_setstacksize(&pthread_attr,
                                                     (CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE > 16384) ? CONFIG_MENDER_WEBSOCKET_THREAD_STACK_SIZE : 16384))) {
-        mender_log_error("Unable to set websocket thread stack size (ret=%d)", err_pthread);
+        mender_log_error("Unable to set websocket thread stack size (%d)", err_pthread);
         ret = MENDER_FAIL;
         goto FAIL;
     }
     if (0 != (err_pthread = pthread_create(&((mender_websocket_handle_t *)*handle)->thread_handle, &pthread_attr, mender_websocket_thread, *handle))) {
-        mender_log_error("Unable to create websocket thread (ret=%d)", err_pthread);
+        mender_log_error("Unable to create websocket thread (%d)", err_pthread);
         ret = MENDER_FAIL;
         goto FAIL;
     }
     if (0 != (err_pthread = pthread_setschedprio(((mender_websocket_handle_t *)*handle)->thread_handle, CONFIG_MENDER_WEBSOCKET_THREAD_PRIORITY))) {
-        mender_log_error("Unable to set websocket thread priority (ret=%d)", err_pthread);
+        mender_log_error("Unable to set websocket thread priority (%d)", err_pthread);
         ret = MENDER_FAIL;
         goto FAIL;
     }
@@ -300,7 +300,7 @@ mender_websocket_send(void *handle, void *payload, size_t length) {
 
     /* Send binary payload */
     if (CURLE_OK != (err = curl_ws_send(((mender_websocket_handle_t *)handle)->client, payload, length, &sent, 0, CURLWS_BINARY))) {
-        mender_log_error("Unable to send data over websocket connection: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to send data over websocket connection (%s)", curl_easy_strerror(err));
         return MENDER_FAIL;
     }
 
@@ -317,7 +317,7 @@ mender_websocket_disconnect(void *handle) {
     /* Close websocket connection */
     ((mender_websocket_handle_t *)handle)->abort = true;
     if (CURLE_OK != (err = curl_ws_send(((mender_websocket_handle_t *)handle)->client, NULL, 0, &sent, 0, CURLWS_CLOSE))) {
-        mender_log_error("Unable to send close payload: %s", curl_easy_strerror(err));
+        mender_log_error("Unable to send close payload (%s)", curl_easy_strerror(err));
         return MENDER_FAIL;
     }
 
@@ -436,7 +436,7 @@ mender_websocket_thread(void *arg) {
                 mender_log_error("Connection has been closed");
                 goto END;
             }
-            mender_log_error("Unable to perform websocket request: %s", curl_easy_strerror(err));
+            mender_log_error("Unable to perform websocket request (%s)", curl_easy_strerror(err));
         }
     }
 

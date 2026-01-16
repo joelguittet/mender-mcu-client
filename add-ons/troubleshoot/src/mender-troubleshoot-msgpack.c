@@ -206,7 +206,7 @@ mender_troubleshoot_msgpack_unpack_object(void *data, size_t length, msgpack_zon
 
     assert(NULL != data);
     assert(NULL != object);
-    msgpack_unpack_return res;
+    msgpack_unpack_return result;
     mender_err_t          ret = MENDER_OK;
 
     /* Initialize msgpack zone */
@@ -217,8 +217,8 @@ mender_troubleshoot_msgpack_unpack_object(void *data, size_t length, msgpack_zon
     }
 
     /* Unpack the message */
-    if (MSGPACK_UNPACK_SUCCESS != (res = msgpack_unpack((const char *)data, length, NULL, *zone, object))) {
-        mender_log_error("Unable to unpack object (res=%d)", res);
+    if (MSGPACK_UNPACK_SUCCESS != (result = msgpack_unpack((const char *)data, length, NULL, *zone, object))) {
+        mender_log_error("Unable to unpack object (%d)", result);
         ret = MENDER_FAIL;
         goto FAIL;
     }

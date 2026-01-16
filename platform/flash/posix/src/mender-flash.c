@@ -54,7 +54,7 @@ mender_flash_open(char *name, size_t size, void **handle) {
 
     /* Begin deployment with sequential writes */
     if (NULL == (*handle = fopen(path, "wb"))) {
-        mender_log_error("fopen failed (%d)", errno);
+        mender_log_error("fopen failed (errno=%d)", errno);
         free(path);
         return MENDER_FAIL;
     }
@@ -111,7 +111,7 @@ mender_flash_set_pending_image(void *handle) {
 
         /* Write request update file */
         if (NULL == (file = fopen(MENDER_FLASH_REQUEST_UPGRADE, "wb"))) {
-            mender_log_error("fopen failed (%d)", errno);
+            mender_log_error("fopen failed (errno=%d)", errno);
             ret = MENDER_FAIL;
         } else {
             fclose(file);
@@ -143,7 +143,7 @@ mender_flash_confirm_image(void) {
     if (false == mender_flash_is_image_confirmed()) {
         /* Remove request upgrade file */
         if (0 != unlink(MENDER_FLASH_REQUEST_UPGRADE)) {
-            mender_log_error("Unable to mark application valid, application will rollback (%d)", errno);
+            mender_log_error("Unable to mark application valid, application will rollback (errno=%d)", errno);
             ret = MENDER_FAIL;
         } else {
             mender_log_info("Application has been mark valid and rollback canceled");
