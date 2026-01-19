@@ -20,6 +20,11 @@ zsock_getaddrinfo(const char *host, const char *service, const struct zsock_addr
     return 0;
 }
 
+int
+zsock_getnameinfo(const struct net_sockaddr *addr, net_socklen_t addrlen, char *host, net_socklen_t hostlen, char *serv, net_socklen_t servlen, int flags) {
+    return 0;
+}
+
 void
 zsock_freeaddrinfo(struct zsock_addrinfo *ai) {
 }

@@ -2,11 +2,13 @@
 #define __NET_IP_H__
 
 #include <stddef.h>
+#include <stdint.h>
 
 #define AF_INET  1
 #define AF_INET6 2
 
 typedef size_t socklen_t;
+typedef uint32_t net_socklen_t;
 
 enum net_ip_protocol {
     IPPROTO_IP     = 0,
@@ -31,6 +33,10 @@ enum net_ip_protocol_secure {
 enum net_sock_type { SOCK_STREAM = 1, SOCK_DGRAM, SOCK_RAW };
 
 struct sockaddr {
+    void *dummy;
+};
+
+struct net_sockaddr {
     void *dummy;
 };
 
