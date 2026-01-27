@@ -18,6 +18,7 @@
  */
 
 #include <errno.h>
+#include <version.h>
 #include <zephyr/net/socket.h>
 #ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
 #include <zephyr/net/tls_credentials.h>
@@ -115,7 +116,11 @@ mender_net_connect(const char *host, const char *port, int *sock) {
     struct zsock_addrinfo  hints;
     struct zsock_addrinfo *addr = NULL;
     struct zsock_addrinfo *tmp;
-    char                   tmp_str[ZSOCK_NI_MAXHOST];
+#if (ZEPHYR_VERSION_CODE >= ZEPHYR_VERSION(4, 3, 0))
+    char tmp_str[ZSOCK_NI_MAXHOST];
+#else
+    char tmp_str[NI_MAXHOST];
+#endif
 
     /* Set hints */
     memset(&hints, 0, sizeof(hints));
@@ -139,7 +144,11 @@ mender_net_connect(const char *host, const char *port, int *sock) {
     /* Connect to the host */
     ret = MENDER_FAIL;
     for (tmp = addr; (NULL != tmp) && (MENDER_OK != ret); tmp = tmp->ai_next) {
+#if (ZEPHYR_VERSION_CODE >= ZEPHYR_VERSION(4, 3, 0))
         zsock_getnameinfo(tmp->ai_addr, tmp->ai_addrlen, tmp_str, sizeof(tmp_str), NULL, 0, ZSOCK_NI_NUMERICHOST);
+#else
+        zsock_getnameinfo(tmp->ai_addr, tmp->ai_addrlen, tmp_str, sizeof(tmp_str), NULL, 0, NI_NUMERICHOST);
+#endif
         mender_log_debug("Trying to connect to the host '%s:%s' with IPv%d address '%s'...", host, port, (AF_INET6 == tmp->ai_family) ? 6 : 4, tmp_str);
         if (MENDER_OK != (ret = mender_net_connect_internal(host, tmp, sock))) {
             mender_log_warning("Unable to connect to the host '%s:%s' with IPv%d address '%s'", host, port, (AF_INET6 == tmp->ai_family) ? 6 : 4, tmp_str);
