@@ -55,7 +55,7 @@ tests/mocks/zephyr/include/zephyr/device.h
 tests/mocks/zephyr/include/zephyr/dfu/flash_img.h
 tests/mocks/zephyr/include/zephyr/dfu/mcuboot.h
 tests/mocks/zephyr/include/zephyr/drivers/flash.h
-tests/mocks/zephyr/include/zephyr/fs/nvs.h
+tests/mocks/zephyr/include/zephyr/kvss/nvs.h
 tests/mocks/zephyr/include/zephyr/init.h
 tests/mocks/zephyr/include/zephyr/kernel.h
 tests/mocks/zephyr/include/zephyr/logging/log.h

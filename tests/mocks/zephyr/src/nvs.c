@@ -1,4 +1,4 @@
-#include <zephyr/fs/nvs.h>
+#include <zephyr/kvss/nvs.h>
 
 int
 nvs_mount(struct nvs_fs *fs) {
