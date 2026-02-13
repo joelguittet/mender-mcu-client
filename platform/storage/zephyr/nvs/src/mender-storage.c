@@ -17,8 +17,13 @@
  * limitations under the License.
  */
 
+#include <version.h>
 #include <zephyr/drivers/flash.h>
+#if (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 3, 0))
+#include <zephyr/kvss/nvs.h>
+#else
 #include <zephyr/fs/nvs.h>
+#endif /* (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 3, 0)) */
 #include <zephyr/storage/flash_map.h>
 #include "mender-log.h"
 #include "mender-storage.h"
