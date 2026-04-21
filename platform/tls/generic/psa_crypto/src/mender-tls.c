@@ -23,18 +23,22 @@
 #endif /* MBEDTLS_ERROR_C */
 #include <psa/crypto.h>
 #include "mender-log.h"
+#include "mender-storage.h"
 #include "mender-tls.h"
 
 /**
  * @brief Default PSA signature key ID
  */
-#ifndef CONFIG_MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID
-#define CONFIG_MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID (1)
-#endif /* CONFIG_MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID */
+#ifndef CONFIG_MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID
+#define CONFIG_MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID (1)
+#endif /* CONFIG_MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID */
 
 /**
  * @brief Keys buffer length
  */
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE
+#define MENDER_TLS_PRIVATE_KEY_LENGTH (32)
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE */
 #define MENDER_TLS_PUBLIC_KEY_LENGTH (64 + 1)
 
 /**
@@ -44,32 +48,78 @@ static const uint8_t mender_tls_public_key_x509_header[] = { 0x30, 0x59, 0x30, 0
                                                              0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07, 0x03, 0x42, 0x00 };
 
 /**
- * @brief Public key of the device
+ * @brief Private and public keys of the device
  */
+static mbedtls_svc_key_id_t mender_tls_key_id = 0;
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE
+static unsigned char *mender_tls_private_key        = NULL;
+static size_t         mender_tls_private_key_length = 0;
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE */
 static unsigned char *mender_tls_public_key        = NULL;
 static size_t         mender_tls_public_key_length = 0;
 
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE
+
 /**
  * @brief Generate authentication keys
+ * @param key_id Key id
+ * @param private_key Private key generated
+ * @param private_key_length Private key length
  * @param public_key Public key generated
  * @param public_key_length Public key length
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-static mender_err_t mender_tls_generate_authentication_keys(unsigned char **public_key, size_t *public_key_length);
+static mender_err_t mender_tls_generate_authentication_keys(
+    mbedtls_svc_key_id_t *key_id, unsigned char **private_key, size_t *private_key_length, unsigned char **public_key, size_t *public_key_length);
 
 /**
  * @brief Get authentication keys
+ * @param key_id Key id
+ * @param private_key Private key generated
+ * @param private_key_length Private key length
  * @param public_key Public key from storage, NULL if not found
  * @param public_key_length Public key length from storage, 0 if not found
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
-static mender_err_t mender_tls_get_authentication_keys(unsigned char **public_key, size_t *public_key_length);
+static mender_err_t mender_tls_get_authentication_keys(
+    mbedtls_svc_key_id_t *key_id, unsigned char **private_key, size_t *private_key_length, unsigned char **public_key, size_t *public_key_length);
+
+/**
+ * @brief Import authentication keys
+ * @param key_id Key id
+ * @param private_key Private key from storage, NULL if not found
+ * @param private_key_length Private key length from storage, 0 if not found
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t mender_tls_import_authentication_keys(mbedtls_svc_key_id_t *key_id, unsigned char *private_key, size_t private_key_length);
+
+#else
+
+/**
+ * @brief Generate authentication keys
+ * @param key_id Key id
+ * @param public_key Public key generated
+ * @param public_key_length Public key length
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t mender_tls_generate_authentication_keys(mbedtls_svc_key_id_t *key_id, unsigned char **public_key, size_t *public_key_length);
+
+/**
+ * @brief Get authentication keys
+ * @param key_id Key id
+ * @param public_key Public key from storage, NULL if not found
+ * @param public_key_length Public key length from storage, 0 if not found
+ * @return MENDER_OK if the function succeeds, error code otherwise
+ */
+static mender_err_t mender_tls_get_authentication_keys(mbedtls_svc_key_id_t *key_id, unsigned char **public_key, size_t *public_key_length);
 
 /**
  * @brief Delete authentication keys
  * @return MENDER_OK if the function succeeds, error code otherwise
  */
 static mender_err_t mender_tls_delete_authentication_keys(void);
+
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE */
 
 /**
  * @brief Write a buffer of PEM information from a DER encoded buffer
@@ -103,6 +153,13 @@ mender_tls_init_authentication_keys(bool recommissioning) {
     mender_err_t ret;
 
     /* Release memory */
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE
+    if (NULL != mender_tls_private_key) {
+        free(mender_tls_private_key);
+        mender_tls_private_key = NULL;
+    }
+    mender_tls_private_key_length = 0;
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE */
     if (NULL != mender_tls_public_key) {
         free(mender_tls_public_key);
         mender_tls_public_key = NULL;
@@ -114,21 +171,56 @@ mender_tls_init_authentication_keys(bool recommissioning) {
 
         /* Erase authentication keys */
         mender_log_info("Delete authentication keys...");
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE
+        if (MENDER_OK != mender_storage_delete_authentication_keys()) {
+            mender_log_warning("Unable to delete authentication keys");
+        }
+#else
         if (MENDER_OK != mender_tls_delete_authentication_keys()) {
             mender_log_warning("Unable to delete authentication keys");
         }
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE */
     }
 
     /* Retrieve or generate private and public keys if not allready done */
-    if (MENDER_OK != (ret = mender_tls_get_authentication_keys(&mender_tls_public_key, &mender_tls_public_key_length))) {
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE
+    if (MENDER_OK
+        != (ret = mender_storage_get_authentication_keys(
+                &mender_tls_private_key, &mender_tls_private_key_length, &mender_tls_public_key, &mender_tls_public_key_length))) {
 
         /* Generate authentication keys */
         mender_log_info("Generating authentication keys...");
-        if (MENDER_OK != (ret = mender_tls_generate_authentication_keys(&mender_tls_public_key, &mender_tls_public_key_length))) {
+        if (MENDER_OK
+            != (ret = mender_tls_generate_authentication_keys(
+                    &mender_tls_key_id, &mender_tls_private_key, &mender_tls_private_key_length, &mender_tls_public_key, &mender_tls_public_key_length))) {
+            mender_log_error("Unable to generate authentication keys");
+            return ret;
+        }
+
+        /* Record keys */
+        if (MENDER_OK
+            != (ret = mender_storage_set_authentication_keys(
+                    mender_tls_private_key, mender_tls_private_key_length, mender_tls_public_key, mender_tls_public_key_length))) {
+            mender_log_error("Unable to record authentication keys");
+            return ret;
+        }
+    } else {
+        if (MENDER_OK != (ret = mender_tls_import_authentication_keys(&mender_tls_key_id, mender_tls_private_key, mender_tls_private_key_length))) {
+            mender_log_error("Unable to import authentication keys");
+            return ret;
+        }
+    }
+#else
+    if (MENDER_OK != (ret = mender_tls_get_authentication_keys(&mender_tls_key_id, &mender_tls_public_key, &mender_tls_public_key_length))) {
+
+        /* Generate authentication keys */
+        mender_log_info("Generating authentication keys...");
+        if (MENDER_OK != (ret = mender_tls_generate_authentication_keys(&mender_tls_key_id, &mender_tls_public_key, &mender_tls_public_key_length))) {
             mender_log_error("Unable to generate authentication keys");
             return ret;
         }
     }
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE */
 
     return ret;
 }
@@ -183,36 +275,24 @@ mender_tls_sign_payload(char *payload, char **signature, size_t *signature_lengt
     assert(NULL != payload);
     assert(NULL != signature);
     assert(NULL != signature_length);
-    psa_status_t     status;
-    psa_key_handle_t key_handle;
-    uint8_t          sig[PSA_ECDSA_SIGNATURE_SIZE(256)];
-    size_t           sig_len;
-    uint8_t         *r = &sig[0];
-    uint8_t         *s = &sig[PSA_ECDSA_SIGNATURE_SIZE(256) / 2];
-    uint8_t          asn1[PSA_ECDSA_SIGNATURE_SIZE(256) + 8];
-    size_t           asn1_len = 0;
-    int              ret;
-    char            *tmp;
+    psa_status_t status;
+    uint8_t      sig[PSA_ECDSA_SIGNATURE_SIZE(256)];
+    size_t       sig_len;
+    uint8_t     *r = &sig[0];
+    uint8_t     *s = &sig[PSA_ECDSA_SIGNATURE_SIZE(256) / 2];
+    uint8_t      asn1[PSA_ECDSA_SIGNATURE_SIZE(256) + 8];
+    size_t       asn1_len = 0;
+    int          ret;
+    char        *tmp;
 #ifdef MBEDTLS_ERROR_C
     char err[128];
 #endif /* MBEDTLS_ERROR_C */
 
-    /* Open key */
-    if (PSA_SUCCESS != (status = psa_open_key(CONFIG_MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID, &key_handle))) {
-        mender_log_error("Unable to open key (%d)", status);
-        return MENDER_FAIL;
-    }
-
     /* Compute signature of the payload */
-    if (PSA_SUCCESS
-        != (status = psa_sign_message(key_handle, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), payload, strlen(payload), sig, sizeof(sig), &sig_len))) {
+    if (PSA_SUCCESS != (status = psa_sign_message(mender_tls_key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256), payload, strlen(payload), sig, sizeof(sig), &sig_len))) {
         mender_log_error("Unable to compute signature of the hash (%d)", status);
-        psa_close_key(key_handle);
         return MENDER_FAIL;
     }
-
-    /* Close key */
-    psa_close_key(key_handle);
 
     /* Convert signature to ASN.1 format */
     asn1[asn1_len] = 0x30;
@@ -274,6 +354,13 @@ mender_err_t
 mender_tls_exit(void) {
 
     /* Release memory */
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE
+    if (NULL != mender_tls_private_key) {
+        free(mender_tls_private_key);
+        mender_tls_private_key = NULL;
+    }
+    mender_tls_private_key_length = 0;
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE */
     if (NULL != mender_tls_public_key) {
         free(mender_tls_public_key);
         mender_tls_public_key = NULL;
@@ -283,64 +370,137 @@ mender_tls_exit(void) {
     return MENDER_OK;
 }
 
-static mender_err_t
-mender_tls_generate_authentication_keys(unsigned char **public_key, size_t *public_key_length) {
+#ifdef CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE
 
+static mender_err_t
+mender_tls_generate_authentication_keys(
+    mbedtls_svc_key_id_t *key_id, unsigned char **private_key, size_t *private_key_length, unsigned char **public_key, size_t *public_key_length) {
+
+    assert(NULL != private_key);
+    assert(NULL != private_key_length);
     assert(NULL != public_key);
     assert(NULL != public_key_length);
     psa_status_t         status;
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_handle_t     key_handle;
 
     /* Setup the key's attributes before the creation request */
-    psa_set_key_id(&key_attributes, CONFIG_MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID);
-    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
-    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_PERSISTENT);
-    psa_set_key_algorithm(&key_attributes, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256));
+    psa_set_key_id(&key_attributes, CONFIG_MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID);
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_EXPORT);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
     psa_set_key_bits(&key_attributes, 256);
 
-    /* Generate the private key, creating the persistent key on success */
-    if (PSA_SUCCESS != (status = psa_generate_key(&key_attributes, &key_handle))) {
+    /* Generate the private key, creating the volatile key on success */
+    if (PSA_SUCCESS != (status = psa_generate_key(&key_attributes, key_id))) {
         mender_log_error("Unable to generate key (%d)", status);
         return MENDER_FAIL;
     }
 
-    /* Close key */
-    psa_close_key(key_handle);
-
     /* Return authentification keys */
-    return mender_tls_get_authentication_keys(public_key, public_key_length);
+    return mender_tls_get_authentication_keys(key_id, private_key, private_key_length, public_key, public_key_length);
 }
 
 static mender_err_t
-mender_tls_get_authentication_keys(unsigned char **public_key, size_t *public_key_length) {
+mender_tls_get_authentication_keys(
+    mbedtls_svc_key_id_t *key_id, unsigned char **private_key, size_t *private_key_length, unsigned char **public_key, size_t *public_key_length) {
 
+    assert(NULL != private_key);
+    assert(NULL != private_key_length);
     assert(NULL != public_key);
     assert(NULL != public_key_length);
-    psa_status_t     status;
-    psa_key_handle_t key_handle;
+    psa_status_t status;
 
-    /* Open key */
-    if (PSA_SUCCESS != (status = psa_open_key(CONFIG_MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID, &key_handle))) {
-        mender_log_error("Unable to open key (%d)", status);
+    /* Export the persistent key's private key part */
+    if (NULL == (*private_key = (unsigned char *)malloc(MENDER_TLS_PRIVATE_KEY_LENGTH))) {
+        mender_log_error("Unable to allocate memory");
+        return MENDER_FAIL;
+    }
+    if (PSA_SUCCESS != (status = psa_export_key(*key_id, *private_key, MENDER_TLS_PRIVATE_KEY_LENGTH, private_key_length))) {
+        mender_log_error("Unable to export private key (%d)", status);
         return MENDER_FAIL;
     }
 
     /* Export the persistent key's public key part */
     if (NULL == (*public_key = (unsigned char *)malloc(MENDER_TLS_PUBLIC_KEY_LENGTH))) {
         mender_log_error("Unable to allocate memory");
-        psa_close_key(key_handle);
         return MENDER_FAIL;
     }
-    if (PSA_SUCCESS != (status = psa_export_public_key(key_handle, *public_key, MENDER_TLS_PUBLIC_KEY_LENGTH, public_key_length))) {
+    if (PSA_SUCCESS != (status = psa_export_public_key(*key_id, *public_key, MENDER_TLS_PUBLIC_KEY_LENGTH, public_key_length))) {
         mender_log_error("Unable to export public key (%d)", status);
-        psa_close_key(key_handle);
         return MENDER_FAIL;
     }
 
-    /* Close key */
-    psa_close_key(key_handle);
+    return MENDER_OK;
+}
+
+static mender_err_t
+mender_tls_import_authentication_keys(mbedtls_svc_key_id_t *key_id, unsigned char *private_key, size_t private_key_length) {
+
+    psa_status_t         status;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+
+    /* Setup the key's attributes before the creation request */
+    psa_set_key_id(&key_attributes, CONFIG_MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID);
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_bits(&key_attributes, 256);
+
+    /* Import key */
+    if (PSA_SUCCESS != (status = psa_import_key(&key_attributes, private_key, private_key_length, key_id))) {
+        mender_log_error("Unable to import key (%d)", status);
+        return MENDER_FAIL;
+    }
+
+    return MENDER_OK;
+}
+
+#else
+
+static mender_err_t
+mender_tls_generate_authentication_keys(mbedtls_svc_key_id_t *key_id, unsigned char **public_key, size_t *public_key_length) {
+
+    assert(NULL != public_key);
+    assert(NULL != public_key_length);
+    psa_status_t         status;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+
+    /* Setup the key's attributes before the creation request */
+    psa_set_key_id(&key_attributes, CONFIG_MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID);
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_PERSISTENT);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_bits(&key_attributes, 256);
+
+    /* Generate the private key, creating the persistent key on success */
+    if (PSA_SUCCESS != (status = psa_generate_key(&key_attributes, key_id))) {
+        mender_log_error("Unable to generate key (%d)", status);
+        return MENDER_FAIL;
+    }
+
+    /* Return authentification keys */
+    return mender_tls_get_authentication_keys(key_id, public_key, public_key_length);
+}
+
+static mender_err_t
+mender_tls_get_authentication_keys(mbedtls_svc_key_id_t *key_id, unsigned char **public_key, size_t *public_key_length) {
+
+    assert(NULL != public_key);
+    assert(NULL != public_key_length);
+    psa_status_t status;
+
+    /* Export the persistent key's public key part */
+    if (NULL == (*public_key = (unsigned char *)malloc(MENDER_TLS_PUBLIC_KEY_LENGTH))) {
+        mender_log_error("Unable to allocate memory");
+        return MENDER_FAIL;
+    }
+    if (PSA_SUCCESS != (status = psa_export_public_key(*key_id, *public_key, MENDER_TLS_PUBLIC_KEY_LENGTH, public_key_length))) {
+        mender_log_error("Unable to export public key (%d)", status);
+        return MENDER_FAIL;
+    }
 
     return MENDER_OK;
 }
@@ -351,13 +511,15 @@ mender_tls_delete_authentication_keys(void) {
     psa_status_t status;
 
     /* Destroy the authentification keys */
-    if (PSA_SUCCESS != (status = psa_destroy_key(CONFIG_MENDER_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID))) {
+    if (PSA_SUCCESS != (status = psa_destroy_key(CONFIG_MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID))) {
         mender_log_error("Unable to delete authentification keys (%d)", status);
         return MENDER_FAIL;
     }
 
     return MENDER_OK;
 }
+
+#endif /* CONFIG_MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE */
 
 static mender_err_t
 mender_tls_pem_write_buffer(const unsigned char *der_data, size_t der_len, char *buf, size_t buf_len, size_t *olen) {
