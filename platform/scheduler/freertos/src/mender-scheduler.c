@@ -79,12 +79,22 @@ static void mender_scheduler_work_queue_thread(void *arg);
  */
 static QueueHandle_t mender_scheduler_work_queue_handle = NULL;
 
+/**
+ * @brief Semaphore given by the work queue thread right before it terminates, used by
+ *        mender_scheduler_exit() to block until the thread has fully exited
+ */
+static SemaphoreHandle_t mender_scheduler_work_queue_thread_exited = NULL;
+
 mender_err_t
 mender_scheduler_init(void) {
 
     /* Create and start work queue */
     if (NULL == (mender_scheduler_work_queue_handle = xQueueCreate(CONFIG_MENDER_SCHEDULER_WORK_QUEUE_LENGTH, sizeof(mender_scheduler_work_context_t *)))) {
         mender_log_error("Unable to create work queue");
+        return MENDER_FAIL;
+    }
+    if (NULL == (mender_scheduler_work_queue_thread_exited = xSemaphoreCreateBinary())) {
+        mender_log_error("Unable to create work queue thread exit semaphore");
         return MENDER_FAIL;
     }
     if (pdPASS
@@ -95,6 +105,8 @@ mender_scheduler_init(void) {
                        CONFIG_MENDER_SCHEDULER_WORK_QUEUE_PRIORITY,
                        NULL)) {
         mender_log_error("Unable to create work queue thread");
+        vSemaphoreDelete(mender_scheduler_work_queue_thread_exited);
+        mender_scheduler_work_queue_thread_exited = NULL;
         return MENDER_FAIL;
     }
 
@@ -348,6 +360,22 @@ mender_scheduler_exit(void) {
         return MENDER_FAIL;
     }
 
+    /* Block until the work queue thread has fully terminated before returning.
+     * Without this join, the thread may still be draining/executing work (and using the
+     * scheduler globals and the mender client mutexes) while the caller tears those down
+     * and a subsequent mender_scheduler_init() recreates them. That aliases handles between
+     * the old and new instances and corrupts the work queue, which is the race that crashes
+     * the MCU when automatic firmware updates are toggled rapidly. */
+    if (NULL != mender_scheduler_work_queue_thread_exited) {
+        xSemaphoreTake(mender_scheduler_work_queue_thread_exited, portMAX_DELAY);
+        vSemaphoreDelete(mender_scheduler_work_queue_thread_exited);
+        mender_scheduler_work_queue_thread_exited = NULL;
+    }
+
+    /* The work queue itself was deleted by the thread; clear the global so a future init
+     * starts from a clean state and the now-dead thread can never alias it */
+    mender_scheduler_work_queue_handle = NULL;
+
     return MENDER_OK;
 }
 
@@ -379,8 +407,13 @@ mender_scheduler_work_queue_thread(void *arg) {
     (void)arg;
     mender_scheduler_work_context_t *work_context = NULL;
 
+    /* Capture the queue handle locally so the cleanup below never touches a handle that a
+     * newer scheduler instance may have stored in the global after this thread was asked
+     * to exit */
+    QueueHandle_t work_queue_handle = mender_scheduler_work_queue_handle;
+
     /* Handle work to be executed */
-    while (pdPASS == xQueueReceive(mender_scheduler_work_queue_handle, &work_context, portMAX_DELAY)) {
+    while (pdPASS == xQueueReceive(work_queue_handle, &work_context, portMAX_DELAY)) {
 
         /* Check if empty work is received from the work queue, this ask the work queue thread to terminate */
         if (NULL == work_context) {
@@ -403,9 +436,12 @@ mender_scheduler_work_queue_thread(void *arg) {
 
 END:
 
-    /* Release memory */
-    vQueueDelete(mender_scheduler_work_queue_handle);
-    mender_scheduler_work_queue_handle = NULL;
+    /* Release the work queue (using the locally captured handle, never the global) */
+    vQueueDelete(work_queue_handle);
+
+    /* Signal mender_scheduler_exit() that the thread has fully terminated. The caller owns
+     * clearing the global queue handle once it observes this. */
+    xSemaphoreGive(mender_scheduler_work_queue_thread_exited);
 
     /* Terminate work queue thread */
     vTaskDelete(NULL);

@@ -469,6 +469,20 @@ mender_client_deactivate(void) {
 
     mender_err_t ret;
 
+    /* Deactivate mender client work FIRST, then the add-ons.
+     *
+     * The add-ons are activated from the client work function itself (running on the work
+     * queue thread) once authentication succeeds - see the "Activate add-ons" block in
+     * mender_client_authentication_work_function(). If we deactivate the add-ons before the
+     * client work, the still-running work thread can activate an add-on (submitting its work)
+     * *after* we just deactivated it. That late work then runs against add-on resources that
+     * mender_client_exit() frees immediately afterwards -> use-after-free (e.g. the inventory
+     * mutex), which crashes when automatic firmware updates are toggled rapidly.
+     *
+     * Draining the client work first guarantees the work thread can no longer activate any
+     * add-on, so the add-on deactivation below reliably stops and drains all add-on work. */
+    mender_scheduler_work_deactivate(mender_client_work_handle);
+
     /* Take mutex used to protect access to the add-ons management list */
     if (MENDER_OK != (ret = mender_scheduler_mutex_take(mender_client_addons_mutex, -1))) {
         mender_log_error("Unable to take mutex");
@@ -486,9 +500,6 @@ mender_client_deactivate(void) {
 
     /* Release mutex used to protect access to the add-ons management list */
     mender_scheduler_mutex_give(mender_client_addons_mutex);
-
-    /* Deactivate mender client work */
-    mender_scheduler_work_deactivate(mender_client_work_handle);
 
     return ret;
 }
