@@ -258,12 +258,18 @@ menu "Mender Firmware Over-the-Air support"
 
         choice MENDER_PLATFORM_TLS_TYPE
             prompt "Mender platform TLS implementation type"
+            default MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO if IDF_VERSION_MAJOR >= 6
             default MENDER_PLATFORM_TLS_TYPE_MBEDTLS
             help
                 Specify platform TLS implementation type, select 'weak' to use you own implementation.
+                PSA Crypto is supported on all ESP-IDF versions and required on v6+ (mbedTLS v4).
+                The legacy mbedtls backend is only available on ESP-IDF v5.x.
 
             config MENDER_PLATFORM_TLS_TYPE_MBEDTLS
                 bool "mbedtls"
+                depends on IDF_VERSION_MAJOR < 6
+            config MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
+                bool "PSA Crypto"
             config MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
                 bool "cryptoauthlib"
             config MENDER_PLATFORM_TLS_TYPE_WEAK
@@ -273,6 +279,7 @@ menu "Mender Firmware Over-the-Air support"
         config MENDER_PLATFORM_TLS_TYPE
             string
             default "generic/mbedtls" if MENDER_PLATFORM_TLS_TYPE_MBEDTLS
+            default "generic/psa_crypto" if MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
             default "generic/cryptoauthlib" if MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
             default "generic/weak" if MENDER_PLATFORM_TLS_TYPE_WEAK
 
@@ -384,6 +391,33 @@ menu "Mender Firmware Over-the-Air support"
                     bool "ECDSA-P256"
                 config MENDER_PLATFORM_TLS_KEY_TYPE_RSA
                     bool "RSA-3072"
+            endchoice
+
+        endmenu
+
+    endif
+
+    if MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
+
+        menu "TLS options (ADVANCED)"
+
+            config MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ID
+                int "Mender TLS PSA Crypto signature key ID"
+                default 1
+                help
+                    PSA Crypto signature key ID.
+
+            choice MENDER_PLATFORM_TLS_PSA_CRYPTO_KEY_LIFETIME
+                prompt "Mender platform TLS key lifetime"
+                default MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE
+                help
+                    PSA Crypto signature key lifetime.
+                    In case Volatile is selected, private and public keys are saved using mender-storage.
+
+                config MENDER_PLATFORM_TLS_KEY_LIFETIME_PERSISTENT
+                    bool "Persistent"
+                config MENDER_PLATFORM_TLS_KEY_LIFETIME_VOLATILE
+                    bool "Volatile"
             endchoice
 
         endmenu
