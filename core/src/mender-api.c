@@ -271,7 +271,10 @@ mender_api_check_for_deployment(char **id, char **artifact_name, char **uri) {
         ret = MENDER_OK;
     } else {
         mender_api_print_response_error(response, status);
-        ret = MENDER_FAIL;
+        /* A 401 means the JWT expired or was revoked server side. Report it distinctly so the
+         * client can go back to the authentication state instead of failing forever: the token
+         * is only ever obtained once, when the client enters MENDER_CLIENT_STATE_AUTHENTICATED */
+        ret = (401 == status) ? MENDER_UNAUTHORIZED : MENDER_FAIL;
     }
 
 END:
@@ -341,7 +344,7 @@ mender_api_publish_deployment_status(char *id, mender_deployment_status_t deploy
         ret = MENDER_OK;
     } else {
         mender_api_print_response_error(response, status);
-        ret = MENDER_FAIL;
+        ret = (401 == status) ? MENDER_UNAUTHORIZED : MENDER_FAIL;
     }
 
 END:

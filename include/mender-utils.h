@@ -42,6 +42,7 @@ typedef enum {
     MENDER_FAIL            = -1, /**< Failure */
     MENDER_NOT_FOUND       = -2, /**< Not found */
     MENDER_NOT_IMPLEMENTED = -3, /**< Not implemented */
+    MENDER_UNAUTHORIZED    = -4, /**< Server rejected the authentication token (HTTP 401) */
 } mender_err_t;
 
 /**

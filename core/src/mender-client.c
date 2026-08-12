@@ -698,6 +698,18 @@ mender_client_work_function(void) {
     if (MENDER_CLIENT_STATE_AUTHENTICATED == mender_client_state) {
         /* Perform updates */
         ret = mender_client_update_work_function();
+
+        /* The authentication token is obtained once, when entering the authenticated state, and
+         * the server expires it after a week by default. Without this the client would keep
+         * polling with the stale token until the next reboot, silently stopping updates: go back
+         * to the authentication state and retry at the (shorter) authentication poll interval */
+        if (MENDER_UNAUTHORIZED == ret) {
+            mender_log_warning("Authentication token rejected by the server, reauthenticating");
+            mender_client_state = MENDER_CLIENT_STATE_AUTHENTICATION;
+            if (MENDER_OK != mender_scheduler_work_set_period(mender_client_work_handle, mender_client_config.authentication_poll_interval)) {
+                mender_log_error("Unable to set work period");
+            }
+        }
     }
 
 RELEASE:
