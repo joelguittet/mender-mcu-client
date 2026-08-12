@@ -7,6 +7,7 @@ tests/mocks/esp-idf/include/esp_http_client.h
 tests/mocks/esp-idf/include/esp_log.h
 tests/mocks/esp-idf/include/esp_ota_ops.h
 tests/mocks/esp-idf/include/esp_partition.h
+tests/mocks/esp-idf/include/esp_timer.h
 tests/mocks/esp-idf/include/esp_transport.h
 tests/mocks/esp-idf/include/esp_transport_ws.h
 tests/mocks/esp-idf/include/esp_websocket_client.h
@@ -16,6 +17,7 @@ tests/mocks/esp-idf/src/esp_crt_bundle.c
 tests/mocks/esp-idf/src/esp_err.c
 tests/mocks/esp-idf/src/esp_http_client.c
 tests/mocks/esp-idf/src/esp_ota_ops.c
+tests/mocks/esp-idf/src/esp_timer.c
 tests/mocks/esp-idf/src/esp_websocket_client.c
 tests/mocks/esp-idf/src/nvs.c
 tests/mocks/freertos/include/FreeRTOSConfig.h

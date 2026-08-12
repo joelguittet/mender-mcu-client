@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <esp_http_client.h>
 #include <esp_crt_bundle.h>
+#include <esp_timer.h>
 #include "mender-http.h"
 #include "mender-log.h"
 #include "mender-utils.h"
@@ -33,6 +34,14 @@
  * @brief Receive buffer length
  */
 #define MENDER_HTTP_RECV_BUF_LENGTH (512)
+
+/**
+ * @brief Maximum time without receiving any response body data before the request is aborted (ms)
+ * @note  This is an idle timeout, not a total one: it is rearmed on every chunk received, so
+ *        artifact downloads streaming through the same loop are never cut short while they make
+ *        progress
+ */
+#define MENDER_HTTP_STALL_TIMEOUT_MS (60000)
 
 /**
  * @brief Mender HTTP configuration
@@ -143,7 +152,13 @@ mender_http_perform(char                *jwt,
         goto END;
     }
 
-    /* Read data until all have been received */
+    /* Read data until all have been received.
+     * esp_http_client_read() returns 0 both on a socket timeout and on a peer that simply stops
+     * sending mid-body, and the loop below only ends on a complete response, so a stalled server
+     * would otherwise spin here forever - wedging the caller, which is the mender scheduler work
+     * queue thread, with no further log output. Bail out once no data has arrived for
+     * MENDER_HTTP_STALL_TIMEOUT_MS */
+    int64_t last_progress_us = esp_timer_get_time();
     do {
 
         char data[MENDER_HTTP_RECV_BUF_LENGTH];
@@ -154,6 +169,8 @@ mender_http_perform(char                *jwt,
             ret = MENDER_FAIL;
             goto END;
         } else if (read_length > 0) {
+            /* Rearm the stall deadline: the transfer is making progress */
+            last_progress_us = esp_timer_get_time();
             /* Transmit data received to the upper layer */
             if (MENDER_OK != (ret = callback(MENDER_HTTP_EVENT_DATA_RECEIVED, data, (size_t)read_length, params))) {
                 mender_log_error("An error occurred, stop reading data");
@@ -162,6 +179,12 @@ mender_http_perform(char                *jwt,
         } else {
             if ((ECONNRESET == errno) || (ENOTCONN == errno)) {
                 mender_log_error("An error occurred, connection has been closed (errno=%d)", errno);
+                callback(MENDER_HTTP_EVENT_ERROR, NULL, 0, params);
+                ret = MENDER_FAIL;
+                goto END;
+            }
+            if ((esp_timer_get_time() - last_progress_us) > (1000LL * MENDER_HTTP_STALL_TIMEOUT_MS)) {
+                mender_log_error("No response data received for %d ms, aborting request (errno=%d)", MENDER_HTTP_STALL_TIMEOUT_MS, errno);
                 callback(MENDER_HTTP_EVENT_ERROR, NULL, 0, params);
                 ret = MENDER_FAIL;
                 goto END;
