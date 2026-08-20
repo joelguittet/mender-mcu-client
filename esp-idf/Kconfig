@@ -420,6 +420,18 @@ menu "Mender Firmware Over-the-Air support"
                     bool "Volatile"
             endchoice
 
+            choice MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ALG
+                prompt "Mender platform TLS key algorithm"
+                default MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ALG_ECDSA
+                help
+                    PSA Crypto signature key algorithm.
+
+                config MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ALG_ECDSA
+                    bool "ECDSA"
+                config MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ALG_DETERMINISTIC_ECDSA
+                    bool "Deterministic ECDSA"
+            endchoice
+
         endmenu
 
     endif
