@@ -74,9 +74,9 @@ menu "Mender Firmware Over-the-Air support"
 
     endmenu
 
-    menu "Addons integration"
+    menu "Add-ons integration"
 
-        menu "Configure Addon configuration"
+        menu "Configure Add-on configuration"
 
             config MENDER_CLIENT_ADD_ON_CONFIGURE
                 bool "Mender client Configure"
@@ -104,7 +104,7 @@ menu "Mender Firmware Over-the-Air support"
 
         endmenu
 
-        menu "Inventory Addon configuration"
+        menu "Inventory Add-on configuration"
 
             config MENDER_CLIENT_ADD_ON_INVENTORY
                 bool "Mender client Inventory"
@@ -127,7 +127,7 @@ menu "Mender Firmware Over-the-Air support"
 
         endmenu
 
-        menu "Troubleshoot Addon configuration"
+        menu "Troubleshoot Add-on configuration"
 
             config MENDER_CLIENT_ADD_ON_TROUBLESHOOT
                 bool "Mender client Troubleshoot (EXPERIMENTAL)"
@@ -268,10 +268,10 @@ menu "Mender Firmware Over-the-Air support"
             config MENDER_PLATFORM_TLS_TYPE_MBEDTLS
                 bool "mbedtls"
                 depends on IDF_VERSION_MAJOR < 6
-            config MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
-                bool "PSA Crypto"
             config MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
                 bool "cryptoauthlib"
+            config MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
+                bool "PSA Crypto"
             config MENDER_PLATFORM_TLS_TYPE_WEAK
                 bool "weak"
         endchoice
@@ -279,8 +279,8 @@ menu "Mender Firmware Over-the-Air support"
         config MENDER_PLATFORM_TLS_TYPE
             string
             default "generic/mbedtls" if MENDER_PLATFORM_TLS_TYPE_MBEDTLS
-            default "generic/psa_crypto" if MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
             default "generic/cryptoauthlib" if MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
+            default "generic/psa_crypto" if MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
             default "generic/weak" if MENDER_PLATFORM_TLS_TYPE_WEAK
 
     endmenu
@@ -397,6 +397,20 @@ menu "Mender Firmware Over-the-Air support"
 
     endif
 
+    if MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
+
+        menu "TLS options (ADVANCED)"
+
+            config MENDER_TLS_PRIVATE_KEY_ID
+                int "Mender TLS cryptoauthlib private key ID"
+                default 0
+                help
+                    Cryptoauthlib private key ID.
+
+        endmenu
+
+    endif
+
     if MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
 
         menu "TLS options (ADVANCED)"
@@ -431,20 +445,6 @@ menu "Mender Firmware Over-the-Air support"
                 config MENDER_PLATFORM_TLS_PSA_CRYPTO_SIGNATURE_KEY_ALG_DETERMINISTIC_ECDSA
                     bool "Deterministic ECDSA"
             endchoice
-
-        endmenu
-
-    endif
-
-    if MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
-
-        menu "TLS options (ADVANCED)"
-
-            config MENDER_TLS_PRIVATE_KEY_ID
-                int "Mender TLS cryptoauthlib private key ID"
-                default 0
-                help
-                    Cryptoauthlib private key ID.
 
         endmenu
 
