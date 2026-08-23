@@ -315,9 +315,14 @@ if MENDER_MCU_CLIENT
 
     endif
 
-    if MENDER_PLATFORM_NET_TYPE_DEFAULT
+    menu "Network options (ADVANCED)"
 
-        menu "Network options (ADVANCED)"
+        config MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT
+            bool "Support unsecure transport URL http:// or ws://"
+            help
+                Allow to use unsecure transport URL http:// or ws://, not recommended except for debugging
+
+        if MENDER_PLATFORM_NET_TYPE_DEFAULT
 
             config MENDER_NET_CA_CERTIFICATE_TAG_PRIMARY
                 int "Primary CA certificate tag"
@@ -371,9 +376,9 @@ if MENDER_MCU_CLIENT
 
             endif
 
-        endmenu
+        endif
 
-    endif
+    endmenu
 
     if MENDER_PLATFORM_SCHEDULER_TYPE_DEFAULT
 

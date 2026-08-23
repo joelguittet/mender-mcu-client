@@ -153,6 +153,9 @@ if (CONFIG_MENDER_PLATFORM_TLS_TYPE STREQUAL "generic/mbedtls")
         message(STATUS "Using TLS key type RSA-3072")
     endif()
 endif()
+if (CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT)
+    message(WARNING "Usage of unsecure transport URL http:// or ws:// is not recommended except for debugging")
+endif()
 
 # Definitions
 if (CONFIG_MENDER_SERVER_HOST)

@@ -53,8 +53,11 @@ mender_net_get_host_port_url(char *path, char *config_host, char **host, char **
     char *saveptr;
 
     /* Check if the path start with protocol */
-    if ((false == mender_utils_strbeginwith(path, "http://")) && (false == mender_utils_strbeginwith(path, "https://"))
-        && (false == mender_utils_strbeginwith(path, "ws://")) && (false == mender_utils_strbeginwith(path, "wss://"))) {
+    if ((false == mender_utils_strbeginwith(path, "https://")) && (false == mender_utils_strbeginwith(path, "wss://"))
+#ifdef CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT
+        && (false == mender_utils_strbeginwith(path, "http://")) && (false == mender_utils_strbeginwith(path, "ws://"))
+#endif /* CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT */
+    ) {
 
         /* Path contain the URL only, retrieve host and port from configuration */
         assert(NULL != url);
@@ -89,10 +92,12 @@ mender_net_get_host_port_url(char *path, char *config_host, char **host, char **
     } else {
         /* Port is not specified */
         *host = strdup(pch1);
-        if ((true == mender_utils_strbeginwith(path, "http://")) || (true == mender_utils_strbeginwith(path, "ws://"))) {
-            *port = strdup("80");
-        } else if ((true == mender_utils_strbeginwith(path, "https://")) || (true == mender_utils_strbeginwith(path, "wss://"))) {
+        if ((true == mender_utils_strbeginwith(path, "https://")) || (true == mender_utils_strbeginwith(path, "wss://"))) {
             *port = strdup("443");
+#ifdef CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT
+        } else if ((true == mender_utils_strbeginwith(path, "http://")) || (true == mender_utils_strbeginwith(path, "ws://"))) {
+            *port = strdup("80");
+#endif /* CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT */
         }
     }
     if (NULL != url) {
