@@ -143,16 +143,12 @@ mender_websocket_connect(
     ((mender_websocket_handle_t *)*handle)->params   = params;
 
     /* Compute URL if required */
-    if ((false == mender_utils_strbeginwith(path, "ws://")) && (false == mender_utils_strbeginwith(path, "wss://"))) {
-        if ((true == mender_utils_strbeginwith(path, "http://")) || (true == mender_utils_strbeginwith(mender_websocket_config.host, "http://"))) {
-            size_t str_length = strlen(mender_websocket_config.host) - strlen("http://") + strlen("ws://") + strlen(path) + 1;
-            if (NULL == (url = (char *)malloc(str_length))) {
-                mender_log_error("Unable to allocate memory");
-                ret = MENDER_FAIL;
-                goto FAIL;
-            }
-            snprintf(url, str_length, "ws://%s%s", mender_websocket_config.host + strlen("http://"), path);
-        } else if ((true == mender_utils_strbeginwith(path, "https://")) || (true == mender_utils_strbeginwith(mender_websocket_config.host, "https://"))) {
+    if ((false == mender_utils_strbeginwith(path, "wss://"))
+#ifdef CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT
+        && (false == mender_utils_strbeginwith(path, "ws://"))
+#endif /* CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT */
+    ) {
+        if ((true == mender_utils_strbeginwith(path, "https://")) || (true == mender_utils_strbeginwith(mender_websocket_config.host, "https://"))) {
             size_t str_length = strlen(mender_websocket_config.host) - strlen("https://") + strlen("wss://") + strlen(path) + 1;
             if (NULL == (url = (char *)malloc(str_length))) {
                 mender_log_error("Unable to allocate memory");
@@ -160,6 +156,16 @@ mender_websocket_connect(
                 goto FAIL;
             }
             snprintf(url, str_length, "wss://%s%s", mender_websocket_config.host + strlen("https://"), path);
+#ifdef CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT
+        } else if ((true == mender_utils_strbeginwith(path, "http://")) || (true == mender_utils_strbeginwith(mender_websocket_config.host, "http://"))) {
+            size_t str_length = strlen(mender_websocket_config.host) - strlen("http://") + strlen("ws://") + strlen(path) + 1;
+            if (NULL == (url = (char *)malloc(str_length))) {
+                mender_log_error("Unable to allocate memory");
+                ret = MENDER_FAIL;
+                goto FAIL;
+            }
+            snprintf(url, str_length, "ws://%s%s", mender_websocket_config.host + strlen("http://"), path);
+#endif /* CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT */
         } else {
             size_t str_length = strlen(mender_websocket_config.host) + strlen(path) + 1;
             if (NULL == (url = (char *)malloc(str_length))) {
@@ -181,10 +187,12 @@ mender_websocket_connect(
                                              .reconnect_timeout_ms = CONFIG_MENDER_WEBSOCKET_RECONNECT_TIMEOUT,
                                              .network_timeout_ms   = CONFIG_MENDER_WEBSOCKET_NETWORK_TIMEOUT,
                                              .ping_interval_sec    = CONFIG_MENDER_WEBSOCKET_PING_INTERVAL };
-    if (true == mender_utils_strbeginwith(config.uri, "ws://")) {
-        config.transport = WEBSOCKET_TRANSPORT_OVER_TCP;
-    } else if (true == mender_utils_strbeginwith(config.uri, "wss://")) {
+    if (true == mender_utils_strbeginwith(config.uri, "wss://")) {
         config.transport = WEBSOCKET_TRANSPORT_OVER_SSL;
+#ifdef CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT
+    } else if (true == mender_utils_strbeginwith(config.uri, "ws://")) {
+        config.transport = WEBSOCKET_TRANSPORT_OVER_TCP;
+#endif /* CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT */
     } else {
         config.transport = WEBSOCKET_TRANSPORT_UNKNOWN;
     }

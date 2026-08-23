@@ -285,9 +285,14 @@ menu "Mender Firmware Over-the-Air support"
 
     endmenu
 
-    if MENDER_PLATFORM_NET_TYPE_DEFAULT
+    menu "Network options (ADVANCED)"
 
-        menu "Network options (ADVANCED)"
+        config MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT
+            bool "Support unsecure transport URL http:// or ws://"
+            help
+                Allow to use unsecure transport URL http:// or ws://, not recommended except for debugging
+
+        if MENDER_PLATFORM_NET_TYPE_DEFAULT
 
             if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
@@ -342,9 +347,9 @@ menu "Mender Firmware Over-the-Air support"
 
             endif
 
-        endmenu
+        endif
 
-    endif
+    endmenu
 
     if MENDER_PLATFORM_SCHEDULER_TYPE_DEFAULT
 

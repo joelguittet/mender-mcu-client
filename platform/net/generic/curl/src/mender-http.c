@@ -102,7 +102,11 @@ mender_http_perform(char                *jwt,
     struct curl_slist *headers         = NULL;
 
     /* Compute URL if required */
-    if ((false == mender_utils_strbeginwith(path, "http://")) && (false == mender_utils_strbeginwith(path, "https://"))) {
+    if ((false == mender_utils_strbeginwith(path, "https://"))
+#ifdef CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT
+        && (false == mender_utils_strbeginwith(path, "http://"))
+#endif /* CONFIG_MENDER_PLATFORM_NET_SUPPORT_UNSECURE_TRANSPORT */
+    ) {
         size_t str_length = strlen(mender_http_config.host) + strlen(path) + 1;
         if (NULL == (url = (char *)malloc(str_length))) {
             mender_log_error("Unable to allocate memory");
