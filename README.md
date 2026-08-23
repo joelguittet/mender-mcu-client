@@ -63,7 +63,7 @@ Artifact are created using [mender-artifact](https://docs.mender.io/downloads#me
 Follow the template below to create an artifact intended for firmware update:
 
 ```
-./mender-artifact write rootfs-image --compression none --device-type <DEVICE-TYPE> --artifact-name <ARTIFACT-NAME> --output-path <ARTIFACT-FILE>.mender --file <BIN-FILE>
+mender-artifact write rootfs-image --compression none --compatible-types <DEVICE-TYPE> --artifact-name <ARTIFACT-NAME> --output-path <ARTIFACT-FILE>.mender --file <BIN-FILE>
 ```
 
 Where:
@@ -77,7 +77,7 @@ Where:
 Follow the template below to create an artifact intended for module update:
 
 ```
-./mender-artifact write module-image --compression none --device-type <DEVICE-TYPE> --artifact-name <ARTIFACT-NAME> --type <MODULE-TYPE> --output-path <ARTIFACT-FILE>.mender --file <MODULE-FILE>
+mender-artifact write module-image --compression none --compatible-types <DEVICE-TYPE> --artifact-name <ARTIFACT-NAME> --type <MODULE-TYPE> --output-path <ARTIFACT-FILE>.mender --file <MODULE-FILE>
 ```
 
 Where:
