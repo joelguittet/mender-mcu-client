@@ -18,6 +18,7 @@
  */
 
 #include <version.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/flash.h>
 #if (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 3, 0))
 #include <zephyr/kvss/nvs.h>
@@ -30,7 +31,20 @@
 
 /**
  * @brief NVS storage
+ * @note Default is to use `storage_partition`; It is possible to specify another partition
+ *       using chosen `mender,storage-partition = &custom_partition;` in the device tree
  */
+#if DT_HAS_CHOSEN(mender_storage_partition)
+#define MENDER_STORAGE_DT_NODE DT_CHOSEN(mender_storage_partition)
+#if (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 3, 0))
+#define MENDER_STORAGE_DEVICE PARTITION_NODE_DEVICE(MENDER_STORAGE_DT_NODE)
+#define MENDER_STORAGE_OFFSET PARTITION_NODE_OFFSET(MENDER_STORAGE_DT_NODE)
+#else
+#define MENDER_STORAGE_DEVICE DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(MENDER_STORAGE_DT_NODE))
+#define MENDER_STORAGE_OFFSET DT_REG_ADDR(MENDER_STORAGE_DT_NODE)
+#endif /* (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 3, 0)) */
+#define MENDER_STORAGE_SIZE DT_REG_SIZE(MENDER_STORAGE_DT_NODE)
+#else
 #define MENDER_STORAGE_LABEL storage_partition
 #if (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 3, 0))
 #define MENDER_STORAGE_DEVICE PARTITION_DEVICE(MENDER_STORAGE_LABEL)
@@ -41,6 +55,7 @@
 #define MENDER_STORAGE_OFFSET FIXED_PARTITION_OFFSET(MENDER_STORAGE_LABEL)
 #define MENDER_STORAGE_SIZE   FIXED_PARTITION_SIZE(MENDER_STORAGE_LABEL)
 #endif /* (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 3, 0)) */
+#endif /* DT_HAS_CHOSEN(mender_storage_partition) */
 
 /**
  * @brief NVS keys
