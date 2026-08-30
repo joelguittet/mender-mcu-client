@@ -6,7 +6,7 @@ zsock_socket(int family, int type, int proto) {
 }
 
 int
-zsock_connect(int sock, const struct sockaddr *addr, socklen_t addrlen) {
+zsock_connect(int sock, const struct net_sockaddr *addr, net_socklen_t addrlen) {
     return 0;
 }
 

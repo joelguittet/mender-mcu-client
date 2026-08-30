@@ -19,13 +19,13 @@ struct zsock_addrinfo {
     int                    ai_socktype;
     int                    ai_protocol;
     int                    ai_eflags;
-    socklen_t              ai_addrlen;
-    struct sockaddr       *ai_addr;
+    net_socklen_t          ai_addrlen;
+    struct net_sockaddr   *ai_addr;
     char                  *ai_canonname;
 };
 
 int  zsock_socket(int family, int type, int proto);
-int  zsock_connect(int sock, const struct sockaddr *addr, socklen_t addrlen);
+int  zsock_connect(int sock, const struct net_sockaddr *addr, net_socklen_t addrlen);
 int  zsock_setsockopt(int sock, int level, int optname, const void *optval, socklen_t optlen);
 int  zsock_getaddrinfo(const char *host, const char *service, const struct zsock_addrinfo *hints, struct zsock_addrinfo **res);
 int zsock_getnameinfo(const struct net_sockaddr *addr, net_socklen_t addrlen, char *host, net_socklen_t hostlen, char *serv, net_socklen_t servlen, int flags);
