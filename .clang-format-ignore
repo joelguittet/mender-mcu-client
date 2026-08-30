@@ -54,6 +54,7 @@ tests/mocks/tf-m/src/error.c
 tests/mocks/tf-m/src/tfm_its_api.c
 tests/mocks/tf-m/src/tfm_ps_api.c
 tests/mocks/zephyr/include/zephyr/device.h
+tests/mocks/zephyr/include/zephyr/devicetree.h
 tests/mocks/zephyr/include/zephyr/dfu/flash_img.h
 tests/mocks/zephyr/include/zephyr/dfu/mcuboot.h
 tests/mocks/zephyr/include/zephyr/drivers/flash.h
