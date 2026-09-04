@@ -1153,6 +1153,17 @@ mender_client_download_artifact_flash_callback(
     /* Check if the filename is provided */
     if (NULL != filename) {
 
+#if CONFIG_MENDER_LOG_LEVEL >= MENDER_LOG_LEVEL_DBG
+        /* Print download progress */
+        if (0 != size) {
+            size_t tenth = size / 10;
+            if ((index / tenth) != ((index + length) / tenth)) {
+                size_t progress = (100 * (index + length)) / size;
+                mender_log_debug("Downloading deployment artifact: %d%% of size %d", progress, size);
+            }
+        }
+#endif /* CONFIG_MENDER_LOG_LEVEL >= MENDER_LOG_LEVEL_DBG */
+
         /* Check if the flash handle must be opened */
         if (0 == index) {
 
