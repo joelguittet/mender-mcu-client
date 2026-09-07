@@ -254,10 +254,8 @@ if MENDER_MCU_CLIENT
                 select NVS
             config MENDER_PLATFORM_STORAGE_TYPE_PSA_ITS
                 bool "PSA Internal Trusted Storage"
-                depends on BUILD_WITH_TFM
             config MENDER_PLATFORM_STORAGE_TYPE_PSA_PS
                 bool "PSA Protected Storage"
-                depends on BUILD_WITH_TFM
             config MENDER_PLATFORM_STORAGE_TYPE_WEAK
                 bool "weak"
         endchoice
@@ -582,15 +580,27 @@ if MENDER_MCU_CLIENT
 
         menu "Storage options"
 
+            config MENDER_STORAGE_PSA_STORAGE_UID_PRIVATE_KEY
+                int "PSA Internal Trusted Storage private key UID"
+                default 1
+                help
+                    PSA Internal Trusted Storage private key UID.
+
+            config MENDER_STORAGE_PSA_STORAGE_UID_PUBLIC_KEY
+                int "PSA Internal Trusted Storage public key UID"
+                default 2
+                help
+                    PSA Internal Trusted Storage public key UID.
+
             config MENDER_STORAGE_PSA_STORAGE_UID_DEPLOYMENT_DATA
                 int "PSA Internal Trusted Storage deployment data UID"
-                default 1
+                default 3
                 help
                     PSA Internal Trusted Storage deployment data UID.
 
             config MENDER_STORAGE_PSA_STORAGE_UID_DEVICE_CONFIG
                 int "PSA Internal Trusted Storage device configuration UID"
-                default 2
+                default 4
                 help
                     PSA Internal Trusted Storage device configuration UID.
 
@@ -602,15 +612,27 @@ if MENDER_MCU_CLIENT
 
         menu "Storage options"
 
+            config MENDER_STORAGE_PSA_STORAGE_UID_PRIVATE_KEY
+                int "PSA Protected Storage private key UID"
+                default 1
+                help
+                    PSA Protected Storage private key UID.
+
+            config MENDER_STORAGE_PSA_STORAGE_UID_PUBLIC_KEY
+                int "PSA Protected Storage public key UID"
+                default 2
+                help
+                    PSA Protected Storage public key UID.
+
             config MENDER_STORAGE_PSA_STORAGE_UID_DEPLOYMENT_DATA
                 int "PSA Protected Storage deployment data UID"
-                default 1
+                default 3
                 help
                     PSA Protected Storage deployment data UID.
 
             config MENDER_STORAGE_PSA_STORAGE_UID_DEVICE_CONFIG
                 int "PSA Protected Storage device configuration UID"
-                default 2
+                default 4
                 help
                     PSA Protected Storage device configuration UID.
 
