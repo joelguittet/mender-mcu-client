@@ -76,12 +76,12 @@ mender_storage_get_authentication_keys(unsigned char **private_key, size_t *priv
 
     /* Retrieve length of the keys */
     if (PSA_SUCCESS != (status = psa_ps_get_info(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_PRIVATE_KEY, &info))) {
-        mender_log_info("Authentication keys are not available");
+        mender_log_info("Authentication keys are not available (%d)", status);
         return MENDER_NOT_FOUND;
     }
     *private_key_length = info.size;
     if (PSA_SUCCESS != (status = psa_ps_get_info(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_PUBLIC_KEY, &info))) {
-        mender_log_info("Authentication keys are not available");
+        mender_log_info("Authentication keys are not available (%d)", status);
         return MENDER_NOT_FOUND;
     }
     *public_key_length = info.size;
@@ -100,7 +100,7 @@ mender_storage_get_authentication_keys(unsigned char **private_key, size_t *priv
 
     /* Read keys */
     if (PSA_SUCCESS != (status = psa_ps_get(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_PRIVATE_KEY, 0, *private_key_length, *private_key, private_key_length))) {
-        mender_log_error("Unable to read authentication keys");
+        mender_log_error("Unable to read authentication keys (%d)", status);
         free(*private_key);
         *private_key = NULL;
         free(*public_key);
@@ -108,7 +108,7 @@ mender_storage_get_authentication_keys(unsigned char **private_key, size_t *priv
         return MENDER_FAIL;
     }
     if (PSA_SUCCESS != (status = psa_ps_get(CONFIG_MENDER_STORAGE_PSA_STORAGE_UID_PUBLIC_KEY, 0, *public_key_length, *public_key, public_key_length))) {
-        mender_log_error("Unable to read authentication keys");
+        mender_log_error("Unable to read authentication keys (%d)", status);
         free(*private_key);
         *private_key = NULL;
         free(*public_key);
