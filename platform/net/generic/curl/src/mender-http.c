@@ -32,6 +32,15 @@
 #endif /* MENDER_CLIENT_VERSION */
 
 /**
+ * @brief Maximum time to proceed the request before it is aborted (milliseconds)
+ * @note  This is a total timeout: it is armed once when the request is initiated, so it must be
+ *        enough long to perform a whole artifact download
+ */
+#ifndef CONFIG_MENDER_NET_HTTP_REQUEST_TIMEOUT_MS
+#define CONFIG_MENDER_NET_HTTP_REQUEST_TIMEOUT_MS (600000)
+#endif /* CONFIG_MENDER_NET_HTTP_REQUEST_TIMEOUT_MS */
+
+/**
  * @brief User data
  */
 typedef struct {
@@ -136,6 +145,11 @@ mender_http_perform(char                *jwt,
     }
     if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2))) {
         mender_log_error("Unable to set TLSv1.2 (%s)", curl_easy_strerror(err));
+        ret = MENDER_FAIL;
+        goto END;
+    }
+    if (CURLE_OK != (err = curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, CONFIG_MENDER_NET_HTTP_REQUEST_TIMEOUT_MS))) {
+        mender_log_error("Unable to set timeout (%s)", curl_easy_strerror(err));
         ret = MENDER_FAIL;
         goto END;
     }

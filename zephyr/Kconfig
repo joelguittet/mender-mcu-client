@@ -342,6 +342,14 @@ if MENDER_MCU_CLIENT
                 help
                     Peer verification level for TLS connection.
 
+            config MENDER_NET_HTTP_REQUEST_TIMEOUT_MS
+                int "HTTP request timeout (milliseconds)"
+                default 600000
+                help
+                    Maximum time to proceed the request before it is aborted (milliseconds)
+                    This is a total timeout: it is armed once when the request is initiated, so it must be
+                    enough long to perform a whole artifact download
+
             if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
                 config MENDER_WEBSOCKET_THREAD_STACK_SIZE
