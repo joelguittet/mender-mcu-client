@@ -213,7 +213,7 @@ mender_shell_transport_api_write(const struct shell_transport *transport, const 
     *cnt = length;
 
     /* Retrieve length of data available in the tx ring buffer */
-    if ((length = ring_buf_size_get(&mender_shell_context.tx_ringbuf)) > CONFIG_MENDER_SHELL_TX_RING_BUFFER_SIZE / 4) {
+    if ((length = ring_buf_size_get(&ctx->tx_ringbuf)) > CONFIG_MENDER_SHELL_TX_RING_BUFFER_SIZE / 4) {
 
         /* Send data to the shell on the mender server */
         if (NULL == (buffer = malloc(length))) {
