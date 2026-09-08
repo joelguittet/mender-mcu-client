@@ -39,12 +39,12 @@
 /**
  * @brief Chunk size
  */
-#define MENDER_TROUBLESHOOT_FILE_TRANSFER_CHUNK_SIZE 1024
+#define MENDER_TROUBLESHOOT_FILE_TRANSFER_CHUNK_SIZE (1024)
 
 /**
  * @brief Number of chunks packets to send/receive before waiting/sending an ack
  */
-#define MENDER_TROUBLESHOOT_FILE_TRANSFER_CHUNK_PACKETS 10
+#define MENDER_TROUBLESHOOT_FILE_TRANSFER_CHUNK_PACKETS (10)
 
 /**
  * @brief Get file
