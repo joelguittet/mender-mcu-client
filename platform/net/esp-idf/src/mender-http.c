@@ -36,12 +36,13 @@
 #define MENDER_HTTP_RECV_BUF_LENGTH (512)
 
 /**
- * @brief Maximum time without receiving any response body data before the request is aborted (ms)
- * @note  This is an idle timeout, not a total one: it is rearmed on every chunk received, so
- *        artifact downloads streaming through the same loop are never cut short while they make
- *        progress
+ * @brief Maximum time without receiving any response body data before the request is aborted (milliseconds)
+ * @note  This is an idle timeout, not a total one: it is rearmed on every chunk received, so artifact
+ *        downloads streaming through the same loop are never cut short while they make progress
  */
-#define MENDER_HTTP_STALL_TIMEOUT_MS (60000)
+#ifndef CONFIG_MENDER_NET_HTTP_STALL_TIMEOUT_MS
+#define CONFIG_MENDER_NET_HTTP_STALL_TIMEOUT_MS (60000)
+#endif /* CONFIG_MENDER_NET_HTTP_STALL_TIMEOUT_MS */
 
 /**
  * @brief Mender HTTP configuration
@@ -161,7 +162,7 @@ mender_http_perform(char                *jwt,
      * sending mid-body, and the loop below only ends on a complete response, so a stalled server
      * would otherwise spin here forever - wedging the caller, which is the mender scheduler work
      * queue thread, with no further log output. Bail out once no data has arrived for
-     * MENDER_HTTP_STALL_TIMEOUT_MS */
+     * CONFIG_MENDER_NET_HTTP_STALL_TIMEOUT_MS */
     int64_t last_progress_us = esp_timer_get_time();
     do {
 
@@ -187,8 +188,8 @@ mender_http_perform(char                *jwt,
                 ret = MENDER_FAIL;
                 goto END;
             }
-            if ((esp_timer_get_time() - last_progress_us) > (1000LL * MENDER_HTTP_STALL_TIMEOUT_MS)) {
-                mender_log_error("No response data received for %d ms, aborting request (errno=%d)", MENDER_HTTP_STALL_TIMEOUT_MS, errno);
+            if ((esp_timer_get_time() - last_progress_us) > (1000LL * CONFIG_MENDER_NET_HTTP_STALL_TIMEOUT_MS)) {
+                mender_log_error("No response data received for %d ms, aborting request (errno=%d)", CONFIG_MENDER_NET_HTTP_STALL_TIMEOUT_MS, errno);
                 callback(MENDER_HTTP_EVENT_ERROR, NULL, 0, params);
                 ret = MENDER_FAIL;
                 goto END;

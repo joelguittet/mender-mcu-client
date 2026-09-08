@@ -294,6 +294,14 @@ menu "Mender Firmware Over-the-Air support"
 
         if MENDER_PLATFORM_NET_TYPE_DEFAULT
 
+            config MENDER_NET_HTTP_REQUEST_TIMEOUT_MS
+                int "HTTP request timeout (milliseconds)"
+                default 60000
+                help
+                    Maximum time without receiving any response body data before the request is aborted (milliseconds)
+                    This is an idle timeout, not a total one: it is rearmed on every chunk received, so artifact
+                    downloads streaming through the same loop are never cut short while they make progress
+
             if MENDER_CLIENT_ADD_ON_TROUBLESHOOT
 
                 config MENDER_WEBSOCKET_THREAD_STACK_SIZE

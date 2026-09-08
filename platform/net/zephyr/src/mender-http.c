@@ -34,9 +34,13 @@
 #define MENDER_HTTP_RECV_BUF_LENGTH (512)
 
 /**
- * @brief Request timeout (milliseconds)
+ * @brief Maximum time to proceed the request before it is aborted (milliseconds)
+ * @note  This is a total timeout: it is armed once when the request is initiated, so it must be
+ *        enough long to perform a whole artifact download
  */
-#define MENDER_HTTP_REQUEST_TIMEOUT (600000)
+#ifndef CONFIG_MENDER_NET_HTTP_REQUEST_TIMEOUT_MS
+#define CONFIG_MENDER_NET_HTTP_REQUEST_TIMEOUT_MS (600000)
+#endif /* CONFIG_MENDER_NET_HTTP_REQUEST_TIMEOUT_MS */
 
 /**
  * @brief Request context
@@ -182,7 +186,7 @@ mender_http_perform(char                *jwt,
     }
 
     /* Perform HTTP request */
-    if (http_client_req(sock, &request, MENDER_HTTP_REQUEST_TIMEOUT, (void *)&request_context) < 0) {
+    if (http_client_req(sock, &request, CONFIG_MENDER_NET_HTTP_REQUEST_TIMEOUT_MS, (void *)&request_context) < 0) {
         mender_log_error("Unable to write data");
         ret = MENDER_FAIL;
         goto END;
