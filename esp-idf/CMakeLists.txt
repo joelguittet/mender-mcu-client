@@ -88,7 +88,7 @@ if(CONFIG_MENDER_CLIENT_ADD_ON_TROUBLESHOOT)
 endif()
 
 # Register mender-mcu-client component
-set(mender_requires app_update esp_http_client mbedtls nvs_flash)
+set(mender_requires app_update esp_http_client esp_timer mbedtls nvs_flash)
 if(IDF_VERSION_MAJOR LESS 6)
     list(APPEND mender_requires json)
 else()
