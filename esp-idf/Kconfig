@@ -258,8 +258,7 @@ menu "Mender Firmware Over-the-Air support"
 
         choice MENDER_PLATFORM_TLS_TYPE
             prompt "Mender platform TLS implementation type"
-            default MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO if IDF_VERSION_MAJOR >= 6
-            default MENDER_PLATFORM_TLS_TYPE_MBEDTLS
+            default MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
             help
                 Specify platform TLS implementation type, select 'weak' to use you own implementation.
                 PSA Crypto is supported on all ESP-IDF versions and required on v6+ (mbedTLS v4).
@@ -267,7 +266,6 @@ menu "Mender Firmware Over-the-Air support"
 
             config MENDER_PLATFORM_TLS_TYPE_MBEDTLS
                 bool "mbedtls"
-                depends on IDF_VERSION_MAJOR < 6
             config MENDER_PLATFORM_TLS_TYPE_CRYPTOAUTHLIB
                 bool "cryptoauthlib"
             config MENDER_PLATFORM_TLS_TYPE_PSA_CRYPTO
