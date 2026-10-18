@@ -509,7 +509,7 @@ if MENDER_MCU_CLIENT
             config MENDER_SHELL_TX_WORK_QUEUE_STACK_SIZE
                 int "Mender Shell TX Work Queue Stack Size"
                 range 0 65536
-                default 2048
+                default 4096
                 help
                     Mender Shell TX work queue stack size, customize only if you have a deep understanding of the impacts! Default value is suitable for most applications.
 
