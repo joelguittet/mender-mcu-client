@@ -18,7 +18,11 @@
  */
 
 #include <errno.h>
+#if __has_include(<zephyr/version.h>)
+#include <zephyr/version.h>
+#else
 #include <version.h>
+#endif /* __has_include(<zephyr/version.h>) */
 #include <zephyr/net/socket.h>
 #ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
 #include <zephyr/net/tls_credentials.h>

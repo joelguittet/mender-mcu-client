@@ -18,7 +18,11 @@
  */
 
 #include <errno.h>
+#if __has_include(<zephyr/version.h>)
+#include <zephyr/version.h>
+#else
 #include <version.h>
+#endif /* __has_include(<zephyr/version.h>) */
 #include <zephyr/kernel.h>
 #include <zephyr/net/websocket.h>
 #include "mender-log.h"

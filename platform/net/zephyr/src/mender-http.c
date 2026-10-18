@@ -17,7 +17,11 @@
  * limitations under the License.
  */
 
+#if __has_include(<zephyr/version.h>)
+#include <zephyr/version.h>
+#else
 #include <version.h>
+#endif /* __has_include(<zephyr/version.h>) */
 #include <zephyr/net/http/client.h>
 #include "mender-http.h"
 #include "mender-log.h"
