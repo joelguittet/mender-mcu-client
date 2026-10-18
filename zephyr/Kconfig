@@ -25,7 +25,7 @@ menuconfig MENDER_MCU_CLIENT
     select IMG_ENABLE_IMAGE_CHECK
     select IMG_ERASE_PROGRESSIVELY
     select IMG_MANAGER
-    select MPU_ALLOW_FLASH_WRITE
+    select MPU_ALLOW_FLASH_WRITE if ARM_MPU
     select NETWORKING
     select NET_TCP
     select NET_SOCKETS
