@@ -17,7 +17,11 @@
  * limitations under the License.
  */
 
+#if __has_include(<zephyr/version.h>)
+#include <zephyr/version.h>
+#else
 #include <version.h>
+#endif /* __has_include(<zephyr/version.h>) */
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/flash.h>
 #if (ZEPHYR_VERSION_CODE > ZEPHYR_VERSION(4, 3, 0))

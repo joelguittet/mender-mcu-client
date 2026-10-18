@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <version.h>
+#include <zephyr/version.h>
 
 enum http_method {
     HTTP_DELETE      = 0,  /**< DELETE */
