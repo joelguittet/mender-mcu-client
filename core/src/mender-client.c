@@ -40,6 +40,13 @@
 #endif /* CONFIG_MENDER_SERVER_TENANT_TOKEN */
 
 /**
+ * @brief Default device tier
+ */
+#ifndef CONFIG_MENDER_DEVICE_TIER
+#define CONFIG_MENDER_DEVICE_TIER (MENDER_DEVICE_TIER_DEFAULT)
+#endif /* CONFIG_MENDER_DEVICE_TIER */
+
+/**
  * @brief Default authentication poll interval (seconds)
  */
 #ifndef CONFIG_MENDER_CLIENT_AUTHENTICATION_POLL_INTERVAL
@@ -245,6 +252,11 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
     if ((NULL != mender_client_config.tenant_token) && (0 == strlen(mender_client_config.tenant_token))) {
         mender_client_config.tenant_token = NULL;
     }
+    if (MENDER_DEVICE_TIER_DEFAULT != config->device_tier) {
+        mender_client_config.device_tier = config->device_tier;
+    } else {
+        mender_client_config.device_tier = CONFIG_MENDER_DEVICE_TIER;
+    }
     if (0 != config->authentication_poll_interval) {
         mender_client_config.authentication_poll_interval = config->authentication_poll_interval;
     } else {
@@ -282,6 +294,7 @@ mender_client_init(mender_client_config_t *config, mender_client_callbacks_t *ca
         .identity      = mender_client_config.identity,
         .artifact_name = mender_client_config.artifact_name,
         .device_type   = mender_client_config.device_type,
+        .device_tier   = mender_client_config.device_tier,
         .host          = mender_client_config.host,
         .tenant_token  = mender_client_config.tenant_token,
     };

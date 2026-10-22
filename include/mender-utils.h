@@ -58,6 +58,15 @@ typedef enum {
 } mender_deployment_status_t;
 
 /**
+ * @brief Mender device tier
+ */
+typedef enum {
+    MENDER_DEVICE_TIER_DEFAULT  = 0, /**< Default tier (authentication tier is not specified, default to server configuration)*/
+    MENDER_DEVICE_TIER_STANDARD = 1, /**< Standard tier */
+    MENDER_DEVICE_TIER_MICRO    = 2, /**< Micro tier */
+} mender_device_tier_t;
+
+/**
  * @brief Key-store item
  */
 typedef struct {
