@@ -727,6 +727,7 @@ main(int argc, char **argv) {
     mender_client_config_t    mender_client_config    = { .identity                     = identity,
                                                           .artifact_name                = artifact_name,
                                                           .device_type                  = device_type,
+                                                          .device_tier                  = MENDER_DEVICE_TIER_DEFAULT,
                                                           .host                         = NULL,
                                                           .tenant_token                 = tenant_token,
                                                           .authentication_poll_interval = 0,

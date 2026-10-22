@@ -31,11 +31,12 @@ extern "C" {
  * @brief Mender API configuration
  */
 typedef struct {
-    mender_keystore_t *identity;      /**< Identity of the device */
-    char              *artifact_name; /**< Artifact name */
-    char const        *device_type;   /**< Device type */
-    char              *host;          /**< URL of the mender server */
-    char              *tenant_token;  /**< Tenant token used to authenticate on the mender server (optional) */
+    mender_keystore_t   *identity;      /**< Identity of the device */
+    char                *artifact_name; /**< Artifact name */
+    char const          *device_type;   /**< Device type */
+    mender_device_tier_t device_tier;   /**< Device tier */
+    char                *host;          /**< URL of the mender server */
+    char                *tenant_token;  /**< Tenant token used to authenticate on the mender server (optional) */
 } mender_api_config_t;
 
 /**
