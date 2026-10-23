@@ -60,7 +60,8 @@ menu "Mender Firmware Over-the-Air support"
 
         config MENDER_CLIENT_UPDATE_POLL_INTERVAL
             int "Mender client Update poll interval (seconds)"
-            range 0 86400
+            range 0 2419200
+            default 604800 if MENDER_DEVICE_TIER_MICRO
             default 1800
             help
                 Interval used to periodically check for new deployments on the Mender server.
@@ -114,7 +115,8 @@ menu "Mender Firmware Over-the-Air support"
 
                 config MENDER_CLIENT_CONFIGURE_REFRESH_INTERVAL
                     int "Mender client Configure refresh interval (seconds)"
-                    range 0 86400
+                    range 0 2419200
+                    default 604800 if MENDER_DEVICE_TIER_MICRO
                     default 28800
                     help
                         Interval used to periodically refresh configuration to/from the Mender server.
@@ -137,7 +139,8 @@ menu "Mender Firmware Over-the-Air support"
 
                 config MENDER_CLIENT_INVENTORY_REFRESH_INTERVAL
                     int "Mender client Inventory refresh interval (seconds)"
-                    range 0 86400
+                    range 0 2419200
+                    default 604800 if MENDER_DEVICE_TIER_MICRO
                     default 28800
                     help
                         Interval used to periodically send inventory to the Mender server.
