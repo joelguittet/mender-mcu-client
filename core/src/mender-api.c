@@ -105,6 +105,16 @@ mender_api_perform_authentication(void) {
     if (NULL != mender_api_config.tenant_token) {
         cJSON_AddStringToObject(json_payload, "tenant_token", mender_api_config.tenant_token);
     }
+    switch (mender_api_config.device_tier) {
+        case MENDER_DEVICE_TIER_STANDARD:
+            cJSON_AddStringToObject(json_payload, "tier", "standard");
+            break;
+        case MENDER_DEVICE_TIER_MICRO:
+            cJSON_AddStringToObject(json_payload, "tier", "micro");
+            break;
+        default:
+            break;
+    }
     if (NULL == (payload = cJSON_PrintUnformatted(json_payload))) {
         mender_log_error("Unable to allocate memory");
         ret = MENDER_FAIL;
